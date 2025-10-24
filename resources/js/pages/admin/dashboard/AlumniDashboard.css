@@ -1,0 +1,243 @@
+
+
+/* .dashboard-header .ant-card-body {
+  padding: 32px;
+} */
+
+.header-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    color: white;
+}
+
+.header-content h2,
+.header-content .ant-typography-secondary {
+    color: white !important;
+    margin: 0;
+}
+
+/* Metric Cards */
+.metrics-row {
+    margin-top: 24px;
+    margin-bottom: 24px;
+}
+
+.metric-card {
+    border-radius: 12px;
+    text-align: center;
+    transition: all 0.3s ease;
+    border: none;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+.metric-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+}
+
+.metric-card .ant-statistic-title {
+    font-size: 14px;
+    color: #666;
+    margin-bottom: 8px;
+}
+
+.metric-card .ant-statistic-content {
+    font-size: 28px;
+    font-weight: 600;
+}
+
+/* Dashboard Cards */
+.dashboard-card {
+    border-radius: 12px;
+    border: none;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    transition: all 0.3s ease;
+}
+
+.dashboard-card:hover {
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+}
+
+.dashboard-card .ant-card-head {
+    border-bottom: 1px solid #f0f0f0;
+    padding: 16px 24px;
+}
+
+.dashboard-card .ant-card-body {
+    padding: 24px;
+}
+
+/* Chart Containers */
+.chart-container {
+    width: 100%;
+}
+
+.chart-container .ant-typography {
+    margin-bottom: 16px;
+    color: #1a1a1a;
+    font-weight: 600;
+}
+
+.chart-legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
+    justify-content: center;
+    margin-top: 16px;
+}
+
+.legend-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 4px 8px;
+    background: #fafafa;
+    border-radius: 6px;
+}
+
+.legend-color {
+    width: 12px;
+    height: 12px;
+    border-radius: 2px;
+}
+
+/* List Styles */
+.dashboard-card .ant-list-item {
+    padding: 16px 0;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.dashboard-card .ant-list-item:last-child {
+    border-bottom: none;
+}
+
+.dashboard-card .ant-avatar {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+/* Progress Bars */
+.dashboard-card .ant-progress-line {
+    line-height: 1;
+}
+
+/* Status Tags */
+.ant-tag {
+    border: none;
+    border-radius: 12px;
+    font-size: 11px;
+    padding: 2px 8px;
+    font-weight: 500;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .alumni-dashboard {
+        padding: 16px;
+    }
+
+    .header-content {
+        flex-direction: column;
+        gap: 16px;
+    }
+
+    .header-controls {
+        width: 100%;
+        justify-content: space-between;
+    }
+
+    .metrics-row .ant-col {
+        margin-bottom: 16px;
+    }
+
+    .chart-container {
+        overflow-x: auto;
+    }
+}
+
+@media (max-width: 576px) {
+    .dashboard-card .ant-card-body {
+        padding: 16px;
+    }
+
+    .header-controls {
+        flex-direction: column;
+        width: 100%;
+    }
+
+    .header-controls .ant-picker,
+    .header-controls .ant-select {
+        width: 100%;
+    }
+}
+
+/* Custom animations */
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.metric-card,
+.dashboard-card {
+    animation: fadeInUp 0.5s ease;
+}
+
+/* Custom scrollbar for charts */
+.chart-container::-webkit-scrollbar {
+    height: 6px;
+}
+
+.chart-container::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 3px;
+}
+
+.chart-container::-webkit-scrollbar-thumb {
+    background: #c1c1c1;
+    border-radius: 3px;
+}
+
+.chart-container::-webkit-scrollbar-thumb:hover {
+    background: #a8a8a8;
+}
+
+/* Enhanced table styles */
+.dashboard-card .ant-table {
+    background: transparent;
+}
+
+.dashboard-card .ant-table-thead > tr > th {
+    background: #fafafa;
+    border-bottom: 2px solid #f0f0f0;
+    font-weight: 600;
+}
+
+.dashboard-card .ant-table-tbody > tr > td {
+    border-bottom: 1px solid #f8f8f8;
+}
+
+.dashboard-card .ant-table-tbody > tr:hover > td {
+    background: #fafafa;
+}
+
+/* Badge styles */
+.ant-badge-count {
+    font-size: 10px;
+    font-weight: 600;
+    box-shadow: 0 0 0 1px #fff;
+}
+
+/* Rate component styles */
+.ant-rate {
+    font-size: 14px;
+}
+
+.ant-rate-star:not(:last-child) {
+    margin-right: 4px;
+}
