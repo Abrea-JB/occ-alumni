@@ -7,7 +7,7 @@ const fetchData = async () => {
 };
 
 export default function useQuestions() {
-    return useQuery(["profile"], () => fetchData(), {
+    return useQuery(["questions-list-page"], () => fetchData(), {
         keepPreviousData: true,
     });
 }

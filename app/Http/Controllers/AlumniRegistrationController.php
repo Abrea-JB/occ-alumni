@@ -134,7 +134,7 @@ class AlumniRegistrationController extends Controller
             $user = User::create([
                 'name' => $validated['first_name'] . ' ' . $validated['last_name'],
                 'email' => $validated['email'],
-                'password' => $validated['password'], // Default password
+                'password' => Hash::make($validated['password']), // Default password
                 'email_verified_at' => now(), 
             ]);
 

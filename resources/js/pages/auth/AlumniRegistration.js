@@ -33,16 +33,13 @@ import {
     MailOutlined,
     PhoneOutlined,
     EnvironmentOutlined,
-    CalendarOutlined,
     BookOutlined,
-    TeamOutlined,
     TrophyOutlined,
     GlobalOutlined,
     LinkedinOutlined,
     GithubOutlined,
     TwitterOutlined,
     PlusOutlined,
-    EditOutlined,
     DeleteOutlined,
     IdcardOutlined,
     SafetyCertificateOutlined,
@@ -50,10 +47,7 @@ import {
     UploadOutlined,
     FileImageOutlined,
     CheckCircleOutlined,
-    BankOutlined,
-    CrownOutlined,
     ClockCircleOutlined,
-    DownloadOutlined,
     ArrowLeftOutlined,
 } from "@ant-design/icons";
 import moment from "moment";
@@ -1073,6 +1067,64 @@ const AlumniRegistration = () => {
                     </Form.Item>
                 </Col>
             </Row>
+            <Row gutter={16}>
+                {/* First Column - Password */}
+                <Col xs={24} md={12}>
+                    <Form.Item
+                        label="Password"
+                        name="password"
+                        rules={[
+                            {
+                                required: true,
+                                message: "Please input your password!",
+                            },
+                            {
+                                min: 6,
+                                message:
+                                    "Password must be at least 6 characters!",
+                            },
+                        ]}
+                    >
+                        <Input.Password
+                            placeholder="Enter password"
+                            size="large"
+                        />
+                    </Form.Item>
+                </Col>
+
+                {/* Second Column - Confirm Password */}
+                <Col xs={24} md={12}>
+                    <Form.Item
+                        label="Confirm Password"
+                        name="confirmPassword"
+                        dependencies={["password"]}
+                        rules={[
+                            {
+                                required: true,
+                                message: "Please confirm your password!",
+                            },
+                            ({ getFieldValue }) => ({
+                                validator(_, value) {
+                                    if (
+                                        !value ||
+                                        getFieldValue("password") === value
+                                    ) {
+                                        return Promise.resolve();
+                                    }
+                                    return Promise.reject(
+                                        new Error("Passwords do not match!")
+                                    );
+                                },
+                            }),
+                        ]}
+                    >
+                        <Input.Password
+                            placeholder="Confirm password"
+                            size="large"
+                        />
+                    </Form.Item>
+                </Col>
+            </Row>
         </div>
     );
 
@@ -1322,22 +1374,50 @@ const AlumniRegistration = () => {
                 </Col>
 
                 <Col xs={24} sm={12}>
-                    <Form.Item name="salaryRange" label="Current Salary Range">
-                        <Select size="large" placeholder="Select salary range">
-                            <Option value="0-30000">$0 - $30,000</Option>
-                            <Option value="30000-50000">
-                                $30,000 - $50,000
+                    <Form.Item
+                        name="salaryRange"
+                        label="Current Annual Salary Range (PHP)"
+                    >
+                        <Select
+                            size="large"
+                            placeholder="Select annual salary range"
+                        >
+                            <Option value="0-200000">
+                                ₱0 - ₱200,000 per year
                             </Option>
-                            <Option value="50000-75000">
-                                $50,000 - $75,000
+                            <Option value="200000-350000">
+                                ₱200,000 - ₱350,000 per year
                             </Option>
-                            <Option value="75000-100000">
-                                $75,000 - $100,000
+                            <Option value="350000-500000">
+                                ₱350,000 - ₱500,000 per year
                             </Option>
-                            <Option value="100000-150000">
-                                $100,000 - $150,000
+                            <Option value="500000-750000">
+                                ₱500,000 - ₱750,000 per year
                             </Option>
-                            <Option value="150000+">$150,000+</Option>
+                            <Option value="750000-1000000">
+                                ₱750,000 - ₱1,000,000 per year
+                            </Option>
+                            <Option value="1000000-1500000">
+                                ₱1,000,000 - ₱1,500,000 per year
+                            </Option>
+                            <Option value="1500000-2000000">
+                                ₱1,500,000 - ₱2,000,000 per year
+                            </Option>
+                            <Option value="2000000-3000000">
+                                ₱2,000,000 - ₱3,000,000 per year
+                            </Option>
+                            <Option value="3000000-5000000">
+                                ₱3,000,000 - ₱5,000,000 per year
+                            </Option>
+                            <Option value="5000000-7500000">
+                                ₱5,000,000 - ₱7,500,000 per year
+                            </Option>
+                            <Option value="7500000-10000000">
+                                ₱7,500,000 - ₱10,000,000 per year
+                            </Option>
+                            <Option value="10000000+">
+                                ₱10,000,000+ per year
+                            </Option>
                             <Option value="prefer_not_to_say">
                                 Prefer not to say
                             </Option>
@@ -2021,7 +2101,7 @@ const AlumniRegistration = () => {
                 visible={isModalVisible}
                 onCancel={() => {
                     setCurrentStep(4);
-                    setIsModalVisible(false)
+                    setIsModalVisible(false);
                 }}
                 onSubmit={handleSubmit}
                 previewData={previewData}

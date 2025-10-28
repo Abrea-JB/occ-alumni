@@ -37,10 +37,20 @@ import {
     FireOutlined,
     CalendarOutlined,
     TeamOutlined,
+    GlobalOutlined,
+    EnvironmentOutlined,
 } from "@ant-design/icons";
 import "./AnswerQuizPage.css";
 import useTakeQuiz from "~/hooks/useTakeQuiz";
 import axiosConfig from "~/utils/axiosConfig";
+
+const companyInfo = {
+    name: "Opol Community College Alumni Association",
+    logo: "https://occph.com/build/assets/OCC_LOGO-BWCM4zrL.png",
+    slogan: "Building tomorrow's leaders, one student at a time.",
+    website: "occph.com",
+    address: "123 University Avenue, Prestige City, PC 12345",
+};
 
 const { Title, Text } = Typography;
 const { Step } = Steps;
@@ -106,7 +116,7 @@ const AnswerQuizPage = () => {
 
     const handlePageChange = (page) => {
         setCurrentPage(page);
-        setVisitedQuestions(prev => new Set([...prev, page]));
+        setVisitedQuestions((prev) => new Set([...prev, page]));
         window.scrollTo({ top: 0, behavior: "smooth" });
     };
 
@@ -191,11 +201,15 @@ const AnswerQuizPage = () => {
                 }
             });
 
-            const response = await axiosConfig.post("/save-alumni-quiz", formData, {
-                headers: {
-                    "Content-Type": "multipart/form-data",
-                },
-            });
+            const response = await axiosConfig.post(
+                "/save-alumni-quiz",
+                formData,
+                {
+                    headers: {
+                        "Content-Type": "multipart/form-data",
+                    },
+                }
+            );
 
             if (response.data.success) {
                 if (response.data.submissionId) {
@@ -207,8 +221,9 @@ const AnswerQuizPage = () => {
 
                 Modal.success({
                     title: "Assessment Complete!",
-                    content: "Thank you for completing the assessment. Your responses have been recorded successfully.",
-                    onOk: () => window.location.href = "/",
+                    content:
+                        "Thank you for completing the assessment. Your responses have been recorded successfully.",
+                    onOk: () => (window.location.href = "/"),
                 });
             } else {
                 throw new Error(response.data.message || "Submission failed");
@@ -374,131 +389,62 @@ const AnswerQuizPage = () => {
         return answers[questionId] ? "answered" : "unanswered";
     };
 
-    if (isQuizCompleted) {
-        const averageRating = getAverageRating();
-        const completionStatus = getCompletionStatus();
-        const stressLevel = getStressLevel();
-
-        return (
-            <div className="quiz-completion-page">
-                <Card className="completion-card">
-                    <Result
-                        icon={
-                            <div className="completion-icon">
-                                {stressLevel.icon}
-                            </div>
-                        }
-                        status="success"
-                        title="Assessment Complete!"
-                        subTitle="Thank you for completing the assessment. Your responses have been recorded successfully."
-                        extra={[
-                            <Button
-                                key="dashboard"
-                                type="primary"
-                                onClick={() => window.location.href = "/"}
-                                icon={<RocketOutlined />}
-                            >
-                                Go to Dashboard
-                            </Button>,
-                            <Button
-                                key="retake"
-                                onClick={() => window.location.reload()}
-                            >
-                                Retake Assessment
-                            </Button>,
-                        ]}
-                    >
-                        <div className="completion-stats">
-                            <Row gutter={[16, 16]}>
-                                <Col xs={24} sm={8}>
-                                    <Card className="stat-card">
-                                        <Statistic
-                                            title="Average Rating"
-                                            value={averageRating}
-                                            precision={1}
-                                            suffix="/ 5"
-                                            valueStyle={{ color: stressLevel.color }}
-                                            prefix={<StarOutlined />}
-                                        />
-                                    </Card>
-                                </Col>
-                                <Col xs={24} sm={8}>
-                                    <Card className="stat-card">
-                                        <Statistic
-                                            title="Questions Answered"
-                                            value={completionStatus.answered}
-                                            suffix={`/ ${completionStatus.total}`}
-                                            prefix={<CheckCircleOutlined />}
-                                        />
-                                    </Card>
-                                </Col>
-                                <Col xs={24} sm={8}>
-                                    <Card className="stat-card">
-                                        <Statistic
-                                            title="Time Spent"
-                                            value={formatTime(timeSpent)}
-                                            prefix={<ClockCircleOutlined />}
-                                        />
-                                    </Card>
-                                </Col>
-                            </Row>
-                            
-                            <Divider />
-                            
-                            <Card 
-                                className="stress-level-card"
-                                style={{ borderLeft: `4px solid ${stressLevel.color}` }}
-                            >
-                                <Space direction="vertical" style={{ width: '100%' }} size="middle">
-                                    <div className="stress-level-header">
-                                        <Title level={4} style={{ margin: 0, color: stressLevel.color }}>
-                                            <Space>
-                                                {stressLevel.icon}
-                                                Stress Level: {stressLevel.level}
-                                            </Space>
-                                        </Title>
-                                        <Tag color={stressLevel.color} style={{ fontSize: '14px', padding: '4px 12px' }}>
-                                            {stressLevel.description}
-                                        </Tag>
-                                    </div>
-                                    <Progress 
-                                        percent={(averageRating / 5) * 100} 
-                                        showInfo={false}
-                                        strokeColor={stressLevel.color}
-                                    />
-                                    <Text type="secondary">
-                                        Based on your responses, you're experiencing {stressLevel.description.toLowerCase()}.
-                                    </Text>
-                                </Space>
-                            </Card>
-                        </div>
-                    </Result>
-                </Card>
-            </div>
-        );
-    }
-
     const completionStatus = getCompletionStatus();
     const currentQuestion = currentQuestions[0];
     const questionNumber = (currentPage - 1) * questionsPerPage + 1;
 
     return (
         <div className="answer-quiz-container">
-            {/* Header Section */}
-            <Card className="quiz-header-card">
-                <Row gutter={[16, 16]} align="middle">
-                    <Col xs={24} md={12}>
-                        <Space direction="vertical" size="small">
-                            <div className="quiz-title-section">
-                                <Title level={2} className="quiz-title">
-                                    <BulbOutlined /> {currentQuiz.title}
+            <div className="content-data">
+                {/* Header Section */}
+                <Card>
+                    <div className="company-header">
+                        <div className="company-logo-section">
+                            <Avatar
+                                src={companyInfo.logo}
+                                size={60}
+                                shape="square"
+                                className="company-logo"
+                            />
+                            <div className="company-info">
+                                <Title level={2} className="company-name">
+                                    {companyInfo.name}
                                 </Title>
-                                <Text className="quiz-description">
-                                    {currentQuiz.description}
+                                <Text className="company-slogan">
+                                    {companyInfo.slogan}
                                 </Text>
+                                <div className="company-details">
+                                    <Space>
+                                        <GlobalOutlined />
+                                        <Text type="secondary">
+                                            {companyInfo.website}
+                                        </Text>
+                                        <EnvironmentOutlined />
+                                        <Text type="secondary">
+                                            {companyInfo.address}
+                                        </Text>
+                                    </Space>
+                                </div>
                             </div>
-                            <Space size="middle">
-                                {/* <Tag icon={<TeamOutlined />} color="blue">
+                        </div>
+                        <Divider />
+                    </div>
+                </Card>
+                <br></br>
+                <Card className="quiz-header-card">
+                    <Row gutter={[16, 16]} align="middle">
+                        <Col xs={24} md={12}>
+                            <Space direction="vertical" size="small">
+                                <div className="quiz-title-section">
+                                    <Title level={2} className="quiz-title">
+                                        <BulbOutlined /> {currentQuiz.title}
+                                    </Title>
+                                    <Text className="quiz-description">
+                                        {currentQuiz.description}
+                                    </Text>
+                                </div>
+                                <Space size="middle">
+                                    {/* <Tag icon={<TeamOutlined />} color="blue">
                                     {currentQuiz.category}
                                 </Tag>
                                 <Tag icon={<ThunderboltOutlined />} color="orange">
@@ -507,269 +453,320 @@ const AnswerQuizPage = () => {
                                 <Tag icon={<CalendarOutlined />} color="purple">
                                     {currentQuiz.estimatedTime} min
                                 </Tag> */}
+                                </Space>
                             </Space>
-                        </Space>
-                    </Col>
-                    <Col xs={24} md={12}>
-                        <Row gutter={[16, 16]} justify="end">
-                            <Col xs={12} sm={8}>
-                                <Card size="small" className="stats-card">
-                                    <Statistic
-                                        title="Progress"
-                                        value={getProgress()}
-                                        suffix="%"
-                                        valueStyle={{ color: '#1890ff' }}
-                                    />
-                                    <Progress 
-                                        percent={getProgress()} 
-                                        size="small" 
-                                        showInfo={false}
-                                        strokeColor="#1890ff"
-                                    />
-                                </Card>
-                            </Col>
-                            <Col xs={12} sm={8}>
-                                <Card size="small" className="stats-card">
-                                    <Statistic
-                                        title="Time"
-                                        value={formatTime(timeSpent)}
-                                        prefix={<ClockCircleOutlined />}
-                                        valueStyle={{ color: '#52c41a' }}
-                                    />
-                                </Card>
-                            </Col>
-                            <Col xs={24} sm={8}>
-                                <Card size="small" className="stats-card">
-                                    <Statistic
-                                        title="Answered"
-                                        value={completionStatus.answered}
-                                        suffix={`/ ${completionStatus.total}`}
-                                        prefix={<CheckCircleOutlined />}
-                                        valueStyle={{ color: '#fa8c16' }}
-                                    />
-                                </Card>
-                            </Col>
-                        </Row>
-                    </Col>
-                </Row>
-            </Card>
-
-            {/* Progress Steps */}
-            <Card className="progress-steps-card">
-                <Steps
-                    current={currentPage - 1}
-                    percent={(getProgress() / 100) * (currentPage / totalPages) * 100}
-                    size="small"
-                >
-                    {Array.from({ length: Math.min(5, totalPages) }, (_, i) => (
-                        <Step 
-                            key={i} 
-                            title={`Q${i + 1}`}
-                            description={i + 1 === currentPage ? "Current" : ""}
-                            icon={
-                                <Badge 
-                                    count={answers[questionsWithInterpretation[i]?.id] ? 
-                                        <CheckCircleOutlined style={{ color: '#52c41a', fontSize: '12px' }} /> 
-                                        : null
+                        </Col>
+                        <Col xs={24} md={12}>
+                            <Row gutter={[16, 16]} justify="end">
+                                <Col xs={12} sm={8}>
+                                    <Card size="small" className="stats-card">
+                                        <Statistic
+                                            title="Progress"
+                                            value={getProgress()}
+                                            suffix="%"
+                                            valueStyle={{ color: "#1890ff" }}
+                                        />
+                                        <Progress
+                                            percent={getProgress()}
+                                            size="small"
+                                            showInfo={false}
+                                            strokeColor="#1890ff"
+                                        />
+                                    </Card>
+                                </Col>
+                                <Col xs={12} sm={8}>
+                                    <Card size="small" className="stats-card">
+                                        <Statistic
+                                            title="Time"
+                                            value={formatTime(timeSpent)}
+                                            prefix={<ClockCircleOutlined />}
+                                            valueStyle={{ color: "#52c41a" }}
+                                        />
+                                    </Card>
+                                </Col>
+                                <Col xs={24} sm={8}>
+                                    <Card size="small" className="stats-card">
+                                        <Statistic
+                                            title="Answered"
+                                            value={completionStatus.answered}
+                                            suffix={`/ ${completionStatus.total}`}
+                                            prefix={<CheckCircleOutlined />}
+                                            valueStyle={{ color: "#fa8c16" }}
+                                        />
+                                    </Card>
+                                </Col>
+                            </Row>
+                        </Col>
+                    </Row>
+                </Card>
+                <br></br>
+                {/* Progress Steps */}
+                <Card className="progress-steps-card">
+                    <Steps
+                        current={currentPage - 1}
+                        percent={
+                            (getProgress() / 100) *
+                            (currentPage / totalPages) *
+                            100
+                        }
+                        size="small"
+                    >
+                        {Array.from(
+                            { length: Math.min(5, totalPages) },
+                            (_, i) => (
+                                <Step
+                                    key={i}
+                                    title={`Q${i + 1}`}
+                                    description={
+                                        i + 1 === currentPage ? "Current" : ""
                                     }
-                                >
-                                    <Avatar 
-                                        size="small" 
-                                        style={{ 
-                                            backgroundColor: i + 1 === currentPage ? '#1890ff' : 
-                                                          answers[questionsWithInterpretation[i]?.id] ? '#52c41a' : '#f0f0f0',
-                                            color: i + 1 === currentPage ? 'white' : 
-                                                 answers[questionsWithInterpretation[i]?.id] ? 'white' : '#999'
-                                        }}
-                                    >
-                                        {i + 1}
-                                    </Avatar>
-                                </Badge>
-                            }
-                        />
-                    ))}
-                    {totalPages > 5 && (
-                        <Step 
-                            title={`+${totalPages - 5} more`}
-                            description=""
-                            icon={<EllipsisOutlined />}
-                        />
-                    )}
-                </Steps>
-            </Card>
-
-            {/* Question Card */}
-            <Card className="question-card">
-                {/* Question Header */}
-                <div className="question-header">
-                    <Space direction="vertical" style={{ width: '100%' }} size="small">
-                        <div className="question-meta">
-                            <Badge 
-                                count={`Question ${questionNumber} of ${questionsWithInterpretation.length}`}
-                                style={{ backgroundColor: '#1890ff' }}
-                                showZero
-                            />
-                            {currentQuestion?.required && (
-                                <Tag color="red" icon={<ExclamationCircleOutlined />}>
-                                    Required
-                                </Tag>
-                            )}
-                            <Text type="secondary" className="question-category">
-                                {currentQuestion?.category}
-                            </Text>
-                        </div>
-                        
-                        <Title level={3} className="question-text">
-                            <QuestionCircleOutlined style={{ marginRight: 8, color: '#1890ff' }} />
-                            {currentQuestion?.question}
-                        </Title>
-                        
-                        {currentQuestion?.description && (
-                            <Alert
-                                message={currentQuestion.description}
-                                type="info"
-                                showIcon
-                                closable
-                                className="question-description"
+                                    icon={
+                                        <Badge
+                                            count={
+                                                answers[
+                                                    questionsWithInterpretation[
+                                                        i
+                                                    ]?.id
+                                                ] ? (
+                                                    <CheckCircleOutlined
+                                                        style={{
+                                                            color: "#52c41a",
+                                                            fontSize: "12px",
+                                                        }}
+                                                    />
+                                                ) : null
+                                            }
+                                        >
+                                            <Avatar
+                                                size="small"
+                                                style={{
+                                                    backgroundColor:
+                                                        i + 1 === currentPage
+                                                            ? "#1890ff"
+                                                            : answers[
+                                                                  questionsWithInterpretation[
+                                                                      i
+                                                                  ]?.id
+                                                              ]
+                                                            ? "#52c41a"
+                                                            : "#f0f0f0",
+                                                    color:
+                                                        i + 1 === currentPage
+                                                            ? "white"
+                                                            : answers[
+                                                                  questionsWithInterpretation[
+                                                                      i
+                                                                  ]?.id
+                                                              ]
+                                                            ? "white"
+                                                            : "#999",
+                                                }}
+                                            >
+                                                {i + 1}
+                                            </Avatar>
+                                        </Badge>
+                                    }
+                                />
+                            )
+                        )}
+                        {totalPages > 5 && (
+                            <Step
+                                title={`+${totalPages - 5} more`}
+                                description=""
+                                icon={<EllipsisOutlined />}
                             />
                         )}
-                    </Space>
-                </div>
+                    </Steps>
+                </Card>
+                <br></br>
+                {/* Question Card */}
+                <Card className="question-card">
+                    {/* Question Header */}
+                    <div className="question-header">
+                        <Space
+                            direction="vertical"
+                            style={{ width: "100%" }}
+                            size="small"
+                        >
+                            <div className="question-meta">
+                                <Badge
+                                    count={`Question ${questionNumber} of ${questionsWithInterpretation.length}`}
+                                    style={{ backgroundColor: "#1890ff" }}
+                                    showZero
+                                />
+                                {currentQuestion?.required && (
+                                    <Tag
+                                        color="red"
+                                        icon={<ExclamationCircleOutlined />}
+                                    >
+                                        Required
+                                    </Tag>
+                                )}
+                                <Text
+                                    type="secondary"
+                                    className="question-category"
+                                >
+                                    {currentQuestion?.category}
+                                </Text>
+                            </div>
 
-                <Divider />
+                            <Title level={3} className="question-text">
+                                <QuestionCircleOutlined
+                                    style={{ marginRight: 8, color: "#1890ff" }}
+                                />
+                                {currentQuestion?.question}
+                            </Title>
 
-                {/* Rating Section */}
-                <div className="rating-section">
-                    <Title level={4} style={{ textAlign: 'center', marginBottom: 32 }}>
-                        Please rate your experience:
-                    </Title>
-                    
-                    <div style={{ textAlign: 'center' }}>
-                        <CustomRate
-                            value={answers[currentQuestion?.id]}
-                            onChange={handleRateChange}
-                            questionId={currentQuestion?.id}
-                        />
+                            {currentQuestion?.description && (
+                                <Alert
+                                    message={currentQuestion.description}
+                                    type="info"
+                                    showIcon
+                                    closable
+                                    className="question-description"
+                                />
+                            )}
+                        </Space>
                     </div>
 
-                    {answers[currentQuestion?.id] && (
-                        <Alert
-                            message={
-                                <Space>
-                                    <TrophyOutlined />
-                                    {currentQuestion?.interpretation[answers[currentQuestion.id]]}
-                                </Space>
-                            }
-                            type="success"
-                            showIcon
-                            className="interpretation-alert"
-                        />
-                    )}
-                </div>
+                    <Divider />
 
-                <Divider />
+                    {/* Rating Section */}
+                    <div className="rating-section">
+                        <Title
+                            level={4}
+                            style={{ textAlign: "center", marginBottom: 32 }}
+                        >
+                            Please rate your experience:
+                        </Title>
 
-                {/* Navigation Section */}
-                <div className="navigation-section">
-                    <Row gutter={[16, 16]} align="middle">
-                        <Col xs={12} md={8}>
+                        <div style={{ textAlign: "center" }}>
+                            <CustomRate
+                                value={answers[currentQuestion?.id]}
+                                onChange={handleRateChange}
+                                questionId={currentQuestion?.id}
+                            />
+                        </div>
+
+                        {answers[currentQuestion?.id] && (
+                            <Alert
+                                message={
+                                    <Space>
+                                        <TrophyOutlined />
+                                        {
+                                            currentQuestion?.interpretation[
+                                                answers[currentQuestion.id]
+                                            ]
+                                        }
+                                    </Space>
+                                }
+                                type="success"
+                                showIcon
+                                className="interpretation-alert"
+                            />
+                        )}
+                    </div>
+
+                    <Divider />
+
+                    {/* Navigation Section */}
+                    <div className="navigation-section">
+                        <Button
+                            icon={<ArrowLeftOutlined />}
+                            onClick={handlePrevious}
+                            disabled={currentPage === 1}
+                            size="large"
+                            className="nav-button"
+                        >
+                            Previous
+                        </Button>
+                        {currentPage === totalPages ? (
                             <Button
-                                icon={<ArrowLeftOutlined />}
-                                onClick={handlePrevious}
-                                disabled={currentPage === 1}
+                                type="primary"
+                                size="large"
+                                onClick={handleSubmit}
+                                disabled={!allRequiredAnswered()}
+                                loading={isSubmitting}
+                                icon={<RocketOutlined />}
+                                className="submit-button"
+                            >
+                                {isSubmitting
+                                    ? "Submitting..."
+                                    : "Submit Assessment"}
+                            </Button>
+                        ) : (
+                            <Button
+                                type="primary"
+                                icon={<ArrowRightOutlined />}
+                                onClick={handleNext}
                                 size="large"
                                 className="nav-button"
                             >
-                                Previous
+                                Next
                             </Button>
-                        </Col>
-                        
-                        <Col xs={24} md={8} style={{ textAlign: 'center' }}>
-                            <Pagination
-                                current={currentPage}
-                                total={questionsWithInterpretation.length}
-                                pageSize={questionsPerPage}
-                                onChange={handlePageChange}
-                                showSizeChanger={false}
-                                simple
-                                showQuickJumper
-                            />
-                            <Text type="secondary" style={{ display: 'block', marginTop: 8 }}>
-                                Page {currentPage} of {totalPages}
-                            </Text>
-                        </Col>
-                        
-                        <Col xs={12} md={8} style={{ textAlign: 'right' }}>
-                            {currentPage === totalPages ? (
-                                <Button
-                                    type="primary"
-                                    size="large"
-                                    onClick={handleSubmit}
-                                    disabled={!allRequiredAnswered()}
-                                    loading={isSubmitting}
-                                    icon={<RocketOutlined />}
-                                    className="submit-button"
-                                >
-                                    {isSubmitting ? "Submitting..." : "Submit Assessment"}
-                                </Button>
-                            ) : (
-                                <Button
-                                    type="primary"
-                                    icon={<ArrowRightOutlined />}
-                                    onClick={handleNext}
-                                    size="large"
-                                    className="nav-button"
-                                >
-                                    Next
-                                </Button>
-                            )}
-                        </Col>
-                    </Row>
-                    
-                    {!allRequiredAnswered() && currentPage === totalPages && (
-                        <Alert
-                            message={`${completionStatus.requiredTotal - completionStatus.requiredAnswered} required question(s) remaining`}
-                            type="warning"
-                            showIcon
-                            style={{ marginTop: 16 }}
-                        />
-                    )}
-                </div>
+                        )}
 
-                {/* Quick Stats Footer */}
-                <Divider />
-                <div className="quiz-footer">
-                    <Row gutter={[16, 16]} justify="space-between" align="middle">
-                        <Col xs={24} sm={8}>
-                            <Space>
-                                <CheckCircleOutlined style={{ color: '#52c41a' }} />
-                                <Text strong>{completionStatus.answered}</Text>
-                                <Text type="secondary">questions answered</Text>
-                            </Space>
-                        </Col>
-                        <Col xs={24} sm={8} style={{ textAlign: 'center' }}>
-                            <Space>
-                                <ClockCircleOutlined style={{ color: '#faad14' }} />
-                                <Text strong>{formatTime(timeSpent)}</Text>
-                                <Text type="secondary">time spent</Text>
-                            </Space>
-                        </Col>
-                        <Col xs={24} sm={8} style={{ textAlign: 'right' }}>
-                            <Space>
-                                <Progress 
-                                    type="circle" 
-                                    percent={getProgress()} 
-                                    size={60} 
-                                    strokeColor={{
-                                        '0%': '#108ee9',
-                                        '100%': '#87d068',
-                                    }}
+                        {!allRequiredAnswered() &&
+                            currentPage === totalPages && (
+                                <Alert
+                                    message={`${
+                                        completionStatus.requiredTotal -
+                                        completionStatus.requiredAnswered
+                                    } required question(s) remaining`}
+                                    type="warning"
+                                    showIcon
+                                    style={{ marginTop: 16 }}
                                 />
-                            </Space>
-                        </Col>
-                    </Row>
-                </div>
-            </Card>
+                            )}
+                    </div>
+
+                    {/* Quick Stats Footer */}
+                    <Divider />
+                    <div className="quiz-footer">
+                        <Row
+                            gutter={[16, 16]}
+                            justify="space-between"
+                            align="middle"
+                        >
+                            <Col xs={24} sm={8}>
+                                <Space>
+                                    <CheckCircleOutlined
+                                        style={{ color: "#52c41a" }}
+                                    />
+                                    <Text strong>
+                                        {completionStatus.answered}
+                                    </Text>
+                                    <Text type="secondary">
+                                        questions answered
+                                    </Text>
+                                </Space>
+                            </Col>
+                            <Col xs={24} sm={8} style={{ textAlign: "center" }}>
+                                <Space>
+                                    <ClockCircleOutlined
+                                        style={{ color: "#faad14" }}
+                                    />
+                                    <Text strong>{formatTime(timeSpent)}</Text>
+                                    <Text type="secondary">time spent</Text>
+                                </Space>
+                            </Col>
+                            <Col xs={24} sm={8} style={{ textAlign: "right" }}>
+                                <Space>
+                                    <Progress
+                                        type="circle"
+                                        percent={getProgress()}
+                                        size={60}
+                                        strokeColor={{
+                                            "0%": "#108ee9",
+                                            "100%": "#87d068",
+                                        }}
+                                    />
+                                </Space>
+                            </Col>
+                        </Row>
+                    </div>
+                </Card>
+            </div>
         </div>
     );
 };

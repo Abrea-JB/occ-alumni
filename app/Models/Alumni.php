@@ -13,6 +13,7 @@ class Alumni extends Model
     protected $table = 'alumni';
 
     protected $fillable = [
+        'user_id',
         'application_id',
         'first_name',
         'last_name',
@@ -78,8 +79,7 @@ class Alumni extends Model
         'contact_permission' => 'boolean',
     ];
 
-    // Add this to include the accessors in JSON responses
-    protected $appends = ['profile_image_url', 'full_name'];
+    protected $appends = ['profile_image_url', 'full_name', 'document_urls'];
 
     // Relationships
     public function documents()
@@ -87,7 +87,7 @@ class Alumni extends Model
         return $this->hasMany(AlumniDocument::class);
     }
 
-    // Traditional Accessor Methods (for older Laravel versions)
+    // Accessor Methods
 
     /**
      * Get the full name attribute
@@ -112,31 +112,6 @@ class Alumni extends Model
     /**
      * Get the profile image URL attribute
      */
-    public function getProfileImageUrlAttribute2eeee()
-    {
-        if (!$this->profile_image) {
-            return null;
-        }
-
-        // If it's already a full URL, return as is
-        if (filter_var($this->profile_image, FILTER_VALIDATE_URL)) {
-            return $this->profile_image;
-        }
-
-        // Generate full URL for stored images
-        // Use Storage::url() if using Laravel's filesystem
-        if (config('filesystems.default') === 'public') {
-            return asset('storage/' . $this->profile_image);
-        }
-
-        return Storage::url($this->profile_image);
-    }
-
-
-
-    /**
-     * Alternative: If you want to keep the original profile_image but also have URL
-     */
     public function getProfileImageUrlAttribute()
     {
         if (!$this->profile_image) {
@@ -147,8 +122,30 @@ class Alumni extends Model
             return $this->profile_image;
         }
 
-        // Add storage/ prefix for files in storage/app/public/
         return asset('storage/' . $this->profile_image);
+    }
+
+    /**
+     * Get document URLs with full file paths
+     */
+    public function getDocumentUrlsAttribute()
+    {
+        if (!$this->relationLoaded('documents')) {
+            $this->load('documents');
+        }
+
+        return $this->documents->map(function ($document) {
+            return [
+                'id' => $document->id,
+                'document_type' => $document->document_type,
+                'file_name' => $document->file_name,
+                'file_path' => $document->file_path,
+                'file_url' => asset('storage/' . $document->file_path),
+                'status' => $document->status,
+                'rejection_reason' => $document->rejection_reason,
+                'created_at' => $document->created_at,
+            ];
+        });
     }
 
     // Scopes
@@ -173,18 +170,61 @@ class Alumni extends Model
             $q->where('first_name', 'like', "%{$search}%")
                 ->orWhere('last_name', 'like', "%{$search}%")
                 ->orWhere('email', 'like', "%{$search}%")
-                ->orWhere('course', 'like', "%{$search}%");
+                ->orWhere('student_id', 'like', "%{$search}%");
         });
     }
 
-    public function employmentStatus()
+    public function scopeWithDocuments($query)
     {
-        return $this->belongsTo(EmploymentStatus::class);
+        return $query->with('documents');
     }
 
-     public function user()
+    public function scopeWithPendingDocuments($query)
+    {
+        return $query->with(['documents' => function ($q) {
+            $q->where('status', 'pending');
+        }]);
+    }
+
+    // Employment Status Relationships
+    public function employmentStatus()
+    {
+        return $this->belongsTo(EmploymentStatus::class, 'employment_status_id');
+    }
+
+    public function femploymentStatus()
+    {
+        return $this->belongsTo(EmploymentStatus::class, 'femployment_status_id');
+    }
+
+    public function user()
     {
         return $this->belongsTo(User::class, 'user_id');
     }
-    
+
+    public function course()
+    {
+        return $this->belongsTo(Course::class, 'course_id');
+    }
+
+    // Helper methods for documents
+    public function getPendingDocuments()
+    {
+        return $this->documents()->where('status', 'pending')->get();
+    }
+
+    public function getApprovedDocuments()
+    {
+        return $this->documents()->where('status', 'approved')->get();
+    }
+
+    public function hasDocumentType($documentType)
+    {
+        return $this->documents()->where('document_type', $documentType)->exists();
+    }
+
+    public function getDocumentByType($documentType)
+    {
+        return $this->documents()->where('document_type', $documentType)->first();
+    }
 }

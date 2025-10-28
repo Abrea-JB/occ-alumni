@@ -27,12 +27,12 @@ const MainPage = () => {
     return (
         <>
             <div className="main-loading-wrapper">
-                {/* <div class="logo-container">
+                <div class="logo-container">
                     <div class="logo"> <img src={logo} /></div>
                     <div class="logo-shadow"></div>
-                </div> */}
+                </div>
                
-                <Title style={{ marginTop: 50}}  level={1} className="gradient-text">
+                <Title style={{ marginTop: 50}}  level={1} >
                    OCC Alumni
                 </Title>
                 <Spin size="large" className="login-spinner" />

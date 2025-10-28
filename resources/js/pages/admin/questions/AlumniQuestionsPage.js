@@ -50,6 +50,7 @@ import {
     ArrowRightOutlined,
     FullscreenOutlined,
     CheckSquareOutlined,
+    OrderedListOutlined,
 } from "@ant-design/icons";
 import { Layout } from "~/components";
 import { DragDropContext, Droppable, Draggable } from "react-beautiful-dnd";
@@ -81,7 +82,7 @@ const AlumniQuestionsPage = () => {
     // const [quizzes, setQuizzes] = useState([]);
     const [isModalVisible, setIsModalVisible] = useState(false);
     const [editingQuestion, setEditingQuestion] = useState(null);
-    const [activeTab, setActiveTab] = useState("quizzes");
+    const [activeTab, setActiveTab] = useState("quizzes-result");
     const [selectedQuestions, setSelectedQuestions] = useState([]);
     const [isQuizDrawerVisible, setIsQuizDrawerVisible] = useState(false);
     const [currentQuiz, setCurrentQuiz] = useState(null);
@@ -206,6 +207,7 @@ const AlumniQuestionsPage = () => {
             const formData = new FormData();
 
             formData.append("id", item?.id);
+            formData.append("type", item?.type);
 
             const response = await axiosConfig.post("/quiz-active", formData, {
                 headers: { "Content-Type": "multipart/form-data" },
@@ -352,6 +354,24 @@ const AlumniQuestionsPage = () => {
                     </div>
                 </div>
             ),
+        },
+        {
+            title: "Type",
+            dataIndex: "type",
+            key: "type",
+            width: 120,
+            render: (type, record) => {
+                const color = type === "rate" ? "blue" : "green";
+                return <Tag color={color}>{type}</Tag>;
+            },
+        },
+        {
+            title: "Active ?",
+            dataIndex: "isActive",
+            key: "isActive",
+            width: 120,
+            render: (isActive, record) =>
+                isActive ? <Tag color="green">Yes</Tag> : null,
         },
         {
             title: "Created",
@@ -521,6 +541,22 @@ const AlumniQuestionsPage = () => {
                         onChange={setActiveTab}
                         className="questions-tabs"
                     >
+                        <TabPane
+                            tab={
+                                <span>
+                                    <OrderedListOutlined />
+                                    Quizzes Result
+                                    <Badge
+                                        count={quizzes.length}
+                                        style={{
+                                            backgroundColor: "#1890ff",
+                                            marginLeft: 8,
+                                        }}
+                                    />
+                                </span>
+                            }
+                            key="quizzes-result"
+                        />
                         <TabPane
                             tab={
                                 <span>

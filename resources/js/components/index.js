@@ -12,6 +12,6 @@ export { default as GroupsAvatar } from "./GroupsAvatar";
 export { default as ImageUploadModal } from "./ImageUploadModal";
 export { default as UserAvatar } from "./UserAvatar";
 export { default as ImportPreviewModal } from "./ImportPreviewModal";
-export { default as MapboxRadarScan } from "./MapboxRadarScan";
+
 
 export { default as AlumniDetails } from "./alumni/AlumniDetails";

@@ -56,8 +56,9 @@ import "./AlumniList.css";
 import { Layout, AlumniDetails } from "~/components";
 import useAlumni from "~/hooks/useAlumni";
 import useEmployeeStatus from "~/hooks/useEmployeeStatus";
-import axios from "axios";
+import axiosConfig from "~/utils/axiosConfig";
 import { BASE_URL } from "~/utils/constant";
+import secureLocalStorage from "react-secure-storage";
 
 const { Title, Text, Paragraph } = Typography;
 const { Option } = Select;
@@ -299,6 +300,7 @@ const StatusUpdateModal = ({
 };
 
 const AlumniCard = ({ alumnus, handleView, handleStatusUpdate }) => {
+    const role = secureLocalStorage.getItem("userRole");
     return (
         <Badge.Ribbon
             text="Featured"
@@ -309,19 +311,25 @@ const AlumniCard = ({ alumnus, handleView, handleStatusUpdate }) => {
                 className="alumni-card"
                 actions={[
                     <Tooltip
+                        key="view"
                         onClick={() => handleView(alumnus)}
                         title="View Profile"
-                        key="view"
                     >
                         <EyeOutlined />
                     </Tooltip>,
-                    <Tooltip
-                        title="Edit Status"
-                        key="message"
-                        onClick={() => handleStatusUpdate(alumnus, "approved")}
-                    >
-                        <EditOutlined />
-                    </Tooltip>,
+                    ...(role === "admin"
+                        ? [
+                              <Tooltip
+                                  title="Edit Status"
+                                  key="edit"
+                                  onClick={() =>
+                                      handleStatusUpdate(alumnus, "approved")
+                                  }
+                              >
+                                  <EditOutlined />
+                              </Tooltip>,
+                          ]
+                        : []),
                 ]}
             >
                 <div className="alumni-card-content">
@@ -422,132 +430,6 @@ const AlumniCard = ({ alumnus, handleView, handleStatusUpdate }) => {
     );
 };
 
-const AlumniListItem = ({ alumnus, handleStatusUpdate }) => (
-    <List.Item className="alumni-list-item">
-        <div className="list-item-content">
-            <div className="list-item-main">
-                <Avatar size={48} src={alumnus.avatar} />
-                <div className="list-item-info">
-                    <div className="list-item-header">
-                        <Title level={5} className="list-item-name">
-                            {alumnus.name}
-                            {getStatusIcon(alumnus.status)}
-                            {alumnus.isFeatured && (
-                                <StarOutlined
-                                    style={{
-                                        color: "#faad14",
-                                        marginLeft: 8,
-                                    }}
-                                />
-                            )}
-                        </Title>
-                        <Space>
-                            {getEmploymentStatusTag(alumnus.employmentStatus)}
-                            {alumnus.salary && (
-                                <Text strong>
-                                    ${alumnus.salary.toLocaleString()}
-                                </Text>
-                            )}
-                        </Space>
-                    </div>
-
-                    <div className="list-item-details">
-                        <Space size="large">
-                            <div className="meta-item">
-                                <UserOutlined />
-                                <Text>
-                                    {alumnus.major} • {alumnus.graduationYear}
-                                </Text>
-                            </div>
-                            <div className="meta-item">
-                                <EnvironmentOutlined />
-                                <Text>{alumnus.location}</Text>
-                            </div>
-                            <div className="meta-item">
-                                <TeamOutlined />
-                                <Text>
-                                    {alumnus.currentCompany ||
-                                        "Seeking Opportunities"}
-                                </Text>
-                            </div>
-                            <div className="meta-item">
-                                <CalendarOutlined />
-                                <Text>
-                                    Active{" "}
-                                    {moment(alumnus.lastActive).fromNow()}
-                                </Text>
-                            </div>
-                        </Space>
-                    </div>
-
-                    {alumnus.admin_notes && (
-                        <div className="meta-item">
-                            <ExclamationCircleOutlined />
-                            <Text
-                                type="secondary"
-                                style={{ fontStyle: "italic" }}
-                            >
-                                {alumnus.admin_notes}
-                            </Text>
-                        </div>
-                    )}
-
-                    <div className="list-item-skills">
-                        {alumnus.skills.slice(0, 3).map((skill) => (
-                            <Tag key={skill} className="skill-tag-small">
-                                {skill}
-                            </Tag>
-                        ))}
-                    </div>
-                </div>
-            </div>
-
-            <div className="list-item-actions">
-                <Space>
-                    <Button type="primary" size="small" icon={<MailOutlined />}>
-                        Contact
-                    </Button>
-                    <Button size="small" icon={<EyeOutlined />}>
-                        Profile
-                    </Button>
-                    <Dropdown
-                        overlay={
-                            <Menu>
-                                <Menu.Item
-                                    icon={<CheckCircleOutlined />}
-                                    onClick={() =>
-                                        handleStatusUpdate(alumnus, "approved")
-                                    }
-                                >
-                                    Approve
-                                </Menu.Item>
-                                <Menu.Item
-                                    icon={<ClockCircleOutlined />}
-                                    onClick={() =>
-                                        handleStatusUpdate(alumnus, "pending")
-                                    }
-                                >
-                                    Mark Pending
-                                </Menu.Item>
-                                <Menu.Item
-                                    icon={<StopOutlined />}
-                                    onClick={() =>
-                                        handleStatusUpdate(alumnus, "inactive")
-                                    }
-                                >
-                                    Mark Inactive
-                                </Menu.Item>
-                            </Menu>
-                        }
-                    >
-                        <Button size="small" icon={<MoreOutlined />} />
-                    </Dropdown>
-                </Space>
-            </div>
-        </div>
-    </List.Item>
-);
-
 const AlumniList = () => {
     const { isLoading, data: alumni = [], isFetching, refetch } = useAlumni();
     const { data: statuses } = useEmployeeStatus();
@@ -559,6 +441,7 @@ const AlumniList = () => {
     const [selectedStatus, setSelectedStatus] = useState(null);
     const [previewData, setPreviewData] = useState(null);
     const [statusUpdateLoading, setStatusUpdateLoading] = useState(false);
+    const role = secureLocalStorage.getItem("userRole");
 
     const [form] = Form.useForm();
 
@@ -593,7 +476,12 @@ const AlumniList = () => {
             studentId: values.studentId,
             graduationYear: values.graduationYear,
             enrollmentYear: values.enrollmentYear,
-            honors: values.honors || [],
+            honors:
+                typeof values.honors === "string" && values.honors.trim() !== ""
+                    ? JSON.parse(values.honors)
+                    : Array.isArray(values.honors)
+                    ? values.honors
+                    : [],
             thesisTitle: values.thesisTitle,
             academicAchievements: values.academicAchievements,
             extracurricular: values.extracurricular,
@@ -622,9 +510,10 @@ const AlumniList = () => {
             agreement: values.agreement,
 
             // Files
-            profileImage: values.profileImage,
-            idDocuments: values.idDocuments,
+            profileImage: values?.profile_image_url,
+            idDocuments: values?.document_urls || [],
         };
+
         setPreviewData(previewData);
         setIsModalVisible(true);
     };
@@ -642,7 +531,7 @@ const AlumniList = () => {
             // Simulate delay (optional)
             await new Promise((resolve) => setTimeout(resolve, 1000));
 
-            const response = await axios.post(
+            const response = await axiosConfig.post(
                 BASE_URL + "api/alumni/update-stastus",
                 formData
             );
@@ -686,7 +575,7 @@ const AlumniList = () => {
 
                 if (!matchesSearch) return false;
             }
-   
+
             if (
                 filters.employmentStatus.toLowerCase() !== "all" &&
                 alumnus?.employment_status?.status_name?.toLowerCase() !==
@@ -843,79 +732,82 @@ const AlumniList = () => {
                         </Col> */}
                     </Row>
                 </Card>
-                {/* Status Tabs */}
-                <Card className="tabs-card">
-                    <Tabs
-                        activeKey={activeTab}
-                        onChange={setActiveTab}
-                        className="status-tabs"
-                    >
-                        <TabPane
-                            tab={
-                                <span>
-                                    <TeamOutlined />
-                                    All Alumni
-                                    <Badge
-                                        count={stats.total}
-                                        style={{
-                                            backgroundColor: "#52c41a",
-                                            marginLeft: 8,
-                                        }}
-                                    />
-                                </span>
-                            }
-                            key="all"
-                        />
-                        <TabPane
-                            tab={
-                                <span>
-                                    <ClockCircleOutlined />
-                                    Pending Review
-                                    <Badge
-                                        count={stats.pending}
-                                        style={{
-                                            backgroundColor: "#faad14",
-                                            marginLeft: 8,
-                                        }}
-                                    />
-                                </span>
-                            }
-                            key="pending"
-                        />
-                        <TabPane
-                            tab={
-                                <span>
-                                    <CheckCircleOutlined />
-                                    Approved
-                                    <Badge
-                                        count={stats.approved}
-                                        style={{
-                                            backgroundColor: "#52c41a",
-                                            marginLeft: 8,
-                                        }}
-                                    />
-                                </span>
-                            }
-                            key="approved"
-                        />
-                        <TabPane
-                            tab={
-                                <span>
-                                    <StopOutlined />
-                                    Inactive
-                                    <Badge
-                                        count={stats.inactive}
-                                        style={{
-                                            backgroundColor: "#ff4d4f",
-                                            marginLeft: 8,
-                                        }}
-                                    />
-                                </span>
-                            }
-                            key="inactive"
-                        />
-                    </Tabs>
-                </Card>
+                <br></br>
+                {role === "admin" && (
+                    <Card className="tabs-card">
+                        <Tabs
+                            activeKey={activeTab}
+                            onChange={setActiveTab}
+                            className="status-tabs"
+                        >
+                            <TabPane
+                                tab={
+                                    <span>
+                                        <TeamOutlined />
+                                        All Alumni
+                                        <Badge
+                                            count={stats.total}
+                                            style={{
+                                                backgroundColor: "#52c41a",
+                                                marginLeft: 8,
+                                            }}
+                                        />
+                                    </span>
+                                }
+                                key="all"
+                            />
+                            <TabPane
+                                tab={
+                                    <span>
+                                        <ClockCircleOutlined />
+                                        Pending Review
+                                        <Badge
+                                            count={stats.pending}
+                                            style={{
+                                                backgroundColor: "#faad14",
+                                                marginLeft: 8,
+                                            }}
+                                        />
+                                    </span>
+                                }
+                                key="pending"
+                            />
+                            <TabPane
+                                tab={
+                                    <span>
+                                        <CheckCircleOutlined />
+                                        Approved
+                                        <Badge
+                                            count={stats.approved}
+                                            style={{
+                                                backgroundColor: "#52c41a",
+                                                marginLeft: 8,
+                                            }}
+                                        />
+                                    </span>
+                                }
+                                key="approved"
+                            />
+                            <TabPane
+                                tab={
+                                    <span>
+                                        <StopOutlined />
+                                        Inactive
+                                        <Badge
+                                            count={stats.inactive}
+                                            style={{
+                                                backgroundColor: "#ff4d4f",
+                                                marginLeft: 8,
+                                            }}
+                                        />
+                                    </span>
+                                }
+                                key="inactive"
+                            />
+                        </Tabs>
+                    </Card>
+                )}
+
                 {/* Controls Section */}
                 <Card className="controls-card">
                     <div className="controls-section">

@@ -1471,6 +1471,7 @@ const AlumniEvents = () => {
                 message.success("Event created successfully!");
                 form.resetFields();
                 handleCancel();
+                refetch()
             }
         } catch (error) {
             message.error("Failed to create event");
@@ -1773,7 +1774,6 @@ const AlumniEvents = () => {
                                                     <Select
                                                         size="large"
                                                         placeholder="Select event type"
-                                                        className="form-select"
                                                     >
                                                         {eventTypes
                                                             .filter(
@@ -1819,7 +1819,6 @@ const AlumniEvents = () => {
                                                     <Select
                                                         size="large"
                                                         placeholder="Select category"
-                                                        className="form-select"
                                                     >
                                                         {eventCategories
                                                             .filter(

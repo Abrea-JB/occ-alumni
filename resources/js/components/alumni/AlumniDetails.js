@@ -11,7 +11,7 @@ import {
     Typography,
     Divider,
     Avatar,
-    Modal
+    Modal,
 } from "antd";
 import {
     BankOutlined,
@@ -35,6 +35,7 @@ import {
     CloseOutlined,
 } from "@ant-design/icons";
 import moment from "moment";
+import secureLocalStorage from "react-secure-storage";
 
 const { Title, Text, Paragraph } = Typography;
 
@@ -91,9 +92,9 @@ const AlumniDetails = ({
     loading = false,
     viewOnly = false,
 }) => {
-    console.log({ previewData });
     const [zoomImage, setZoomImage] = useState(null);
     const [zoomVisible, setZoomVisible] = useState(false);
+    const role = secureLocalStorage.getItem("userRole");
 
     const handleImageZoom = (imageUrl) => {
         setZoomImage(imageUrl);
@@ -163,8 +164,8 @@ const AlumniDetails = ({
                 placement="right"
                 extra={
                     <Space>
-                        <Button 
-                            icon={<CloseOutlined />} 
+                        <Button
+                            icon={<CloseOutlined />}
                             onClick={onCancel}
                             disabled={loading}
                         >
@@ -183,7 +184,7 @@ const AlumniDetails = ({
                 }
                 styles={{
                     body: { padding: 0 },
-                    header: { borderBottom: "1px solid #f0f0f0" }
+                    header: { borderBottom: "1px solid #f0f0f0" },
                 }}
             >
                 <div className=" drawer-content">
@@ -684,111 +685,176 @@ const AlumniDetails = ({
                                             )}
                                         </div>
                                     </div>
+                                    {role === "admin" && (
+                                        <>
+                                            {/* Document Status */}
+                                            <div className="sidebar-section">
+                                                <Title
+                                                    level={5}
+                                                    className="sidebar-title"
+                                                >
+                                                    <FileImageOutlined />{" "}
+                                                    Documents
+                                                </Title>
+                                                <div className="document-status">
+                                                    {!viewOnly && (
+                                                        <div className="document-item uploaded">
+                                                            <CheckCircleOutlined className="doc-icon" />
+                                                            <Text>
+                                                                Profile Photo
+                                                            </Text>
+                                                        </div>
+                                                    )}
 
-                                    {/* Document Status */}
-                                    <div className="sidebar-section">
-                                        <Title
-                                            level={5}
-                                            className="sidebar-title"
-                                        >
-                                            <FileImageOutlined /> Documents
-                                        </Title>
-                                        <div className="document-status">
-                                            <div className="document-item uploaded">
-                                                <CheckCircleOutlined className="doc-icon" />
-                                                <Text>Profile Photo</Text>
-                                            </div>
-                                            {getData("idDocuments") &&
-                                                getData("idDocuments").map(
-                                                    (doc, index) => {
-                                                        const docType =
-                                                            ID_TYPES.find(
-                                                                (d) =>
-                                                                    d.value ===
-                                                                    doc.type
+                                                    {!viewOnly &&
+                                                        getData(
+                                                            "idDocuments"
+                                                        ) &&
+                                                        getData(
+                                                            "idDocuments"
+                                                        ).map((doc, index) => {
+                                                            const docType =
+                                                                ID_TYPES.find(
+                                                                    (d) =>
+                                                                        d.value ===
+                                                                        doc.type
+                                                                );
+                                                            return (
+                                                                <div
+                                                                    key={index}
+                                                                    className="document-item uploaded"
+                                                                >
+                                                                    <CheckCircleOutlined className="doc-icon" />
+                                                                    <Text>
+                                                                        {
+                                                                            docType?.label
+                                                                        }
+                                                                    </Text>
+                                                                    <Button
+                                                                        type="link"
+                                                                        size="small"
+                                                                        icon={
+                                                                            <EyeOutlined />
+                                                                        }
+                                                                        onClick={() =>
+                                                                            handleImageZoom(
+                                                                                doc.url
+                                                                            )
+                                                                        }
+                                                                        className="doc-view-btn"
+                                                                    />
+                                                                </div>
                                                             );
-                                                        return (
-                                                            <div
-                                                                key={index}
-                                                                className="document-item uploaded"
-                                                            >
-                                                                <CheckCircleOutlined className="doc-icon" />
-                                                                <Text>
-                                                                    {
-                                                                        docType?.label
-                                                                    }
-                                                                </Text>
-                                                                <Button
-                                                                    type="link"
-                                                                    size="small"
-                                                                    icon={
-                                                                        <EyeOutlined />
-                                                                    }
-                                                                    onClick={() =>
-                                                                        handleImageZoom(
-                                                                            doc.url
-                                                                        )
-                                                                    }
-                                                                    className="doc-view-btn"
-                                                                />
-                                                            </div>
-                                                        );
-                                                    }
-                                                )}
-                                        </div>
-                                    </div>
-
-                                    {/* Preferences */}
-                                    <div className="sidebar-section">
-                                        <Title
-                                            level={5}
-                                            className="sidebar-title"
-                                        >
-                                            <SafetyCertificateOutlined />{" "}
-                                            Preferences
-                                        </Title>
-                                        <div className="preference-items">
-                                            <div className="preference-item">
-                                                <CheckCircleOutlined className="pref-icon" />
-                                                <Text>
-                                                    Terms & Conditions Accepted
-                                                </Text>
+                                                        })}
+                                                    {viewOnly &&
+                                                        Array.isArray(
+                                                            previewData?.idDocuments
+                                                        ) &&
+                                                        previewData?.idDocuments.map(
+                                                            (doc, index) => {
+                                                                const docType =
+                                                                    ID_TYPES.find(
+                                                                        (d) =>
+                                                                            d.value ===
+                                                                            doc.document_type
+                                                                    );
+                                                                return (
+                                                                    <div
+                                                                        key={
+                                                                            index
+                                                                        }
+                                                                        className="document-item uploaded"
+                                                                    >
+                                                                        <CheckCircleOutlined className="doc-icon" />
+                                                                        <Text>
+                                                                            {
+                                                                                docType?.label
+                                                                            }
+                                                                        </Text>
+                                                                        <Button
+                                                                            type="link"
+                                                                            size="small"
+                                                                            icon={
+                                                                                <EyeOutlined />
+                                                                            }
+                                                                            onClick={() =>
+                                                                                handleImageZoom(
+                                                                                    doc.file_url
+                                                                                )
+                                                                            }
+                                                                            className="doc-view-btn"
+                                                                        />
+                                                                    </div>
+                                                                );
+                                                            }
+                                                        )}
+                                                </div>
                                             </div>
-                                            {getData("newsletter") && (
-                                                <div className="preference-item">
-                                                    <CheckCircleOutlined className="pref-icon" />
-                                                    <Text>
-                                                        Newsletter Subscribed
-                                                    </Text>
+
+                                            {/* Preferences */}
+                                            <div className="sidebar-section">
+                                                <Title
+                                                    level={5}
+                                                    className="sidebar-title"
+                                                >
+                                                    <SafetyCertificateOutlined />{" "}
+                                                    Preferences
+                                                </Title>
+                                                <div className="preference-items">
+                                                    <div className="preference-item">
+                                                        <CheckCircleOutlined className="pref-icon" />
+                                                        <Text>
+                                                            Terms & Conditions
+                                                            Accepted
+                                                        </Text>
+                                                    </div>
+                                                    {getData("newsletter") && (
+                                                        <div className="preference-item">
+                                                            <CheckCircleOutlined className="pref-icon" />
+                                                            <Text>
+                                                                Newsletter
+                                                                Subscribed
+                                                            </Text>
+                                                        </div>
+                                                    )}
+                                                    {getData(
+                                                        "contactPermission"
+                                                    ) && (
+                                                        <div className="preference-item">
+                                                            <CheckCircleOutlined className="pref-icon" />
+                                                            <Text>
+                                                                Contact
+                                                                Permission
+                                                                Granted
+                                                            </Text>
+                                                        </div>
+                                                    )}
+                                                    {getData(
+                                                        "continueEducation"
+                                                    ) && (
+                                                        <div className="preference-item">
+                                                            <CheckCircleOutlined className="pref-icon" />
+                                                            <Text>
+                                                                Planning Further
+                                                                Education
+                                                            </Text>
+                                                        </div>
+                                                    )}
                                                 </div>
-                                            )}
-                                            {getData("contactPermission") && (
-                                                <div className="preference-item">
-                                                    <CheckCircleOutlined className="pref-icon" />
-                                                    <Text>
-                                                        Contact Permission
-                                                        Granted
-                                                    </Text>
-                                                </div>
-                                            )}
-                                            {getData("continueEducation") && (
-                                                <div className="preference-item">
-                                                    <CheckCircleOutlined className="pref-icon" />
-                                                    <Text>
-                                                        Planning Further
-                                                        Education
-                                                    </Text>
-                                                </div>
-                                            )}
-                                        </div>
-                                    </div>
+                                            </div>
+                                        </>
+                                    )}
                                 </Card>
                             </Col>
                         </Row>
                         {/* Honors & Awards Section */}
 
                         {honors.length > 0 && (
-                            <Card className="preview-card" size="small" style={{ marginTop: 10 }}>
+                            <Card
+                                className="preview-card"
+                                size="small"
+                                style={{ marginTop: 10 }}
+                            >
                                 <div className="section-header">
                                     <TrophyIcon className="section-icon" />
                                     <Title level={4} className="section-title">
@@ -874,7 +940,11 @@ const AlumniDetails = ({
                 }
 
                 .preview-header {
-                    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                    background: linear-gradient(
+                        135deg,
+                        #667eea 0%,
+                        #764ba2 100%
+                    );
                     padding: 40px;
                     color: white;
                 }
@@ -1056,9 +1126,15 @@ const AlumniDetails = ({
                     width: 20px;
                 }
 
-                .sidebar-icon.linkedin { color: #0077b5; }
-                .sidebar-icon.github { color: #333; }
-                .sidebar-icon.portfolio { color: #1890ff; }
+                .sidebar-icon.linkedin {
+                    color: #0077b5;
+                }
+                .sidebar-icon.github {
+                    color: #333;
+                }
+                .sidebar-icon.portfolio {
+                    color: #1890ff;
+                }
 
                 .sidebar-content {
                     display: flex;
@@ -1075,13 +1151,15 @@ const AlumniDetails = ({
                     color: #333;
                 }
 
-                .document-status, .preference-items {
+                .document-status,
+                .preference-items {
                     display: flex;
                     flex-direction: column;
                     gap: 8px;
                 }
 
-                .document-item, .preference-item {
+                .document-item,
+                .preference-item {
                     display: flex;
                     align-items: center;
                     gap: 8px;
@@ -1092,7 +1170,8 @@ const AlumniDetails = ({
                     color: #52c41a;
                 }
 
-                .doc-icon, .pref-icon {
+                .doc-icon,
+                .pref-icon {
                     font-size: 16px;
                 }
 
@@ -1140,15 +1219,15 @@ const AlumniDetails = ({
                         flex-direction: column;
                         text-align: center;
                     }
-                    
+
                     .preview-header {
                         padding: 20px;
                     }
-                    
+
                     .preview-body {
                         padding: 20px;
                     }
-                    
+
                     .sidebar-card {
                         position: static;
                     }

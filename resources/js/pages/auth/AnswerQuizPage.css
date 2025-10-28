@@ -1,9 +1,13 @@
-/* Behavioral Test Specific Styles */
 .behavioral-test .quiz-header-banner {
     background: linear-gradient(135deg, #ff6b6b 0%, #ffa726 100%);
 }
 
-/* Custom Rate Stars */
+.navigation-section {
+    display: flex;
+    justify-content: center;
+    gap: 20px;
+}
+
 .custom-rate {
     display: flex;
     gap: 8px;
@@ -120,15 +124,15 @@
         height: 50px;
         font-size: 16px;
     }
-    
+
     .stress-label {
         padding: 8px 4px;
     }
-    
+
     .stress-level {
         font-size: 20px;
     }
-    
+
     .custom-rate {
         gap: 4px;
     }

@@ -28,7 +28,7 @@ import {
     EyeOutlined,
     StarOutlined,
 } from "@ant-design/icons";
-import "./ImageQuizPage.css";
+// import "./ImageQuizPage.css";
 
 const { Title, Text } = Typography;
 

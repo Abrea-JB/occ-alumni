@@ -53,7 +53,7 @@ import { useQuery, useMutation, useQueryClient } from "react-query";
 import useRealtimeNotification from "~/hooks/useRealtimeNotification";
 import useProfile from "~/hooks/useProfile";
 import { useHistory } from "react-router-dom";
-import StudentProfile from "~/components/StudentProfile";
+
 
 const { Header, Sider, Content, Footer } = Layout;
 const { Text, Title } = Typography;
@@ -87,12 +87,6 @@ const MENU_ADMIN = [
 
 const MENU_ALUMNI = [
     {
-        key: 10,
-        url: "/admin-dashboard",
-        label: "Dashboard",
-        icon: <DashboardOutlined className="menu-icon" />,
-    },
-    {
         key: 120,
         url: "/alumni",
         label: "Alumni",
@@ -104,36 +98,14 @@ const MENU_ALUMNI = [
         label: "Events",
         icon: <CalendarOutlined className="menu-icon" />,
     },
-];
-
-const MENU_STUDENT = [
-    {
-        key: 20,
-        url: "/classroom",
-        subUrl1: "/classroom-details",
-        subUrl2: "none",
-        label: "Classroom",
-        icon: <GroupOutlined className="menu-icon" />,
-    },
-    {
-        key: 30,
-        url: "/archive",
-        label: "Archive",
-        icon: <GroupOutlined className="menu-icon" />,
-    },
-    {
-        key: 50,
-        url: "/academic-records",
-        label: "Academic Records",
-        icon: <GroupOutlined className="menu-icon" />,
-    },
-    {
-        key: 60,
+     {
+        key: 120,
         url: "/profile",
         label: "Profile",
         icon: <GroupOutlined className="menu-icon" />,
     },
 ];
+
 
 const MainLayout = ({ children, breadcrumb }) => {
     const queryClient = useQueryClient();
@@ -157,7 +129,7 @@ const MainLayout = ({ children, breadcrumb }) => {
     const userData = {
         name: secureLocalStorage.getItem("name") || "User Name",
         email: secureLocalStorage.getItem("email") || "",
-        avatar: "https://plus.unsplash.com/premium_photo-1689568126014-06fea9d5d341?q=80&w=1170&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
+        avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=1064&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
         role: secureLocalStorage.getItem("userRole") || "user",
     };
 
@@ -193,27 +165,27 @@ const MainLayout = ({ children, breadcrumb }) => {
         {
             type: "divider",
         },
-        {
-            label: (
-                <Space>
-                    <span>View Profile</span>
-                </Space>
-            ),
-            key: "view-profile",
-            icon: <UserOutlined />,
-        },
-        {
-            label: (
-                <Space>
-                    <span>Account Settings</span>
-                </Space>
-            ),
-            key: "account-settings",
-            icon: <SettingOutlined />,
-        },
-        {
-            type: "divider",
-        },
+        // {
+        //     label: (
+        //         <Space>
+        //             <span>View Profile</span>
+        //         </Space>
+        //     ),
+        //     key: "view-profile",
+        //     icon: <UserOutlined />,
+        // },
+        // {
+        //     label: (
+        //         <Space>
+        //             <span>Account Settings</span>
+        //         </Space>
+        //     ),
+        //     key: "account-settings",
+        //     icon: <SettingOutlined />,
+        // },
+        // {
+        //     type: "divider",
+        // },
         {
             label: "Sign out",
             key: "logout",
@@ -254,68 +226,6 @@ const MainLayout = ({ children, breadcrumb }) => {
     const [animateBell, setAnimateBell] = useState(false);
     const [notifications, setNotifications] = useState([]);
     const [filterUnread, setFilterUnread] = useState(false);
-
-    // Update notifications when data changes
-    useEffect(() => {
-        // if (Array.isArray(data)) {
-        //     const transformedNotifications = data.map((notification) => {
-        //         try {
-        //             const notificationData = notification.data
-        //                 ? JSON.parse(notification.data)
-        //                 : {};
-        //             return {
-        //                 id: notification.id,
-        //                 title:
-        //                     notification.title ||
-        //                     notificationData.title ||
-        //                     "Notification",
-        //                 message:
-        //                     notification.message ||
-        //                     notificationData.message ||
-        //                     "New notification",
-        //                 read: notification.read,
-        //                 created_at: notification.created_at,
-        //                 type: notification.type,
-        //                 data: notificationData,
-        //                 sender: notificationData.sender || {
-        //                     name: "System",
-        //                     avatar: null,
-        //                 },
-        //                 priority: notificationData.priority || "normal",
-        //             };
-        //         } catch (error) {
-        //             console.error("Error parsing notification data:", error);
-        //             return {
-        //                 id: notification.id,
-        //                 title: notification.title || "Notification",
-        //                 message: notification.message || "New notification",
-        //                 read: notification.read,
-        //                 created_at: notification.created_at,
-        //                 type: notification.type,
-        //                 data: {},
-        //                 sender: { name: "System", avatar: null },
-        //                 priority: "normal",
-        //             };
-        //         }
-        //     });
-        //     setNotifications(transformedNotifications);
-        //     const hasNewUnread = transformedNotifications.some((n) => !n.read);
-        //     if (hasNewUnread) {
-        //         setAnimateBell(true);
-        //         setTimeout(() => setAnimateBell(false), 1000);
-        //     }
-        // }
-    }, [data]);
-
-    useEffect(() => {
-        // const interval = setInterval(() => {
-        //     if (notifications.some((n) => !n.read)) {
-        //         setAnimateBell(true);
-        //         setTimeout(() => setAnimateBell(false), 1000);
-        //     }
-        // }, 30000);
-        // return () => clearInterval(interval);
-    }, [notifications]);
 
     useEffect(() => {
         const handleResize = () => {
@@ -702,66 +612,7 @@ const MainLayout = ({ children, breadcrumb }) => {
                 </div>
             </div>
 
-            {/* Quick Settings */}
-            <div
-                style={{
-                    padding: "12px 16px",
-                    borderBottom: "1px solid #f0f0f0",
-                }}
-            >
-                <div
-                    style={{
-                        display: "flex",
-                        justifyContent: "space-between",
-                        alignItems: "center",
-                        marginBottom: 8,
-                    }}
-                >
-                    <Text style={{ fontSize: "12px" }}>
-                        Email Notifications
-                    </Text>
-                    <Switch
-                        size="small"
-                        checked={settings.emailNotifications}
-                        onChange={(checked) =>
-                            handleSettingsChange("emailNotifications", checked)
-                        }
-                    />
-                </div>
-                <div
-                    style={{
-                        display: "flex",
-                        justifyContent: "space-between",
-                        alignItems: "center",
-                        marginBottom: 8,
-                    }}
-                >
-                    <Text style={{ fontSize: "12px" }}>Sound</Text>
-                    <Switch
-                        size="small"
-                        checked={settings.soundEnabled}
-                        onChange={(checked) =>
-                            handleSettingsChange("soundEnabled", checked)
-                        }
-                    />
-                </div>
-                <div
-                    style={{
-                        display: "flex",
-                        justifyContent: "space-between",
-                        alignItems: "center",
-                    }}
-                >
-                    <Text style={{ fontSize: "12px" }}>Dark Mode</Text>
-                    <Switch
-                        size="small"
-                        checked={settings.darkMode}
-                        onChange={(checked) =>
-                            handleSettingsChange("darkMode", checked)
-                        }
-                    />
-                </div>
-            </div>
+           
 
             {/* Menu Items */}
             <Menu
@@ -816,16 +667,16 @@ const MainLayout = ({ children, breadcrumb }) => {
         </Menu>
     );
 
-    useEffect(() => {
-        // setQuizzes(profile?.alumni_quizzes);
-        // if (profile?.alumni_quizzes.length === 0) {
-        //     setModalVisible(true);
-        // }
+     useEffect(() => {
+       
+        if (Array.isArray((profile?.alumni_quizzes) &&  profile?.alumni_quizzes?.length === 0)) {
+            setQuizzes(profile?.alumni_quizzes);
+            setModalVisible(true);
+        }
     }, [profile]);
 
     return (
         <>
-            <StudentProfile />
             <Layout id="main-layout">
                 {isMobile ? (
                     <Drawer
@@ -886,9 +737,9 @@ const MainLayout = ({ children, breadcrumb }) => {
                                     />
                                 )}
                             </Col>
-                            <Col flex="300px" className="second">
+                            <Col flex="230px" className="second">
                                 <Space size="middle">
-                                    <Dropdown
+                                    {/* <Dropdown
                                         placement="bottomRight"
                                         trigger={["click"]}
                                         dropdownRender={
@@ -926,7 +777,7 @@ const MainLayout = ({ children, breadcrumb }) => {
                                                 }}
                                             />
                                         </Badge>
-                                    </Dropdown>
+                                    </Dropdown> */}
 
                                     <Dropdown
                                         placement="bottomRight"
@@ -941,8 +792,10 @@ const MainLayout = ({ children, breadcrumb }) => {
                                                 gap: 8,
                                                 height: 40,
                                                 padding: "0 12px",
-                                                border: "1px solid #f0f0f0",
-                                                borderRadius: 6,
+                                                border: "1px solid rgb(102 126 234)",
+                                                borderRadius: 20,
+                                                background: '#667eea40',
+
                                             }}
                                         >
                                             <Avatar

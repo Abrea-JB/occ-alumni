@@ -5,7 +5,7 @@ namespace App\Http\Controllers;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\Faculties;
-use App\Models\Students;
+use App\Models\Alumni;
 use App\Models\Coaches;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Str;
@@ -37,11 +37,25 @@ class AuthController extends Controller
             'access_token' => $accessToken
         ];
 
+        if ($user->role === 'alumni') {
+            $alumni = Alumni::where('user_id', $user->id)->firstOrFail();
 
-        // if ($user->role === 'coach') {
-        //     $coach = Coaches::where('user_id', $user->id)->firstOrFail();
-        //     $responseData['coach_id'] = $coach->id; 
-        // }
+            if ($alumni->status === 'pending') {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Your alumni account is pending approval. Please wait for administrator approval.'
+                ], 403);
+            }
+
+            if ($alumni->status === 'inactive') {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Your alumni account is inactive. Please contact administrator to reactivate your account.'
+                ], 403);
+            }
+
+            $responseData['alumni_id'] = $alumni->id;
+        }
 
         return response($responseData, 200);
     }
