@@ -1,0 +1,165 @@
+/* Behavioral Test Specific Styles */
+.behavioral-test .quiz-header-banner {
+    background: linear-gradient(135deg, #ff6b6b 0%, #ffa726 100%);
+}
+
+/* Custom Rate Stars */
+.custom-rate {
+    display: flex;
+    gap: 8px;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+.rate-star {
+    width: 60px;
+    height: 60px;
+    border-radius: 12px;
+    border: 2px solid #d9d9d9;
+    background: white;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    position: relative;
+}
+
+.rate-star:hover {
+    transform: scale(1.1);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.rate-star.active {
+    transform: scale(1.1);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+}
+
+.star-number {
+    font-size: 12px;
+    font-weight: bold;
+    margin-top: 2px;
+}
+
+/* Stress Labels */
+.stress-labels {
+    margin-top: 20px;
+}
+
+.stress-label {
+    padding: 12px 8px;
+    border: 2px solid #e8e8e8;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    background: white;
+}
+
+.stress-label:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.stress-label.active {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+}
+
+.stress-level {
+    font-size: 24px;
+    font-weight: bold;
+    margin-bottom: 4px;
+}
+
+/* Pagination Styles */
+.pagination-section {
+    margin: 32px 0;
+}
+
+.pagination-section .ant-pagination {
+    display: flex;
+    justify-content: center;
+}
+
+.pagination-section .ant-pagination-item {
+    border-radius: 8px;
+}
+
+.pagination-section .ant-pagination-item-active {
+    border-color: #1890ff;
+    background: #1890ff;
+}
+
+.pagination-section .ant-pagination-item-active a {
+    color: white;
+}
+
+/* Assessment Info */
+.assessment-info {
+    margin-top: 16px;
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+/* Stress Level Colors in Results */
+.stress-level-indicator {
+    padding: 8px 16px;
+    border-radius: 20px;
+    font-weight: bold;
+    text-align: center;
+}
+
+/* Responsive Design for Custom Rate */
+@media (max-width: 768px) {
+    .rate-star {
+        width: 50px;
+        height: 50px;
+        font-size: 16px;
+    }
+    
+    .stress-label {
+        padding: 8px 4px;
+    }
+    
+    .stress-level {
+        font-size: 20px;
+    }
+    
+    .custom-rate {
+        gap: 4px;
+    }
+}
+
+/* Color Legend */
+.color-legend {
+    display: flex;
+    justify-content: center;
+    gap: 16px;
+    margin: 16px 0;
+    flex-wrap: wrap;
+}
+
+.legend-item {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.legend-color {
+    width: 16px;
+    height: 16px;
+    border-radius: 4px;
+}
+
+/* Enhanced Question Cards for Behavioral Test */
+.behavioral-test .question-card {
+    background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+}
+
+.behavioral-test .question-card.answered {
+    background: linear-gradient(135deg, #f6ffed 0%, #f0fff3 100%);
+}

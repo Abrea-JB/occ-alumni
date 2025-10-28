@@ -1,6 +1,6 @@
 import { useQuery } from "react-query";
 import axiosConfig from "~/utils/axiosConfig";
-import { delay } from "../utils/helper";
+
 
 const fetch = async (class_id) => {
     const { data } = await axiosConfig.get(`quizzes/`);

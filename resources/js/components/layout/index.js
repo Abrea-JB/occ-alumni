@@ -17,13 +17,13 @@ import {
     ClusterOutlined,
     TeamOutlined,
     CreditCardOutlined,
-    QuestionCircleOutlined,
     FileUnknownOutlined,
     BellOutlined,
     DribbbleOutlined,
     EyeOutlined,
     EyeInvisibleOutlined,
     MailOutlined,
+    QuestionCircleOutlined,
 } from "@ant-design/icons";
 import {
     Layout,
@@ -43,6 +43,7 @@ import {
     Space,
     message,
     Switch,
+    Modal,
 } from "antd";
 import { Link, useLocation } from "react-router-dom";
 import logoMini from "../../assets/images/site-logo.png";
@@ -50,8 +51,8 @@ import { setCookie } from "~/utils/helper";
 import secureLocalStorage from "react-secure-storage";
 import { useQuery, useMutation, useQueryClient } from "react-query";
 import useRealtimeNotification from "~/hooks/useRealtimeNotification";
+import useProfile from "~/hooks/useProfile";
 import { useHistory } from "react-router-dom";
-import useClassroomStore from "~/states/classroomState";
 import StudentProfile from "~/components/StudentProfile";
 
 const { Header, Sider, Content, Footer } = Layout;
@@ -68,7 +69,7 @@ const MENU_ADMIN = [
         key: 120,
         url: "/alumni",
         label: "Alumni",
-        icon: <CalendarOutlined className="menu-icon" />,
+        icon: <TeamOutlined className="menu-icon" />,
     },
     {
         key: 120,
@@ -76,40 +77,32 @@ const MENU_ADMIN = [
         label: "Events",
         icon: <CalendarOutlined className="menu-icon" />,
     },
-];
-
-const MENU_FACULTY = [
     {
-        key: 20,
-        url: "/classroom",
-        subUrl1: "/classroom-details",
-        subUrl2: "none",
-        label: "Classroom",
-        icon: <FileTextOutlined className="menu-icon" />,
-    },
-    {
-        key: 30,
-        url: "/archive",
-        label: "Archive",
-        icon: <FolderOpenOutlined className="menu-icon" />,
-    },
-    {
-        key: 50,
+        key: 120,
         url: "/questions",
         label: "Questions",
         icon: <QuestionCircleOutlined className="menu-icon" />,
     },
+];
+
+const MENU_ALUMNI = [
     {
-        key: 60,
-        url: "/quizzes",
-        label: "Quizzes",
-        icon: <FileUnknownOutlined className="menu-icon" />,
+        key: 10,
+        url: "/admin-dashboard",
+        label: "Dashboard",
+        icon: <DashboardOutlined className="menu-icon" />,
     },
     {
-        key: 70,
-        url: "/profile",
-        label: "Profile",
-        icon: <UserOutlined className="menu-icon" />,
+        key: 120,
+        url: "/alumni",
+        label: "Alumni",
+        icon: <TeamOutlined className="menu-icon" />,
+    },
+    {
+        key: 120,
+        url: "/events",
+        label: "Events",
+        icon: <CalendarOutlined className="menu-icon" />,
     },
 ];
 
@@ -145,11 +138,13 @@ const MENU_STUDENT = [
 const MainLayout = ({ children, breadcrumb }) => {
     const queryClient = useQueryClient();
     const { isLoading, data, isFetching } = useRealtimeNotification();
+    const { data: profile } = useProfile();
     const { pathname } = useLocation();
     const history = useHistory();
     const basePath = "/" + pathname.split("/").filter(Boolean)[0];
-    const { markNotificationAsRead } = useClassroomStore();
     const [dropdownVisible, setDropdownVisible] = useState(false);
+    const [alumniQuizzes, setQuizzes] = useState([]);
+    const [modalVisible, setModalVisible] = useState(false);
 
     const logout = () => {
         localStorage.removeItem("access_token");
@@ -247,10 +242,10 @@ const MainLayout = ({ children, breadcrumb }) => {
     const role = secureLocalStorage.getItem("userRole");
     if (role === "admin") {
         menus = MENU_ADMIN;
-    } else if (role === "student") {
-        menus = MENU_STUDENT;
+    } else if (role === "alumni") {
+        menus = MENU_ALUMNI;
     } else if (role === "faculty") {
-        menus = MENU_FACULTY;
+        // menus = MENU_FACULTY;
     }
 
     const [collapsed, setCollapsed] = useState(true);
@@ -262,68 +257,64 @@ const MainLayout = ({ children, breadcrumb }) => {
 
     // Update notifications when data changes
     useEffect(() => {
-        if (Array.isArray(data)) {
-            const transformedNotifications = data.map((notification) => {
-                try {
-                    const notificationData = notification.data
-                        ? JSON.parse(notification.data)
-                        : {};
-
-                    return {
-                        id: notification.id,
-                        title:
-                            notification.title ||
-                            notificationData.title ||
-                            "Notification",
-                        message:
-                            notification.message ||
-                            notificationData.message ||
-                            "New notification",
-                        read: notification.read,
-                        created_at: notification.created_at,
-                        type: notification.type,
-                        data: notificationData,
-                        sender: notificationData.sender || {
-                            name: "System",
-                            avatar: null,
-                        },
-                        priority: notificationData.priority || "normal",
-                    };
-                } catch (error) {
-                    console.error("Error parsing notification data:", error);
-                    return {
-                        id: notification.id,
-                        title: notification.title || "Notification",
-                        message: notification.message || "New notification",
-                        read: notification.read,
-                        created_at: notification.created_at,
-                        type: notification.type,
-                        data: {},
-                        sender: { name: "System", avatar: null },
-                        priority: "normal",
-                    };
-                }
-            });
-
-            setNotifications(transformedNotifications);
-
-            const hasNewUnread = transformedNotifications.some((n) => !n.read);
-            if (hasNewUnread) {
-                setAnimateBell(true);
-                setTimeout(() => setAnimateBell(false), 1000);
-            }
-        }
+        // if (Array.isArray(data)) {
+        //     const transformedNotifications = data.map((notification) => {
+        //         try {
+        //             const notificationData = notification.data
+        //                 ? JSON.parse(notification.data)
+        //                 : {};
+        //             return {
+        //                 id: notification.id,
+        //                 title:
+        //                     notification.title ||
+        //                     notificationData.title ||
+        //                     "Notification",
+        //                 message:
+        //                     notification.message ||
+        //                     notificationData.message ||
+        //                     "New notification",
+        //                 read: notification.read,
+        //                 created_at: notification.created_at,
+        //                 type: notification.type,
+        //                 data: notificationData,
+        //                 sender: notificationData.sender || {
+        //                     name: "System",
+        //                     avatar: null,
+        //                 },
+        //                 priority: notificationData.priority || "normal",
+        //             };
+        //         } catch (error) {
+        //             console.error("Error parsing notification data:", error);
+        //             return {
+        //                 id: notification.id,
+        //                 title: notification.title || "Notification",
+        //                 message: notification.message || "New notification",
+        //                 read: notification.read,
+        //                 created_at: notification.created_at,
+        //                 type: notification.type,
+        //                 data: {},
+        //                 sender: { name: "System", avatar: null },
+        //                 priority: "normal",
+        //             };
+        //         }
+        //     });
+        //     setNotifications(transformedNotifications);
+        //     const hasNewUnread = transformedNotifications.some((n) => !n.read);
+        //     if (hasNewUnread) {
+        //         setAnimateBell(true);
+        //         setTimeout(() => setAnimateBell(false), 1000);
+        //     }
+        // }
     }, [data]);
 
     useEffect(() => {
-        const interval = setInterval(() => {
-            if (notifications.some((n) => !n.read)) {
-                setAnimateBell(true);
-                setTimeout(() => setAnimateBell(false), 1000);
-            }
-        }, 30000);
-
-        return () => clearInterval(interval);
+        // const interval = setInterval(() => {
+        //     if (notifications.some((n) => !n.read)) {
+        //         setAnimateBell(true);
+        //         setTimeout(() => setAnimateBell(false), 1000);
+        //     }
+        // }, 30000);
+        // return () => clearInterval(interval);
     }, [notifications]);
 
     useEffect(() => {
@@ -341,31 +332,6 @@ const MainLayout = ({ children, breadcrumb }) => {
 
     const toggleDrawer = () => {
         setDrawerVisible(!drawerVisible);
-    };
-
-    const markAsReadMutation = useMutation(markNotificationAsRead, {
-        onSuccess: () => {
-            queryClient.invalidateQueries([
-                "markNotificationAsRead",
-                "classroom-list",
-            ]);
-        },
-        onError: (error) => {
-            message.error("Failed to mark notification as read");
-        },
-    });
-
-    const handleNotificationClick = (notification) => {
-        if (!notification.read) {
-            markAsReadMutation.mutate(notification.id);
-        }
-        setDropdownVisible(false);
-        handleNotificationNavigation(notification);
-    };
-
-    const handleNotificationNavigation = (notification) => {
-        const type = notification?.type;
-        history.push(`/classroom-details/${notification.data.class_slug}`);
     };
 
     const markAllAsReadMutation = useMutation(markAllNotificationsAsRead, {
@@ -447,7 +413,7 @@ const MainLayout = ({ children, breadcrumb }) => {
                           )}`,
                     borderRadius: "0",
                 }}
-                onClick={() => handleNotificationClick(notification)}
+                onClick={() => {}}
             >
                 <div
                     style={{
@@ -850,6 +816,13 @@ const MainLayout = ({ children, breadcrumb }) => {
         </Menu>
     );
 
+    useEffect(() => {
+        // setQuizzes(profile?.alumni_quizzes);
+        // if (profile?.alumni_quizzes.length === 0) {
+        //     setModalVisible(true);
+        // }
+    }, [profile]);
+
     return (
         <>
             <StudentProfile />
@@ -995,6 +968,73 @@ const MainLayout = ({ children, breadcrumb }) => {
                     </Footer> */}
                 </Layout>
             </Layout>
+            <Modal
+                title="Select Quiz Type"
+                open={modalVisible}
+                onCancel={() => setModalVisible(true)}
+                footer={null}
+                closable={false}
+                maskClosable={false}
+            >
+                <div style={{ textAlign: "center" }}>
+                    <div
+                        style={{
+                            background: "#fff2e8",
+                            border: "1px solid #ffbb96",
+                            borderRadius: 6,
+                            padding: 16,
+                            marginBottom: 20,
+                        }}
+                    >
+                        <div
+                            style={{
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                            }}
+                        >
+                            <span
+                                style={{
+                                    color: "#fa541c",
+                                    fontSize: 18,
+                                    marginRight: 8,
+                                }}
+                            >
+                                ⚠
+                            </span>
+                            <span
+                                style={{
+                                    color: "#fa541c",
+                                    fontWeight: "bold",
+                                    fontSize: 14,
+                                }}
+                            >
+                                Required: Complete a quiz to continue using the
+                                app
+                            </span>
+                        </div>
+                    </div>
+
+                    <Button
+                        type="dashed"
+                        size="large"
+                        style={{ width: "100%", marginBottom: 16 }}
+                        onClick={() =>  
+                            window.location.href = "answer-question"
+                        }
+                    >
+                        Take Behavioral Assessment Questions
+                    </Button>
+                    <Button
+                        type="dashed"
+                        size="large"
+                        style={{ width: "100%" }}
+                        onClick={() => setQuizType("multiple")}
+                    >
+                        Take Multiple Choice Quiz
+                    </Button>
+                </div>
+            </Modal>
         </>
     );
 };

@@ -120,8 +120,8 @@ ant-dropdown-menu-inline-collapsed-tooltip.ant-tooltip-arrow {
         width: 40px !important;
         height: 40px !important;
         background: #ffffff;
-        border-radius: 50%;
-        padding: 5px;
+        // border-radius: 50%;
+        // padding: 5px;
     }
 }
 
@@ -2014,7 +2014,7 @@ ul.ant-menu {
 
 /* AlumniDashboard.css */
 .dashboard-header-card{
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
 }
 /* Header Styles */
 .dashboard-header {
@@ -2152,4 +2152,123 @@ ul.ant-menu {
 
 .metric-card{
     background-color: #fff;
+}
+
+.preview-modal .ant-modal-close {
+  background-color: #f99c95 ; /* example soft red */
+  border-radius: 50%;
+  transition: 0.3s;
+}
+
+.preview-modal .ant-modal-close:hover {
+  background-color: #ff4d4f; /* solid red */
+  color: #fff !important; /* change icon color */
+}
+
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .alumni-events-container {
+    padding: 16px;
+  }
+  
+  .header-content {
+    flex-direction: column;
+    gap: 16px;
+  }
+  
+  .controls-section {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  .controls-left,
+  .controls-right {
+    justify-content: center;
+  }
+  
+  .controls-left .ant-input,
+  .controls-left .ant-select {
+    width: 100% !important;
+  }
+  
+  .list-item-content {
+    flex-direction: column;
+  }
+  
+  .list-item-image {
+    width: 100%;
+    height: 200px;
+  }
+  
+  .list-item-header {
+    flex-direction: column;
+    gap: 12px;
+  }
+  
+  .event-details-content .ant-col {
+    width: 100% !important;
+  }
+}
+
+@media (max-width: 576px) {
+  .event-card .ant-card-actions {
+    padding: 8px 0;
+  }
+  
+  .event-header {
+    padding: 16px 16px 0 16px;
+  }
+  
+  .event-organizer {
+    padding: 0 16px;
+  }
+  
+  .event-description {
+    padding: 0 16px;
+  }
+  
+  .event-details {
+    padding: 0 16px;
+  }
+  
+  .event-pricing {
+    padding: 0 16px;
+  }
+  
+  .event-registration {
+    padding: 0 16px;
+  }
+  
+  .event-tags {
+    padding: 0 16px 16px 16px;
+  }
+  
+  .register-btn {
+    margin: 0 16px 16px 16px;
+  }
+  
+  .list-item-meta .ant-space {
+    flex-direction: column;
+    gap: 8px !important;
+  }
+}
+
+
+.header-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  color: white;
+  margin-bottom: 24px;
+}
+
+.header-content h2,
+.header-content .ant-typography-secondary {
+  color: white !important;
+  margin: 0;
+}
+
+.header-content .ant-statistic-title {
+  color: rgba(255, 255, 255, 0.8);
 }

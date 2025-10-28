@@ -60,6 +60,9 @@ import moment from "moment";
 import "./AlumniRegistration.css";
 import axios from "axios";
 import { BASE_URL } from "../../utils/constant";
+import useCourses from "~/hooks/useCourses";
+import useEmployeeStatus from "~/hooks/useEmployeeStatus";
+import { AlumniDetails } from "~/components";
 
 const { Title, Text, Paragraph } = Typography;
 const { Option } = Select;
@@ -203,7 +206,15 @@ const ID_TYPES = [
     { value: "transcript", label: "Transcript", icon: <BookOutlined /> },
 ];
 
+const statusColors = {
+    Employed: "green",
+    Unemployed: "red",
+    "Under Employed": "orange",
+};
+
 const AlumniRegistration = () => {
+    const { isLoading, data: courses, isFetching, refetch } = useCourses();
+    const { data: statuses } = useEmployeeStatus();
     const [currentStep, setCurrentStep] = useState(0);
     const [form] = Form.useForm();
     const [profileImage, setProfileImage] = useState(null);
@@ -370,15 +381,67 @@ const AlumniRegistration = () => {
         setCurrentStep(currentStep - 1);
     };
 
-    const handlePreview = () => {
-        form.validateFields()
-            .then((values) => {
-                setPreviewData({ ...values, profileImage, idDocuments });
-                setIsModalVisible(true);
-            })
-            .catch((error) => {
-                console.log("Validation Failed:", error);
-            });
+    const handlePreview = async () => {
+        setCurrentStep("all");
+        setTimeout(() => {
+            previewShow();
+        }, 100);
+    };
+
+    const previewShow = async () => {
+        const values = await form.validateFields();
+        const previewData = {
+            // Personal Information
+            first_name: values.first_name,
+            last_name: values.last_name,
+            middle_name: values.middle_name,
+            suffix: values.suffix,
+            email: values.email,
+            phone: values.phone,
+            address: values.address,
+            birth_date: values.birth_date,
+            gender: values.gender,
+            bio: values.bio,
+
+            // Academic Information
+            course_id: values.course_id,
+            studentId: values.studentId,
+            graduationYear: values.graduationYear,
+            enrollmentYear: values.enrollmentYear,
+            honors: values.honors || [],
+            thesisTitle: values.thesisTitle,
+            academicAchievements: values.academicAchievements,
+            extracurricular: values.extracurricular,
+            continueEducation: values.continueEducation,
+
+            // Career Information
+            employment_status_id: values.employment_status_id,
+            currentCompany: values.currentCompany,
+            jobTitle: values.jobTitle,
+            industry: values.industry,
+            yearsExperience: values.yearsExperience,
+            salaryRange: values.salaryRange,
+            workLocation: values.workLocation,
+            careerGoals: values.careerGoals,
+            previousCompanies: values.previousCompanies,
+
+            // Social media
+            linkedin: values.linkedin,
+            github: values.github,
+            portfolio: values.portfolio,
+            twitter: values.twitter,
+
+            // Preferences
+            newsletter: values.newsletter,
+            contactPermission: values.contactPermission,
+            agreement: values.agreement,
+
+            // Files
+            profileImage,
+            idDocuments,
+        };
+        setPreviewData(previewData);
+        setIsModalVisible(true);
     };
 
     const calculateProgress = () => {
@@ -1025,7 +1088,7 @@ const AlumniRegistration = () => {
             <Row gutter={[24, 16]}>
                 <Col xs={24}>
                     <Form.Item
-                        name="course"
+                        name="course_id"
                         label="Course/Degree"
                         rules={[
                             {
@@ -1040,20 +1103,13 @@ const AlumniRegistration = () => {
                             showSearch
                             optionFilterProp="children"
                         >
-                            {courseOptions.map((course) => (
-                                <Option key={course.value} value={course.value}>
-                                    <div>
-                                        <Text strong>{course.label}</Text>
-                                        <br />
-                                        <Text
-                                            type="secondary"
-                                            style={{ fontSize: "12px" }}
-                                        >
-                                            {course.college}
-                                        </Text>
-                                    </div>
-                                </Option>
-                            ))}
+                            {Array.isArray(courses) &&
+                                courses.map((course) => (
+                                    <Option key={course.id} value={course.id}>
+                                        {course.course_code}(
+                                        {course.course_name})
+                                    </Option>
+                                ))}
                         </Select>
                     </Form.Item>
                 </Col>
@@ -1186,7 +1242,7 @@ const AlumniRegistration = () => {
             <Row gutter={[24, 16]}>
                 <Col xs={24}>
                     <Form.Item
-                        name="employmentStatus"
+                        name="employment_status_id"
                         label="Current Employment Status"
                         rules={[
                             {
@@ -1199,13 +1255,20 @@ const AlumniRegistration = () => {
                             size="large"
                             placeholder="Select your employment status"
                         >
-                            {employmentStatusOptions.map((status) => (
-                                <Option key={status.value} value={status.value}>
-                                    <Tag color={status.color}>
-                                        {status.label}
-                                    </Tag>
-                                </Option>
-                            ))}
+                            {Array.isArray(statuses) &&
+                                statuses.map((status) => (
+                                    <Option key={status.id} value={status.id}>
+                                        <Tag
+                                            color={
+                                                statusColors[
+                                                    status.status_name
+                                                ] || "blue"
+                                            }
+                                        >
+                                            {status.status_name}
+                                        </Tag>
+                                    </Option>
+                                ))}
                         </Select>
                     </Form.Item>
                 </Col>
@@ -1719,7 +1782,9 @@ const AlumniRegistration = () => {
                 <Button
                     type="primary"
                     icon={<EyeOutlined />}
-                    onClick={handlePreview}
+                    onClick={() => {
+                        handlePreview();
+                    }}
                     size="large"
                     disabled={!profileImage || idDocuments.length === 0}
                 >
@@ -1786,798 +1851,6 @@ const AlumniRegistration = () => {
         </div>
     );
 
-    const PreviewModal = () => {
-        const [zoomImage, setZoomImage] = useState(null);
-        const [zoomVisible, setZoomVisible] = useState(false);
-
-        const handleImageZoom = (imageUrl) => {
-            setZoomImage(imageUrl);
-            setZoomVisible(true);
-        };
-
-        return (
-            <>
-                <Modal
-                    title={
-                        <Space>
-                            <BankOutlined />
-                            Alumni Registration Preview - {companyInfo.name}
-                        </Space>
-                    }
-                    open={isModalVisible}
-                    onCancel={() => setIsModalVisible(false)}
-                    footer={[
-                        <Button
-                            key="back"
-                            onClick={() => setIsModalVisible(false)}
-                        >
-                            Cancel
-                        </Button>,
-                        <Button
-                            key="submit"
-                            type="primary"
-                            onClick={handleSubmit}
-                        >
-                            Submit Application
-                        </Button>,
-                    ]}
-                    width="90%"
-                    className="preview-modal"
-                    bodyStyle={{ padding: 0 }}
-                >
-                    {previewData && (
-                        <div className="preview-content">
-                            {/* Header Section */}
-                            <div className="preview-header">
-                                <div className="preview-profile-section">
-                                    <div className="profile-image-container">
-                                        {previewData.profileImage ? (
-                                            <div className="profile-image-wrapper">
-                                                <img
-                                                    src={
-                                                        previewData.profileImage
-                                                    }
-                                                    alt="Profile"
-                                                    className="preview-profile-img"
-                                                />
-                                                <div
-                                                    className="image-zoom-overlay"
-                                                    onClick={() =>
-                                                        handleImageZoom(
-                                                            previewData.profileImage
-                                                        )
-                                                    }
-                                                >
-                                                    <EyeOutlined />
-                                                    <span>Click to Zoom</span>
-                                                </div>
-                                            </div>
-                                        ) : (
-                                            <Avatar
-                                                size={120}
-                                                icon={<UserOutlined />}
-                                                className="default-avatar"
-                                            />
-                                        )}
-                                    </div>
-                                    <div className="profile-info">
-                                        <Title
-                                            level={2}
-                                            className="preview-name"
-                                        >
-                                            {previewData.first_name}{" "}
-                                            {previewData.middle_name}{" "}
-                                            {previewData.last_name}{" "}
-                                            {previewData.suffix}
-                                        </Title>
-                                        <Text className="preview-title">
-                                            {previewData.jobTitle || "Alumni"}
-                                            {previewData.currentCompany &&
-                                                ` at ${previewData.currentCompany}`}
-                                        </Text>
-                                        <div className="preview-contact-info">
-                                            <Row gutter={[16, 8]}>
-                                                {previewData.email && (
-                                                    <Col xs={24} sm={12} md={8}>
-                                                        <div className="contact-item">
-                                                            <MailOutlined className="contact-icon" />
-                                                            <div className="contact-details">
-                                                                <Text className="contact-label">
-                                                                    Email
-                                                                </Text>
-                                                                <Text className="contact-value">
-                                                                    {
-                                                                        previewData.email
-                                                                    }
-                                                                </Text>
-                                                            </div>
-                                                        </div>
-                                                    </Col>
-                                                )}
-                                                {previewData.phone && (
-                                                    <Col xs={24} sm={12} md={8}>
-                                                        <div className="contact-item">
-                                                            <PhoneOutlined className="contact-icon" />
-                                                            <div className="contact-details">
-                                                                <Text className="contact-label">
-                                                                    Phone
-                                                                </Text>
-                                                                <Text className="contact-value">
-                                                                    {
-                                                                        previewData.phone
-                                                                    }
-                                                                </Text>
-                                                            </div>
-                                                        </div>
-                                                    </Col>
-                                                )}
-                                                {previewData.address && (
-                                                    <Col xs={24} sm={12} md={8}>
-                                                        <div className="contact-item">
-                                                            <EnvironmentOutlined className="contact-icon" />
-                                                            <div className="contact-details">
-                                                                <Text className="contact-label">
-                                                                    Address
-                                                                </Text>
-                                                                <Text
-                                                                    className="contact-value"
-                                                                    ellipsis={{
-                                                                        tooltip:
-                                                                            previewData.address,
-                                                                    }}
-                                                                >
-                                                                    {
-                                                                        previewData.address
-                                                                    }
-                                                                </Text>
-                                                            </div>
-                                                        </div>
-                                                    </Col>
-                                                )}
-                                            </Row>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            {/* Main Content */}
-                            <div className="preview-body">
-                                <Row gutter={[32, 24]}>
-                                    {/* Left Column - Main Content */}
-                                    <Col xs={24} lg={16}>
-                                        {/* Personal Summary */}
-                                        {previewData.bio && (
-                                            <Card
-                                                className="preview-card"
-                                                size="small"
-                                            >
-                                                <div className="section-header">
-                                                    <UserOutlined className="section-icon" />
-                                                    <Title
-                                                        level={4}
-                                                        className="section-title"
-                                                    >
-                                                        Personal Summary
-                                                    </Title>
-                                                </div>
-                                                <Paragraph className="preview-bio">
-                                                    {previewData.bio}
-                                                </Paragraph>
-                                            </Card>
-                                        )}
-
-                                        {/* Career Information */}
-                                        <Card
-                                            className="preview-card"
-                                            size="small"
-                                        >
-                                            <div className="section-header">
-                                                <TrophyOutlined className="section-icon" />
-                                                <Title
-                                                    level={4}
-                                                    className="section-title"
-                                                >
-                                                    Career Information
-                                                </Title>
-                                            </div>
-                                            <div className="career-details">
-                                                <Row gutter={[16, 12]}>
-                                                    <Col xs={24} sm={12}>
-                                                        <div className="detail-item">
-                                                            <Text strong>
-                                                                Employment
-                                                                Status:
-                                                            </Text>
-                                                            <Tag
-                                                                color={
-                                                                    employmentStatusOptions.find(
-                                                                        (s) =>
-                                                                            s.value ===
-                                                                            previewData.employmentStatus
-                                                                    )?.color ||
-                                                                    "blue"
-                                                                }
-                                                            >
-                                                                {employmentStatusOptions.find(
-                                                                    (s) =>
-                                                                        s.value ===
-                                                                        previewData.employmentStatus
-                                                                )?.label ||
-                                                                    previewData.employmentStatus}
-                                                            </Tag>
-                                                        </div>
-                                                    </Col>
-                                                    {previewData.currentCompany && (
-                                                        <Col xs={24} sm={12}>
-                                                            <div className="detail-item">
-                                                                <Text strong>
-                                                                    Current
-                                                                    Company:
-                                                                </Text>
-                                                                <Text>
-                                                                    {
-                                                                        previewData.currentCompany
-                                                                    }
-                                                                </Text>
-                                                            </div>
-                                                        </Col>
-                                                    )}
-                                                    {previewData.jobTitle && (
-                                                        <Col xs={24} sm={12}>
-                                                            <div className="detail-item">
-                                                                <Text strong>
-                                                                    Position:
-                                                                </Text>
-                                                                <Text>
-                                                                    {
-                                                                        previewData.jobTitle
-                                                                    }
-                                                                </Text>
-                                                            </div>
-                                                        </Col>
-                                                    )}
-                                                    {previewData.industry && (
-                                                        <Col xs={24} sm={12}>
-                                                            <div className="detail-item">
-                                                                <Text strong>
-                                                                    Industry:
-                                                                </Text>
-                                                                <Text>
-                                                                    {
-                                                                        previewData.industry
-                                                                    }
-                                                                </Text>
-                                                            </div>
-                                                        </Col>
-                                                    )}
-                                                    {previewData.yearsExperience && (
-                                                        <Col xs={24} sm={12}>
-                                                            <div className="detail-item">
-                                                                <Text strong>
-                                                                    Experience:
-                                                                </Text>
-                                                                <Text>
-                                                                    {
-                                                                        previewData.yearsExperience
-                                                                    }{" "}
-                                                                    years
-                                                                </Text>
-                                                            </div>
-                                                        </Col>
-                                                    )}
-                                                    {previewData.workLocation && (
-                                                        <Col xs={24} sm={12}>
-                                                            <div className="detail-item">
-                                                                <Text strong>
-                                                                    Work
-                                                                    Location:
-                                                                </Text>
-                                                                <Text>
-                                                                    {
-                                                                        previewData.workLocation
-                                                                    }
-                                                                </Text>
-                                                            </div>
-                                                        </Col>
-                                                    )}
-                                                    {previewData.salaryRange && (
-                                                        <Col xs={24} sm={12}>
-                                                            <div className="detail-item">
-                                                                <Text strong>
-                                                                    Salary
-                                                                    Range:
-                                                                </Text>
-                                                                <Text>
-                                                                    {
-                                                                        previewData.salaryRange
-                                                                    }
-                                                                </Text>
-                                                            </div>
-                                                        </Col>
-                                                    )}
-                                                </Row>
-
-                                                {/* Career Goals */}
-                                                {previewData.careerGoals && (
-                                                    <div className="subsection">
-                                                        <Text
-                                                            strong
-                                                            className="subsection-title"
-                                                        >
-                                                            Career Goals
-                                                        </Text>
-                                                        <Paragraph className="preview-text">
-                                                            {
-                                                                previewData.careerGoals
-                                                            }
-                                                        </Paragraph>
-                                                    </div>
-                                                )}
-
-                                                {/* Previous Experience */}
-                                                {previewData.previousCompanies && (
-                                                    <div className="subsection">
-                                                        <Text
-                                                            strong
-                                                            className="subsection-title"
-                                                        >
-                                                            Previous Experience
-                                                        </Text>
-                                                        <Paragraph className="preview-text">
-                                                            {
-                                                                previewData.previousCompanies
-                                                            }
-                                                        </Paragraph>
-                                                    </div>
-                                                )}
-                                            </div>
-                                        </Card>
-
-                                        {/* Academic Information */}
-                                        <Card
-                                            className="preview-card"
-                                            size="small"
-                                        >
-                                            <div className="section-header">
-                                                <BookOutlined className="section-icon" />
-                                                <Title
-                                                    level={4}
-                                                    className="section-title"
-                                                >
-                                                    Academic Background
-                                                </Title>
-                                            </div>
-                                            <div className="academic-details">
-                                                <Row gutter={[16, 12]}>
-                                                    {previewData.course && (
-                                                        <Col xs={24} sm={12}>
-                                                            <div className="detail-item">
-                                                                <Text strong>
-                                                                    Course/Degree:
-                                                                </Text>
-                                                                <Text>
-                                                                    {courseOptions.find(
-                                                                        (c) =>
-                                                                            c.value ===
-                                                                            previewData.course
-                                                                    )?.label ||
-                                                                        previewData.course}
-                                                                </Text>
-                                                            </div>
-                                                        </Col>
-                                                    )}
-                                                    {previewData.graduationYear && (
-                                                        <Col xs={24} sm={12}>
-                                                            <div className="detail-item">
-                                                                <Text strong>
-                                                                    Graduation
-                                                                    Year:
-                                                                </Text>
-                                                                <Text>
-                                                                    {
-                                                                        previewData.graduationYear
-                                                                    }
-                                                                </Text>
-                                                            </div>
-                                                        </Col>
-                                                    )}
-                                                    {previewData.enrollmentYear && (
-                                                        <Col xs={24} sm={12}>
-                                                            <div className="detail-item">
-                                                                <Text strong>
-                                                                    Enrollment
-                                                                    Year:
-                                                                </Text>
-                                                                <Text>
-                                                                    {
-                                                                        previewData.enrollmentYear
-                                                                    }
-                                                                </Text>
-                                                            </div>
-                                                        </Col>
-                                                    )}
-                                                    {previewData.studentId && (
-                                                        <Col xs={24} sm={12}>
-                                                            <div className="detail-item">
-                                                                <Text strong>
-                                                                    Student ID:
-                                                                </Text>
-                                                                <Text>
-                                                                    {
-                                                                        previewData.studentId
-                                                                    }
-                                                                </Text>
-                                                            </div>
-                                                        </Col>
-                                                    )}
-                                                </Row>
-
-                                                {/* Academic Achievements */}
-                                                {previewData.academicAchievements && (
-                                                    <div className="subsection">
-                                                        <Text
-                                                            strong
-                                                            className="subsection-title"
-                                                        >
-                                                            Academic
-                                                            Achievements
-                                                        </Text>
-                                                        <Paragraph className="preview-text">
-                                                            {
-                                                                previewData.academicAchievements
-                                                            }
-                                                        </Paragraph>
-                                                    </div>
-                                                )}
-
-                                                {/* Extracurricular Activities */}
-                                                {previewData.extracurricular && (
-                                                    <div className="subsection">
-                                                        <Text
-                                                            strong
-                                                            className="subsection-title"
-                                                        >
-                                                            Extracurricular
-                                                            Activities
-                                                        </Text>
-                                                        <Paragraph className="preview-text">
-                                                            {
-                                                                previewData.extracurricular
-                                                            }
-                                                        </Paragraph>
-                                                    </div>
-                                                )}
-
-                                                {/* Thesis/Capstone */}
-                                                {previewData.thesisTitle && (
-                                                    <div className="subsection">
-                                                        <Text
-                                                            strong
-                                                            className="subsection-title"
-                                                        >
-                                                            Thesis/Capstone
-                                                            Project
-                                                        </Text>
-                                                        <Paragraph className="preview-text">
-                                                            {
-                                                                previewData.thesisTitle
-                                                            }
-                                                        </Paragraph>
-                                                    </div>
-                                                )}
-                                            </div>
-                                        </Card>
-                                    </Col>
-
-                                    {/* Right Column - Sidebar */}
-                                    <Col xs={24} lg={8}>
-                                        {/* Quick Info Card */}
-                                        <Card
-                                            className="sidebar-card"
-                                            size="small"
-                                        >
-                                            {/* Personal Information */}
-                                            <div className="sidebar-section">
-                                                <Title
-                                                    level={5}
-                                                    className="sidebar-title"
-                                                >
-                                                    <IdcardOutlined /> Personal
-                                                    Info
-                                                </Title>
-                                                <div className="sidebar-items">
-                                                    {previewData.birth_date && (
-                                                        <div className="sidebar-item">
-                                                            <CalendarOutlined className="sidebar-icon" />
-                                                            <div className="sidebar-content">
-                                                                <Text className="sidebar-label">
-                                                                    Birth Date
-                                                                </Text>
-                                                                <Text className="sidebar-value">
-                                                                    {moment(
-                                                                        previewData.birth_date
-                                                                    ).format(
-                                                                        "MMM DD, YYYY"
-                                                                    )}
-                                                                </Text>
-                                                            </div>
-                                                        </div>
-                                                    )}
-                                                    {previewData.gender && (
-                                                        <div className="sidebar-item">
-                                                            <UserOutlined className="sidebar-icon" />
-                                                            <div className="sidebar-content">
-                                                                <Text className="sidebar-label">
-                                                                    Gender
-                                                                </Text>
-                                                                <Text
-                                                                    className="sidebar-value"
-                                                                    style={{
-                                                                        textTransform:
-                                                                            "capitalize",
-                                                                    }}
-                                                                >
-                                                                    {previewData.gender.replace(
-                                                                        "_",
-                                                                        " "
-                                                                    )}
-                                                                </Text>
-                                                            </div>
-                                                        </div>
-                                                    )}
-                                                </div>
-                                            </div>
-
-                                            {/* Social Profiles */}
-                                            <div className="sidebar-section">
-                                                <Title
-                                                    level={5}
-                                                    className="sidebar-title"
-                                                >
-                                                    <GlobalOutlined /> Social
-                                                    Profiles
-                                                </Title>
-                                                <div className="sidebar-items">
-                                                    {previewData.linkedin && (
-                                                        <div className="sidebar-item clickable">
-                                                            <LinkedinOutlined className="sidebar-icon linkedin" />
-                                                            <div className="sidebar-content">
-                                                                <Text className="sidebar-label">
-                                                                    LinkedIn
-                                                                </Text>
-                                                                <Text className="sidebar-value">
-                                                                    Profile
-                                                                    Connected
-                                                                </Text>
-                                                            </div>
-                                                        </div>
-                                                    )}
-                                                    {previewData.github && (
-                                                        <div className="sidebar-item clickable">
-                                                            <GithubOutlined className="sidebar-icon github" />
-                                                            <div className="sidebar-content">
-                                                                <Text className="sidebar-label">
-                                                                    GitHub
-                                                                </Text>
-                                                                <Text className="sidebar-value">
-                                                                    Profile
-                                                                    Connected
-                                                                </Text>
-                                                            </div>
-                                                        </div>
-                                                    )}
-                                                    {previewData.portfolio && (
-                                                        <div className="sidebar-item clickable">
-                                                            <GlobalOutlined className="sidebar-icon portfolio" />
-                                                            <div className="sidebar-content">
-                                                                <Text className="sidebar-label">
-                                                                    Portfolio
-                                                                </Text>
-                                                                <Text className="sidebar-value">
-                                                                    Website
-                                                                    Added
-                                                                </Text>
-                                                            </div>
-                                                        </div>
-                                                    )}
-                                                </div>
-                                            </div>
-
-                                            {/* Document Status */}
-                                            <div className="sidebar-section">
-                                                <Title
-                                                    level={5}
-                                                    className="sidebar-title"
-                                                >
-                                                    <FileImageOutlined />{" "}
-                                                    Documents
-                                                </Title>
-                                                <div className="document-status">
-                                                    <div className="document-item uploaded">
-                                                        <CheckCircleOutlined className="doc-icon" />
-                                                        <Text>
-                                                            Profile Photo
-                                                        </Text>
-                                                    </div>
-                                                    {previewData.idDocuments &&
-                                                        previewData.idDocuments.map(
-                                                            (doc, index) => {
-                                                                const docType =
-                                                                    ID_TYPES.find(
-                                                                        (d) =>
-                                                                            d.value ===
-                                                                            doc.type
-                                                                    );
-                                                                return (
-                                                                    <div
-                                                                        key={
-                                                                            index
-                                                                        }
-                                                                        className="document-item uploaded"
-                                                                    >
-                                                                        <CheckCircleOutlined className="doc-icon" />
-                                                                        <Text>
-                                                                            {
-                                                                                docType?.label
-                                                                            }
-                                                                        </Text>
-                                                                        <Button
-                                                                            type="link"
-                                                                            size="small"
-                                                                            icon={
-                                                                                <EyeOutlined />
-                                                                            }
-                                                                            onClick={() =>
-                                                                                handleImageZoom(
-                                                                                    doc.url
-                                                                                )
-                                                                            }
-                                                                            className="doc-view-btn"
-                                                                        />
-                                                                    </div>
-                                                                );
-                                                            }
-                                                        )}
-                                                </div>
-                                            </div>
-
-                                            {/* Preferences */}
-                                            <div className="sidebar-section">
-                                                <Title
-                                                    level={5}
-                                                    className="sidebar-title"
-                                                >
-                                                    <SafetyCertificateOutlined />{" "}
-                                                    Preferences
-                                                </Title>
-                                                <div className="preference-items">
-                                                    <div className="preference-item">
-                                                        <CheckCircleOutlined className="pref-icon" />
-                                                        <Text>
-                                                            Terms & Conditions
-                                                            Accepted
-                                                        </Text>
-                                                    </div>
-                                                    {previewData.newsletter && (
-                                                        <div className="preference-item">
-                                                            <CheckCircleOutlined className="pref-icon" />
-                                                            <Text>
-                                                                Newsletter
-                                                                Subscribed
-                                                            </Text>
-                                                        </div>
-                                                    )}
-                                                    {previewData.contactPermission && (
-                                                        <div className="preference-item">
-                                                            <CheckCircleOutlined className="pref-icon" />
-                                                            <Text>
-                                                                Contact
-                                                                Permission
-                                                                Granted
-                                                            </Text>
-                                                        </div>
-                                                    )}
-                                                    {previewData.continueEducation && (
-                                                        <div className="preference-item">
-                                                            <CheckCircleOutlined className="pref-icon" />
-                                                            <Text>
-                                                                Planning Further
-                                                                Education
-                                                            </Text>
-                                                        </div>
-                                                    )}
-                                                </div>
-                                            </div>
-                                        </Card>
-                                    </Col>
-                                </Row>
-
-                                {/* Honors & Awards Section */}
-                                {previewData.honors &&
-                                    previewData.honors.length > 0 && (
-                                        <Card
-                                            className="preview-card"
-                                            size="small"
-                                        >
-                                            <div className="section-header">
-                                                <TrophyOutlined className="section-icon" />
-                                                <Title
-                                                    level={4}
-                                                    className="section-title"
-                                                >
-                                                    Honors & Awards
-                                                </Title>
-                                            </div>
-                                            <div className="honors-container">
-                                                <Row gutter={[8, 8]}>
-                                                    {previewData.honors.map(
-                                                        (honor, index) => (
-                                                            <Col
-                                                                key={index}
-                                                                xs={24}
-                                                                sm={12}
-                                                                md={8}
-                                                                lg={6}
-                                                            >
-                                                                <div className="honor-item">
-                                                                    <TrophyOutlined className="honor-icon" />
-                                                                    <Text>
-                                                                        {honor}
-                                                                    </Text>
-                                                                </div>
-                                                            </Col>
-                                                        )
-                                                    )}
-                                                </Row>
-                                            </div>
-                                        </Card>
-                                    )}
-                            </div>
-                        </div>
-                    )}
-                </Modal>
-
-                {/* Image Zoom Modal */}
-                <Modal
-                    open={zoomVisible}
-                    onCancel={() => setZoomVisible(false)}
-                    footer={null}
-                    width="auto"
-                    className="image-zoom-modal"
-                    closable={true}
-                    style={{ top: 20 }}
-                >
-                    {zoomImage && (
-                        <div className="zoom-container">
-                            <Image
-                                src={zoomImage}
-                                alt="Zoomed Document"
-                                style={{ maxWidth: "100%", maxHeight: "80vh" }}
-                                preview={false}
-                            />
-                            <div className="zoom-actions">
-                                <Button
-                                    type="primary"
-                                    icon={<DownloadOutlined />}
-                                    onClick={() => {
-                                        // Download functionality would go here
-                                        message.info(
-                                            "Download functionality would be implemented here"
-                                        );
-                                    }}
-                                >
-                                    Download
-                                </Button>
-                                <Button onClick={() => setZoomVisible(false)}>
-                                    Close
-                                </Button>
-                            </div>
-                        </div>
-                    )}
-                </Modal>
-            </>
-        );
-    };
     return (
         <div className="alumni-registration">
             <Card className="registration-card">
@@ -2669,11 +1942,26 @@ const AlumniRegistration = () => {
                         contactPermission: true,
                     }}
                 >
-                    {currentStep === 0 && <PersonalInfoStep />}
+                    {/* {currentStep === 0 && <PersonalInfoStep />}
                     {currentStep === 1 && <AcademicInfoStep />}
                     {currentStep === 2 && <CareerInfoStep />}
                     {currentStep === 3 && <DocumentsStep />}
-                    {currentStep === 4 && <ReviewSubmitStep />}
+                    {currentStep === 4 && <ReviewSubmitStep />} */}
+                    {(currentStep === 0 || currentStep === "all") && (
+                        <PersonalInfoStep />
+                    )}
+                    {(currentStep === 1 || currentStep === "all") && (
+                        <AcademicInfoStep />
+                    )}
+                    {(currentStep === 2 || currentStep === "all") && (
+                        <CareerInfoStep />
+                    )}
+                    {(currentStep === 3 || currentStep === "all") && (
+                        <DocumentsStep />
+                    )}
+                    {(currentStep === 4 || currentStep === "all") && (
+                        <ReviewSubmitStep />
+                    )}
                 </Form>
 
                 {/* Navigation Buttons */}
@@ -2729,7 +2017,16 @@ const AlumniRegistration = () => {
                 </div>
             </Card>
 
-            <PreviewModal />
+            <AlumniDetails
+                visible={isModalVisible}
+                onCancel={() => {
+                    setCurrentStep(4);
+                    setIsModalVisible(false)
+                }}
+                onSubmit={handleSubmit}
+                previewData={previewData}
+                loading={loading}
+            />
         </div>
     );
 };

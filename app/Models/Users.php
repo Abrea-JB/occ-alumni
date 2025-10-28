@@ -11,6 +11,11 @@ class Users extends Model
     protected $guarded = [];
     protected $table = 'users';
 
+    public function alumni()
+    {
+        return $this->belongsTo(Alumni::class);
+    }
+
 }
 
 

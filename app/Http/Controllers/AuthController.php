@@ -38,10 +38,10 @@ class AuthController extends Controller
         ];
 
 
-         if ($user->role === 'coach') {
-            $coach = Coaches::where('user_id', $user->id)->firstOrFail();
-            $responseData['coach_id'] = $coach->id; 
-        }
+        // if ($user->role === 'coach') {
+        //     $coach = Coaches::where('user_id', $user->id)->firstOrFail();
+        //     $responseData['coach_id'] = $coach->id; 
+        // }
 
         return response($responseData, 200);
     }

@@ -54,7 +54,7 @@ const Formlogin = () => {
                     justifyContent: "center",
                     minHeight: "100vh",
                     padding: "40px 20px",
-                    backgroundColor: 'rgb(4 52 116 / 89%)'
+                    backgroundColor: '#667eead1'
                 }}
             >
                 <div className="form">
@@ -173,6 +173,25 @@ const Formlogin = () => {
                             </a>
                         </p>
                     </div>
+                     {/* <div style={{ textAlign: "center", marginTop: 20 }}>
+                        <p style={{ color: "#666", margin: 0 }}>
+                            For Forth Year Students
+                            <a
+                                href="/answer-question"
+                                onClick={(e) => {
+                                    e.preventDefault();
+                                     window.location.href = "/answer-question";
+                                }}
+                                style={{
+                                    color: "#1890ff",
+                                    fontWeight: 600,
+                                    textDecoration: "none",
+                                }}
+                            >
+                                Sign up here
+                            </a>
+                        </p>
+                    </div> */}
                 </div>
             </Col>
         </Row>

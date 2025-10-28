@@ -20,7 +20,7 @@ class CreateUsersTable extends Migration
             $table->string('fname')->nullable();
              $table->string('lname')->nullable();
             $table->string('email',100)->unique();
-            $table->enum('role',['player','coach','treasurer','admin'])->default('player');
+            $table->string('role',30)->default('alumni');
             $table->timestamp('email_verified_at')->nullable();
             $table->string('password',255);
             $table->enum('status',['active','inactive'])->default('active');

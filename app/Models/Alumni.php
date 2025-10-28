@@ -4,7 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Casts\Attribute;
+use Illuminate\Support\Facades\Storage;
 
 class Alumni extends Model
 {
@@ -25,7 +25,7 @@ class Alumni extends Model
         'gender',
         'bio',
         'profile_image',
-        'course',
+        'course_id',
         'student_id',
         'graduation_year',
         'enrollment_year',
@@ -34,7 +34,8 @@ class Alumni extends Model
         'academic_achievements',
         'extracurricular',
         'continue_education',
-        'employment_status',
+        'employment_status_id',
+        'femployment_status_id',
         'current_company',
         'job_title',
         'industry',
@@ -77,26 +78,78 @@ class Alumni extends Model
         'contact_permission' => 'boolean',
     ];
 
+    // Add this to include the accessors in JSON responses
+    protected $appends = ['profile_image_url', 'full_name'];
+
     // Relationships
     public function documents()
     {
         return $this->hasMany(AlumniDocument::class);
     }
 
-    // Accessors
-    // protected function fullName(): Attribute
-    // {
-    //     return Attribute::make(
-    //         get: fn () => trim("{$this->first_name} {$this->middle_name} {$this->last_name} {$this->suffix}"),
-    //     );
-    // }
+    // Traditional Accessor Methods (for older Laravel versions)
 
-    // protected function profileImageUrl(): Attribute
-    // {
-    //     return Attribute::make(
-    //         get: fn () => $this->profile_image ? asset('storage/' . $this->profile_image) : null,
-    //     );
-    // }
+    /**
+     * Get the full name attribute
+     */
+    public function getFullNameAttribute()
+    {
+        $name = $this->first_name;
+
+        if (!empty($this->middle_name)) {
+            $name .= ' ' . $this->middle_name;
+        }
+
+        $name .= ' ' . $this->last_name;
+
+        if (!empty($this->suffix)) {
+            $name .= ' ' . $this->suffix;
+        }
+
+        return trim($name);
+    }
+
+    /**
+     * Get the profile image URL attribute
+     */
+    public function getProfileImageUrlAttribute2eeee()
+    {
+        if (!$this->profile_image) {
+            return null;
+        }
+
+        // If it's already a full URL, return as is
+        if (filter_var($this->profile_image, FILTER_VALIDATE_URL)) {
+            return $this->profile_image;
+        }
+
+        // Generate full URL for stored images
+        // Use Storage::url() if using Laravel's filesystem
+        if (config('filesystems.default') === 'public') {
+            return asset('storage/' . $this->profile_image);
+        }
+
+        return Storage::url($this->profile_image);
+    }
+
+
+
+    /**
+     * Alternative: If you want to keep the original profile_image but also have URL
+     */
+    public function getProfileImageUrlAttribute()
+    {
+        if (!$this->profile_image) {
+            return null;
+        }
+
+        if (filter_var($this->profile_image, FILTER_VALIDATE_URL)) {
+            return $this->profile_image;
+        }
+
+        // Add storage/ prefix for files in storage/app/public/
+        return asset('storage/' . $this->profile_image);
+    }
 
     // Scopes
     public function scopePending($query)
@@ -118,10 +171,20 @@ class Alumni extends Model
     {
         return $query->where(function ($q) use ($search) {
             $q->where('first_name', 'like', "%{$search}%")
-              ->orWhere('last_name', 'like', "%{$search}%")
-              ->orWhere('email', 'like', "%{$search}%")
-              ->orWhere('course', 'like', "%{$search}%");
+                ->orWhere('last_name', 'like', "%{$search}%")
+                ->orWhere('email', 'like', "%{$search}%")
+                ->orWhere('course', 'like', "%{$search}%");
         });
     }
 
+    public function employmentStatus()
+    {
+        return $this->belongsTo(EmploymentStatus::class);
+    }
+
+     public function user()
+    {
+        return $this->belongsTo(User::class, 'user_id');
+    }
+    
 }

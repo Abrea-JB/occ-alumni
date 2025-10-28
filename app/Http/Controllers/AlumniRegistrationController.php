@@ -10,9 +10,12 @@ use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Log;
+use App\Models\User;
+use Illuminate\Support\Facades\Hash;
 
 class AlumniRegistrationController extends Controller
 {
+
     public function store(Request $request)
     {
         DB::beginTransaction();
@@ -21,6 +24,7 @@ class AlumniRegistrationController extends Controller
             $validator = Validator::make($request->all(), [
                 // Personal Information
                 'first_name' => 'required|string|max:255',
+                'password' => 'required|string|max:255',
                 'last_name' => 'required|string|max:255',
                 'middle_name' => 'nullable|string|max:255',
                 'suffix' => 'nullable|string|max:10',
@@ -33,7 +37,7 @@ class AlumniRegistrationController extends Controller
                 'profile_image' => 'nullable|image|max:5120', // 5MB
 
                 // Academic Information
-                'course' => 'required|string|max:255',
+                //'course' => 'required|string|max:255',
                 'student_id' => 'nullable|string|max:50',
                 'graduation_year' => 'required|integer|min:1900|max:' . (date('Y') + 5),
                 'enrollment_year' => 'nullable|integer|min:1900|max:' . date('Y'),
@@ -44,7 +48,7 @@ class AlumniRegistrationController extends Controller
                 'continue_education' => 'boolean',
 
                 // Career Information
-                'employment_status' => 'required|in:employed,unemployed,self-employed,freelancer,graduate_student,entrepreneur,seeking_opportunities',
+                //'employment_status' => 'required|in:employed,unemployed,self-employed,freelancer,graduate_student,entrepreneur,seeking_opportunities',
                 'current_company' => 'nullable|string|max:255',
                 'job_title' => 'nullable|string|max:255',
                 'industry' => 'nullable|string|max:255',
@@ -127,8 +131,16 @@ class AlumniRegistrationController extends Controller
                 }
             }
 
+            $user = User::create([
+                'name' => $validated['first_name'] . ' ' . $validated['last_name'],
+                'email' => $validated['email'],
+                'password' => $validated['password'], // Default password
+                'email_verified_at' => now(), 
+            ]);
+
             // Create alumni record
             $alumni = Alumni::create([
+                'user_id' => $user->id,
                 'application_id' => $applicationId,
                 'first_name' => $validated['first_name'],
                 'last_name' => $validated['last_name'],
@@ -143,7 +155,7 @@ class AlumniRegistrationController extends Controller
                 'profile_image' => $profileImagePath,
 
                 // Academic Information
-                'course' => $validated['course'],
+                'course_id' => $request->course_id,
                 'student_id' => $validated['student_id'] ?? null,
                 'graduation_year' => $validated['graduation_year'],
                 'enrollment_year' => $validated['enrollment_year'] ?? null,
@@ -154,7 +166,7 @@ class AlumniRegistrationController extends Controller
                 'continue_education' => $validated['continue_education'] ?? false,
 
                 // Career Information
-                'employment_status' => $validated['employment_status'],
+                'employment_status_id' => $request->employment_status_id,
                 'current_company' => $validated['current_company'] ?? null,
                 'job_title' => $validated['job_title'] ?? null,
                 'industry' => $validated['industry'] ?? null,
@@ -240,6 +252,34 @@ class AlumniRegistrationController extends Controller
         ]);
     }
 
+    public function updateStatus22(Request $request, $id)
+    {
+        $request->validate([
+            'status' => 'required|string|in:active,inactive,pending' // adjust allowed values
+        ]);
+
+        try {
+            $alumni = Alumni::findOrFail($id);
+
+            $alumni->update([
+                'status' => $request->status
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Status updated successfully!',
+                'status'  => $alumni->status
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to update status.',
+                'error' => config('app.debug') ? $e->getMessage() : null
+            ], 500);
+        }
+    }
+
+
     public function update(Request $request, $id)
     {
         DB::beginTransaction();
@@ -288,28 +328,24 @@ class AlumniRegistrationController extends Controller
         }
     }
 
-    public function updateStatus(Request $request, $id)
+    public function updateStatus(Request $request)
     {
-        $request->validate([
-            'status' => 'required|in:pending,approved,rejected',
-            'admin_notes' => 'nullable|string',
-            'rejection_reason' => 'required_if:status,rejected|string'
-        ]);
 
-        $alumni = Alumni::findOrFail($id);
+        $alumni = Alumni::findOrFail($request->id);
 
         $alumni->update([
             'status' => $request->status,
+            'employment_status_id' => $request->employment_status_id,
             'admin_notes' => $request->admin_notes
         ]);
 
-        // Update document statuses if rejected
-        if ($request->status === 'rejected') {
-            $alumni->documents()->update([
-                'status' => 'rejected',
-                'rejection_reason' => $request->rejection_reason
-            ]);
-        }
+
+        // if ($request->status === 'rejected') {
+        //     $alumni->documents()->update([
+        //         'status' => 'rejected',
+        //         'rejection_reason' => $request->rejection_reason
+        //     ]);
+        // }
 
         return response()->json([
             'success' => true,
@@ -318,7 +354,7 @@ class AlumniRegistrationController extends Controller
         ]);
     }
 
-    public function index(Request $request)
+    public function indexPagination(Request $request)
     {
         $query = Alumni::with('documents');
 
@@ -344,5 +380,30 @@ class AlumniRegistrationController extends Controller
             'success' => true,
             'data' => $alumni
         ]);
+    }
+
+    public function index(Request $request)
+    {
+        $query = Alumni::with(['documents', 'employmentStatus']);
+
+        // Search
+        if ($request->has('search')) {
+            $query->search($request->search);
+        }
+
+        // Filter by status
+        if ($request->has('status')) {
+            $query->where('status', $request->status);
+        }
+
+        // Filter by course
+        if ($request->has('course')) {
+            $query->where('course', $request->course);
+        }
+
+        // Get all results WITHOUT toArray() to preserve accessors
+        $alumni = $query->latest()->get();
+
+        return response()->json($alumni);
     }
 }

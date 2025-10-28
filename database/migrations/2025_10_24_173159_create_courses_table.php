@@ -3,27 +3,36 @@
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\DB;
 
 class CreateCoursesTable extends Migration
 {
-    /**
-     * Run the migrations.
-     *
-     * @return void
-     */
     public function up()
     {
         Schema::create('courses', function (Blueprint $table) {
             $table->id();
+            $table->string('course_code', 10)->unique();
+            $table->string('course_name');
             $table->timestamps();
         });
+
+        // Insert sample courses
+        DB::table('courses')->insert([
+            [
+                'course_code' => 'BSIT',
+                'course_name' => 'Bachelor of Science in Information Technology'
+            ],
+            [
+                'course_code' => 'BSEd',
+                'course_name' => 'Bachelor in Teacher Education'
+            ],
+            [
+                'course_code' => 'CBA',
+                'course_name' => 'College of Business Administration'
+            ],
+        ]);
     }
 
-    /**
-     * Reverse the migrations.
-     *
-     * @return void
-     */
     public function down()
     {
         Schema::dropIfExists('courses');

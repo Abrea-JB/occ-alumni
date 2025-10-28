@@ -16,6 +16,7 @@ import {
     adminRoutes,
     authRoutes,
     noLayoutRoutes,
+    alumniRoutes,
 } from "./routes";
 
 const NonAuthmiddleware = ({
@@ -101,7 +102,15 @@ function Main() {
                                 exact
                             />
                         ))}
-
+                        {alumniRoutes.map((route, idx) => (
+                            <NonAuthmiddleware
+                                path={route.path}
+                                layout={route.layout}
+                                component={route.component}
+                                key={idx}
+                                exact
+                            />
+                        ))}
 
                         {/* Routes with no layout */}
                         {noLayoutRoutes.map((route, idx) => (

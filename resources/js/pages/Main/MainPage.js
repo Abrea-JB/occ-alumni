@@ -11,9 +11,13 @@ const MainPage = () => {
             if (!getStorage("userRole")) {
                 window.location = "/login";
             } else {
-                window.location = '/admin-dashboard';
                 if(getStorage("userRole") === 'admin'){
                     window.location = '/admin-dashboard'
+                    return
+                }
+                
+                 if(getStorage("userRole") === 'alumni'){
+                    window.location = '/profile'
                     return
                 }
             }

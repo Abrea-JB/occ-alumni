@@ -10,7 +10,7 @@ use Laravel\Passport\HasApiTokens;
 class User extends Authenticatable
 {
     use HasApiTokens, HasFactory, Notifiable; //HasApiTokens include for passwport
-    
+
 
     /**
      * The attributes that are mass assignable.
@@ -42,13 +42,14 @@ class User extends Authenticatable
         'email_verified_at' => 'datetime',
     ];
 
-    public function bookingHistory()
+
+    public function alumni()
     {
-        return $this->hasMany('App\Models\PlayerBookings','user_id');
+        return $this->hasOne(Alumni::class, 'user_id');
     }
 
-
-    
+    public function alumniQuizzes()
+    {
+        return $this->hasMany(AlumniQuizzes::class, 'user_id');
+    }
 }
-
-
