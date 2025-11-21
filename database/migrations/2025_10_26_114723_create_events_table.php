@@ -22,10 +22,10 @@ class CreateEventsTable extends Migration
             $table->decimal('price', 10, 2)->default(0);
             $table->integer('capacity');
             $table->string('organizer');
-            $table->json('tags')->nullable();
+            $table->text('tags')->nullable();
             $table->text('agenda')->nullable();
             $table->boolean('featured')->default(false);
-            $table->json('images')->nullable();
+            $table->text('images')->nullable();
             $table->foreignId('user_id')->constrained()->onDelete('cascade');
             $table->timestamps();
         });

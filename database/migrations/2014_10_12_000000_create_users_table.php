@@ -1,8 +1,9 @@
 <?php
 
-use Illuminate\Database\Migrations\Migration;
-use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Database\Migrations\Migration;
 
 class CreateUsersTable extends Migration
 {
@@ -31,12 +32,12 @@ class CreateUsersTable extends Migration
        
         DB::table('users')->insert(
             array(
-                'name' => "Shandy Padere",
-                'email' => 'occ_alumni@gmail.com',
+                'name' => "Guidance Counselor",
+                'email' => 'occ.verula.annabelle@gmail.com',
                 'role' => 'admin',
-                'password' => bcrypt('123456'),
+                'password' => bcrypt('zxyadmin03'),
                 'status' => 'active',
-            )
+            ),
         );
     }
 

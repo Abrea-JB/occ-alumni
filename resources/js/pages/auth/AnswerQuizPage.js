@@ -39,6 +39,7 @@ import {
     TeamOutlined,
     GlobalOutlined,
     EnvironmentOutlined,
+    EllipsisOutlined ,
 } from "@ant-design/icons";
 import "./AnswerQuizPage.css";
 import useTakeQuiz from "~/hooks/useTakeQuiz";
@@ -49,7 +50,7 @@ const companyInfo = {
     logo: "https://occph.com/build/assets/OCC_LOGO-BWCM4zrL.png",
     slogan: "Building tomorrow's leaders, one student at a time.",
     website: "occph.com",
-    address: "123 University Avenue, Prestige City, PC 12345",
+    address: "C. Salva St, Opol, 9016 Misamis Oriental",
 };
 
 const { Title, Text } = Typography;
@@ -61,7 +62,7 @@ const AnswerQuizPage = () => {
         data: questions = [],
         isFetching: isFetchingQuizzes,
         refetch: refetchQuizzes,
-    } = useTakeQuiz();
+    } = useTakeQuiz("rating");
 
     const [currentQuiz, setCurrentQuiz] = useState({
         title: "Behavioral Stress Test",
@@ -92,11 +93,11 @@ const AnswerQuizPage = () => {
     const questionsWithInterpretation = questions.map((question, index) => ({
         ...question,
         interpretation: {
-            1: "Very rarely / Very poorly",
-            2: "Rarely / Poorly",
+            1: "Very often / Very well",
+            2: "Often / Well",
             3: "Sometimes / Moderately",
-            4: "Often / Well",
-            5: "Very often / Very well",
+            4: "Rarely / Poorly",
+            5: "Very rarely / Very poorly",
         },
         category: "Workplace Wellness",
         sequence: index + 1,
@@ -292,35 +293,42 @@ const AnswerQuizPage = () => {
     };
 
     const getStressLevel = () => {
-        const average = getAverageRating();
-        if (average <= 2)
-            return {
-                level: "Low",
-                color: "#52c41a",
-                description: "Positive experiences",
-                icon: <SmileOutlined />,
-            };
-        if (average <= 3)
-            return {
-                level: "Moderate",
-                color: "#faad14",
-                description: "Balanced experiences",
-                icon: <UserOutlined />,
-            };
-        if (average <= 4)
-            return {
-                level: "High",
-                color: "#fa8c16",
-                description: "Challenging experiences",
-                icon: <ExclamationCircleOutlined />,
-            };
+    const average = getAverageRating();
+
+    if (average <= 2) {
+        return {
+            level: "Low",
+            color: "#52c41a",
+            description: "Positive experiences",
+            icon: <SmileOutlined />,
+            indicator: <Badge color="#52c41a" text="Low" /> // color indicator
+        };
+    } else if (average <= 3) {
+        return {
+            level: "Moderate",
+            color: "#faad14",
+            description: "Balanced experiences",
+            icon: <UserOutlined />,
+            indicator: <Badge color="#faad14" text="Moderate" />
+        };
+    } else if (average <= 4) {
+        return {
+            level: "High",
+            color: "#fa8c16",
+            description: "Challenging experiences",
+            icon: <ExclamationCircleOutlined />,
+            indicator: <Badge color="#fa8c16" text="High" />
+        };
+    } else {
         return {
             level: "Critical",
             color: "#f5222d",
             description: "Difficult experiences",
             icon: <FireOutlined />,
+            indicator: <Badge color="#f5222d" text="Critical" />
         };
-    };
+    }
+};
 
     const allRequiredAnswered = () => {
         const requiredQuestions = questionsWithInterpretation.filter(
@@ -647,7 +655,7 @@ const AnswerQuizPage = () => {
                                 questionId={currentQuestion?.id}
                             />
                         </div>
-
+                        <br></br>
                         {answers[currentQuestion?.id] && (
                             <Alert
                                 message={

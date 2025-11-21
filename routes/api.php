@@ -8,6 +8,7 @@ use App\Http\Controllers\GlobalAluminiController;
 use App\Http\Controllers\EventController;
 use App\Http\Controllers\QuestionController;
 use App\Http\Controllers\QuizController;
+use App\Http\Controllers\AdminDashboardController;
 
 
 
@@ -34,8 +35,10 @@ Route::post('/mobile/login', 'App\Http\Controllers\AuthController@login');
 Route::post('/login', 'App\Http\Controllers\AuthController@login');
 
 
-
-
+//public route
+Route::get('/check-email', [AlumniRegistrationController::class, 'checkEmail']);
+Route::get('/check-phone', [AlumniRegistrationController::class, 'checkPhone']);
+Route::get('/check-student-id', [AlumniRegistrationController::class, 'checkStudentId']);
 
 
 Route::group([
@@ -61,8 +64,11 @@ Route::group([
     Route::put('/quizzes/{quiz}/order', [QuizController::class, 'updateOrder']);
     Route::post('quiz-active', [QuizController::class, 'quizActive']);
     Route::get('/answer-quizzes', [QuizController::class, 'answerQuiz']);
+    Route::get('/quizzes-result', [QuizController::class, 'quizzesResult']);
 
 
+
+    
     Route::post('save-alumni-quiz', [QuizController::class, 'saveAlumniQuiz']);
 
     Route::prefix('alumni')->group(function () {
@@ -80,3 +86,4 @@ Route::group([
 Route::post('/alumni/register', [AlumniRegistrationController::class, 'store']);
 Route::get('/get-courses', [GlobalAluminiController::class, 'courses']);
 Route::get('/get-employee-status', [GlobalAluminiController::class, 'employeeStatus']);
+Route::get('/admin-dashboard', [AdminDashboardController::class, 'index']);

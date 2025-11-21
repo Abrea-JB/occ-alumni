@@ -29,6 +29,7 @@ import {
     Badge,
     Drawer,
     Empty,
+    Statistic,
 } from "antd";
 import {
     PlusOutlined,
@@ -58,6 +59,7 @@ import "./QuestionsPage.css";
 import axiosConfig from "~/utils/axiosConfig";
 import useQuestions from "~/hooks/useQuestions";
 import useQuiz from "~/hooks/useQuiz";
+import useQuizResult from "~/hooks/useQuizResult";
 
 const { Title, Text, Paragraph } = Typography;
 const { Option } = Select;
@@ -78,6 +80,13 @@ const AlumniQuestionsPage = () => {
         refetch: refetchQuizzes,
     } = useQuiz();
 
+    const {
+        isLoading: isLoadingQuizzesResult,
+        data: quizzes_result = [],
+        isFetching: isFetchingQuizzesResult,
+        refetch: refetchQuizzesResult,
+    } = useQuizResult();
+
     //const [questions, setQuestions] = useState([]);
     // const [quizzes, setQuizzes] = useState([]);
     const [isModalVisible, setIsModalVisible] = useState(false);
@@ -92,6 +101,11 @@ const AlumniQuestionsPage = () => {
     const [filterType, setFilterType] = useState("all");
     const [isSaving, setIsSaving] = useState(false);
     const [form] = Form.useForm();
+
+    // New state for quiz details modal
+    const [isQuizDetailsModalVisible, setIsQuizDetailsModalVisible] =
+        useState(false);
+    const [viewingQuiz, setViewingQuiz] = useState(null);
 
     // Question types
     const questionTypes = [
@@ -164,9 +178,6 @@ const AlumniQuestionsPage = () => {
 
             // Append choices only for MCQ
             if (values.type === "abcd" && values.choices) {
-                // values.choices.forEach((choice, index) => {
-                //     formData.append(`choices[${index}]`, choice);
-                // });
                 values.choices.forEach((choice, index) => {
                     formData.append(
                         `choices[${index}][interpretation]`,
@@ -191,8 +202,6 @@ const AlumniQuestionsPage = () => {
             if (response.data.success) {
                 refetch();
                 message.success("Question added successfully!");
-                // ✅ Update UI state (optional)
-                // setQuestions((prev) => [...prev, response.data.question]);
             }
 
             handleCancel(); // close modal
@@ -331,10 +340,16 @@ const AlumniQuestionsPage = () => {
         message.success("Quiz deleted successfully!");
     };
 
-    // View quiz details
+    // View quiz details in modal
     const viewQuizDetails = (quiz) => {
-        setCurrentQuiz(quiz);
-        setActiveTab("quiz-details");
+        setViewingQuiz(quiz);
+        setIsQuizDetailsModalVisible(true);
+    };
+
+    // Close quiz details modal
+    const closeQuizDetailsModal = () => {
+        setIsQuizDetailsModalVisible(false);
+        setViewingQuiz(null);
     };
 
     // Quiz columns for table
@@ -348,7 +363,7 @@ const AlumniQuestionsPage = () => {
                     <Text strong>{text}</Text>
                     <div>
                         <Text type="secondary" style={{ fontSize: "12px" }}>
-                            {record.questions.length} questions • Updated{" "}
+                            {record.questions?.length || 0} questions • Updated{" "}
                             {new Date(record.updated_at).toLocaleDateString()}
                         </Text>
                     </div>
@@ -410,19 +425,6 @@ const AlumniQuestionsPage = () => {
                             style={{ color: "#52c41a" }} // Green color
                         />
                     </Tooltip>
-                    {/* <Tooltip title="Create Similar">
-                        <Button
-                            type="text"
-                            icon={<CopyOutlined />}
-                            onClick={() =>
-                                openQuizDrawer({
-                                    ...record,
-                                    id: null,
-                                    title: `${record.title} (Copy)`,
-                                })
-                            }
-                        />
-                    </Tooltip> */}
                     <Popconfirm
                         title="Delete Quiz"
                         description="Are you sure you want to delete this quiz?"
@@ -500,6 +502,73 @@ const AlumniQuestionsPage = () => {
         },
     ];
 
+    const quizResultColumns = [
+        {
+            title: "Name",
+            dataIndex: "user",
+            key: "user",
+            render: (record) => (
+                <div>
+                    <Text strong>{record?.name}</Text>
+                </div>
+            ),
+        },
+        {
+            title: "Type",
+            dataIndex: "type",
+            key: "type",
+            width: 120,
+            render: (type, record) => {
+                const color = type === "rate" ? "blue" : "green";
+                return <Tag color={color}>{type}</Tag>;
+            },
+        },
+        {
+            title: "Created",
+            dataIndex: "createdAt",
+            key: "createdAt",
+            width: 120,
+            align: "center",
+            render: (_, record) =>
+                new Date(record.created_at).toLocaleDateString(),
+        },
+        {
+            title: "Actions",
+            key: "actions",
+            width: 200,
+            align: "center",
+            render: (_, record) => (
+                <Space size="small">
+                    <Tooltip title="View Details">
+                        <Button
+                            type="text"
+                            icon={<EyeOutlined />}
+                            onClick={() => viewQuizResultDetails(record)}
+                        />
+                    </Tooltip>
+                </Space>
+            ),
+        },
+    ];
+
+    const [
+        isQuizResultDetailsModalVisible,
+        setIsQuizResultDetailsModalVisible,
+    ] = useState(false);
+    const [viewingQuizResult, setViewingQuizResult] = useState(null);
+
+    // Add this function to view quiz result details
+    const viewQuizResultDetails = (record) => {
+        setViewingQuizResult(record);
+        setIsQuizResultDetailsModalVisible(true);
+    };
+
+    // Close quiz result details modal
+    const closeQuizResultDetailsModal = () => {
+        setIsQuizResultDetailsModalVisible(false);
+        setViewingQuizResult(null);
+    };
+
     return (
         <Layout>
             <div className="alumni-dashboard">
@@ -547,7 +616,7 @@ const AlumniQuestionsPage = () => {
                                     <OrderedListOutlined />
                                     Quizzes Result
                                     <Badge
-                                        count={quizzes.length}
+                                        count={quizzes_result.length}
                                         style={{
                                             backgroundColor: "#1890ff",
                                             marginLeft: 8,
@@ -589,18 +658,37 @@ const AlumniQuestionsPage = () => {
                             }
                             key="questions"
                         />
-                        {currentQuiz && (
-                            <TabPane
-                                tab={
-                                    <span>
-                                        <EyeOutlined />
-                                        {currentQuiz.title}
-                                    </span>
-                                }
-                                key="quiz-details"
-                            />
-                        )}
                     </Tabs>
+
+                    {activeTab === "quizzes-result" && (
+                        <div className="quizzes-tab-content">
+                            {quizzes.length === 0 ? (
+                                <Card className="empty-state-card">
+                                    <div className="empty-state-content">
+                                        <UnorderedListOutlined
+                                            style={{
+                                                fontSize: 48,
+                                                color: "#d9d9d9",
+                                            }}
+                                        />
+                                        <Title level={4}>
+                                            No Quizzes Result
+                                        </Title>
+                                    </div>
+                                </Card>
+                            ) : (
+                                <Table
+                                    columns={quizResultColumns}
+                                    dataSource={quizzes_result}
+                                    rowKey="id"
+                                    pagination={{
+                                        pageSize: 10,
+                                        showSizeChanger: true,
+                                    }}
+                                />
+                            )}
+                        </div>
+                    )}
 
                     {/* Quizzes Tab Content */}
                     {activeTab === "quizzes" && (
@@ -759,145 +847,190 @@ const AlumniQuestionsPage = () => {
                             )}
                         </div>
                     )}
+                </Card>
 
-                    {/* Quiz Details Tab Content */}
-                    {activeTab === "quiz-details" && currentQuiz && (
+                {/* Quiz Details Modal */}
+                <Modal
+                    title={
+                        <Space>
+                            <Text strong>Quiz Details</Text>
+                            {viewingQuiz && (
+                                <Badge
+                                    count={`${
+                                        viewingQuiz.questions?.length || 0
+                                    } questions`}
+                                    style={{ backgroundColor: "#1890ff" }}
+                                />
+                            )}
+                        </Space>
+                    }
+                    open={isQuizDetailsModalVisible}
+                    onCancel={closeQuizDetailsModal}
+                    width={800}
+                    footer={[
+                        <Button
+                            key="edit"
+                            onClick={() => {
+                                closeQuizDetailsModal();
+                                openQuizDrawer(viewingQuiz);
+                            }}
+                        >
+                            Edit Quiz
+                        </Button>,
+                        <Button
+                            key="preview"
+                            type="primary"
+                            icon={<FullscreenOutlined />}
+                        >
+                            Preview Quiz
+                        </Button>,
+                        <Button key="close" onClick={closeQuizDetailsModal}>
+                            Close
+                        </Button>,
+                    ]}
+                >
+                    {viewingQuiz && (
                         <div className="quiz-details-content">
                             <Card
                                 title={
                                     <Space>
-                                        <Text strong>{currentQuiz.title}</Text>
-                                        <Badge
-                                            count={`${
-                                                (Array.isArray(currentQuiz) &&
-                                                    currentQuiz?.questions
-                                                        ?.length) ||
-                                                0
-                                            } questions`}
-                                        />
-                                    </Space>
-                                }
-                                extra={
-                                    <Space>
-                                        <Button
-                                            icon={<EditOutlined />}
-                                            onClick={() =>
-                                                openQuizDrawer(currentQuiz)
+                                        <Text strong>{viewingQuiz.title}</Text>
+                                        <Tag
+                                            color={
+                                                viewingQuiz.type === "rate"
+                                                    ? "blue"
+                                                    : "green"
                                             }
                                         >
-                                            Edit Quiz
-                                        </Button>
-                                        <Button
-                                            type="primary"
-                                            icon={<FullscreenOutlined />}
-                                        >
-                                            Preview Quiz
-                                        </Button>
+                                            {viewingQuiz.type === "rate"
+                                                ? "Rating Quiz"
+                                                : "Multiple Choice Quiz"}
+                                        </Tag>
+                                        {viewingQuiz.isActive && (
+                                            <Tag color="green">Active</Tag>
+                                        )}
                                     </Space>
                                 }
+                                style={{ marginBottom: 16 }}
                             >
-                                <List
-                                    dataSource={currentQuiz.questions}
-                                    renderItem={(question, index) => (
-                                        <List.Item className="quiz-question-item">
-                                            <div className="question-number">
-                                                <Text strong>#{index + 1}</Text>
-                                            </div>
-                                            <div className="question-content">
-                                                <Space
-                                                    direction="vertical"
-                                                    style={{ width: "100%" }}
-                                                >
-                                                    <div className="question-header">
-                                                        <Space>
-                                                            <Tag
-                                                                color={
-                                                                    question.type ===
-                                                                    "rate"
-                                                                        ? "blue"
-                                                                        : "green"
-                                                                }
-                                                            >
-                                                                {question.type ===
-                                                                "rate"
-                                                                    ? "Rating"
-                                                                    : "Multiple Choice"}
-                                                            </Tag>
-                                                            {question.required && (
-                                                                <Tag color="red">
-                                                                    Required
-                                                                </Tag>
-                                                            )}
-                                                        </Space>
-                                                    </div>
-                                                    <Text strong>
-                                                        {question.question}
-                                                    </Text>
-                                                    {question.description && (
-                                                        <Text type="secondary">
-                                                            {
-                                                                question.description
-                                                            }
-                                                        </Text>
-                                                    )}
-                                                    {question.type === "abcd" &&
-                                                        question.choices && (
-                                                            <div className="choices-preview">
-                                                                <Text strong>
-                                                                    Options:
-                                                                </Text>
-                                                                <Row
-                                                                    gutter={[
-                                                                        16, 16,
-                                                                    ]}
-                                                                    style={{
-                                                                        marginTop: 8,
-                                                                    }}
-                                                                >
-                                                                    {question.choices.map(
-                                                                        (
-                                                                            choice,
-                                                                            choiceIndex
-                                                                        ) => (
-                                                                            <Col
-                                                                                span={
-                                                                                    12
-                                                                                }
-                                                                                key={
-                                                                                    choiceIndex
-                                                                                }
-                                                                            >
-                                                                                <Card size="small">
-                                                                                    <Space>
-                                                                                        <Text
-                                                                                            strong
-                                                                                        >
-                                                                                            {
-                                                                                                choice.letter
-                                                                                            }
-                                                                                        </Text>
-                                                                                        <Text>
-                                                                                            {
-                                                                                                choice.interpretation
-                                                                                            }
-                                                                                        </Text>
-                                                                                    </Space>
-                                                                                </Card>
-                                                                            </Col>
-                                                                        )
-                                                                    )}
-                                                                </Row>
-                                                            </div>
-                                                        )}
-                                                </Space>
-                                            </div>
-                                        </List.Item>
-                                    )}
-                                />
+                                <Space
+                                    direction="vertical"
+                                    style={{ width: "100%" }}
+                                >
+                                    <Text>
+                                        <strong>Created:</strong>{" "}
+                                        {new Date(
+                                            viewingQuiz.created_at
+                                        ).toLocaleDateString()}
+                                    </Text>
+                                    <Text>
+                                        <strong>Updated:</strong>{" "}
+                                        {new Date(
+                                            viewingQuiz.updated_at
+                                        ).toLocaleDateString()}
+                                    </Text>
+                                </Space>
                             </Card>
+
+                            <List
+                                dataSource={viewingQuiz.questions || []}
+                                renderItem={(question, index) => (
+                                    <List.Item className="quiz-question-item">
+                                        <div className="question-number">
+                                            <Text strong>#{index + 1}</Text>
+                                        </div>
+                                        <div className="question-content">
+                                            <Space
+                                                direction="vertical"
+                                                style={{ width: "100%" }}
+                                            >
+                                                <div className="question-header">
+                                                    <Space>
+                                                        <Tag
+                                                            color={
+                                                                question.type ===
+                                                                "rate"
+                                                                    ? "blue"
+                                                                    : "green"
+                                                            }
+                                                        >
+                                                            {question.type ===
+                                                            "rate"
+                                                                ? "Rating"
+                                                                : "Multiple Choice"}
+                                                        </Tag>
+                                                        {question.required && (
+                                                            <Tag color="red">
+                                                                Required
+                                                            </Tag>
+                                                        )}
+                                                    </Space>
+                                                </div>
+                                                <Text strong>
+                                                    {question.question}
+                                                </Text>
+                                                {question.description && (
+                                                    <Text type="secondary">
+                                                        {question.description}
+                                                    </Text>
+                                                )}
+                                                {question.type === "abcd" &&
+                                                    question.choices && (
+                                                        <div className="choices-preview">
+                                                            <Text strong>
+                                                                Options:
+                                                            </Text>
+                                                            <Row
+                                                                gutter={[
+                                                                    16, 16,
+                                                                ]}
+                                                                style={{
+                                                                    marginTop: 8,
+                                                                }}
+                                                            >
+                                                                {question.choices.map(
+                                                                    (
+                                                                        choice,
+                                                                        choiceIndex
+                                                                    ) => (
+                                                                        <Col
+                                                                            span={
+                                                                                12
+                                                                            }
+                                                                            key={
+                                                                                choiceIndex
+                                                                            }
+                                                                        >
+                                                                            <Card size="small">
+                                                                                <Space>
+                                                                                    <Text
+                                                                                        strong
+                                                                                    >
+                                                                                        {
+                                                                                            choice.letter
+                                                                                        }
+                                                                                    </Text>
+                                                                                    <Text>
+                                                                                        {
+                                                                                            choice.interpretation
+                                                                                        }
+                                                                                    </Text>
+                                                                                </Space>
+                                                                            </Card>
+                                                                        </Col>
+                                                                    )
+                                                                )}
+                                                            </Row>
+                                                        </div>
+                                                    )}
+                                            </Space>
+                                        </div>
+                                    </List.Item>
+                                )}
+                            />
                         </div>
                     )}
-                </Card>
+                </Modal>
 
                 {/* Quiz Creation/Editing Drawer */}
                 <Drawer
@@ -1103,7 +1236,7 @@ const AlumniQuestionsPage = () => {
                                                                                 />
                                                                             </div>
                                                                             <Text
-                                                                                type="secondary"
+                                                                                strong
                                                                                 style={{
                                                                                     display:
                                                                                         "block",
@@ -1111,9 +1244,22 @@ const AlumniQuestionsPage = () => {
                                                                                 }}
                                                                             >
                                                                                 {
-                                                                                    question.description
+                                                                                    question.question
                                                                                 }
                                                                             </Text>
+                                                                            {question.description && (
+                                                                                <Text
+                                                                                    type="secondary"
+                                                                                    style={{
+                                                                                        display:
+                                                                                            "block",
+                                                                                        marginTop: 4,
+                                                                                    }}
+                                                                                >
+                                                                                    {
+                                                                                        question.description
+                                                                                    }
+                                                                                </Text>
                                                                             )}
                                                                             {question.type ===
                                                                                 "abcd" &&
@@ -1437,6 +1583,370 @@ const AlumniQuestionsPage = () => {
                             </Button>
                         </div>
                     </Form>
+                </Modal>
+
+                {/* Quiz Result Details Modal */}
+                <Modal
+                    title={
+                        <Space>
+                            <Text strong>Quiz Result Details</Text>
+                            {viewingQuizResult && (
+                                <Badge
+                                    count={`${
+                                        viewingQuizResult.questions?.length || 0
+                                    } questions`}
+                                    style={{ backgroundColor: "#1890ff" }}
+                                />
+                            )}
+                        </Space>
+                    }
+                    open={isQuizResultDetailsModalVisible}
+                    onCancel={closeQuizResultDetailsModal}
+                    width={900}
+                    footer={[
+                        <Button
+                            key="close"
+                            onClick={closeQuizResultDetailsModal}
+                        >
+                            Close
+                        </Button>,
+                    ]}
+                >
+                    {viewingQuizResult && (
+                        <div className="quiz-result-details-content">
+                            {/* User Information */}
+                            <Card
+                                title="User Information"
+                                style={{ marginBottom: 16 }}
+                            >
+                                <Space
+                                    direction="vertical"
+                                    style={{ width: "100%" }}
+                                >
+                                    <Text strong>
+                                        Name:{" "}
+                                        {viewingQuizResult.user?.name || "N/A"}
+                                    </Text>
+                                    <Text type="secondary">
+                                        Submitted:{" "}
+                                        {new Date(
+                                            viewingQuizResult.created_at
+                                        ).toLocaleDateString()}
+                                    </Text>
+                                    <Tag
+                                        color={
+                                            viewingQuizResult.type === "rate"
+                                                ? "blue"
+                                                : "green"
+                                        }
+                                    >
+                                        {viewingQuizResult.type === "rate"
+                                            ? "Rating Quiz"
+                                            : "Multiple Choice Quiz"}
+                                    </Tag>
+                                </Space>
+                            </Card>
+
+                            {/* Questions and Answers */}
+                            <Card title="Questions & Answers">
+                                <List
+                                    dataSource={
+                                        viewingQuizResult.questions || []
+                                    }
+                                    renderItem={(question, index) => (
+                                        <List.Item className="quiz-result-question-item">
+                                            <div className="question-number">
+                                                <Text strong>#{index + 1}</Text>
+                                            </div>
+                                            <div
+                                                className="question-content"
+                                                style={{ width: "100%" }}
+                                            >
+                                                <Space
+                                                    direction="vertical"
+                                                    style={{ width: "100%" }}
+                                                >
+                                                    <div className="question-header">
+                                                        <Space>
+                                                            <Tag
+                                                                color={
+                                                                    question.type ===
+                                                                    "rate"
+                                                                        ? "blue"
+                                                                        : "green"
+                                                                }
+                                                            >
+                                                                {question.type ===
+                                                                "rate"
+                                                                    ? "Rating"
+                                                                    : "Multiple Choice"}
+                                                            </Tag>
+                                                            {question.required && (
+                                                                <Tag color="red">
+                                                                    Required
+                                                                </Tag>
+                                                            )}
+                                                        </Space>
+                                                    </div>
+
+                                                    <Text strong>
+                                                        {question.question}
+                                                    </Text>
+
+                                                    {question.description && (
+                                                        <Text type="secondary">
+                                                            {
+                                                                question.description
+                                                            }
+                                                        </Text>
+                                                    )}
+
+                                                    {/* User's Answer */}
+                                                    <div
+                                                        className="user-answer-section"
+                                                        style={{
+                                                            marginTop: 12,
+                                                            padding: 12,
+                                                            backgroundColor:
+                                                                "#f5f5f5",
+                                                            borderRadius: 6,
+                                                        }}
+                                                    >
+                                                        <Text strong>
+                                                            User's Answer:{" "}
+                                                        </Text>
+                                                        {question.type ===
+                                                        "rate" ? (
+                                                            <Space>
+                                                                <Rate
+                                                                    value={
+                                                                        parseInt(
+                                                                            question
+                                                                                .pivot
+                                                                                ?.answer
+                                                                        ) || 0
+                                                                    }
+                                                                    disabled
+                                                                    style={{
+                                                                        marginLeft: 8,
+                                                                    }}
+                                                                />
+                                                                <Text>
+                                                                    (
+                                                                    {question
+                                                                        .pivot
+                                                                        ?.answer ||
+                                                                        "No answer"}
+                                                                    )
+                                                                </Text>
+                                                            </Space>
+                                                        ) : (
+                                                            <Space>
+                                                                <Text
+                                                                    strong
+                                                                    style={{
+                                                                        color: "#1890ff",
+                                                                    }}
+                                                                >
+                                                                    {question
+                                                                        .pivot
+                                                                        ?.answer ||
+                                                                        "No answer"}
+                                                                </Text>
+                                                                {question.choices_with_urls && (
+                                                                    <Text>
+                                                                        -{" "}
+                                                                        {question.choices_with_urls.find(
+                                                                            (
+                                                                                choice
+                                                                            ) =>
+                                                                                choice.letter ===
+                                                                                question
+                                                                                    .pivot
+                                                                                    ?.answer
+                                                                        )
+                                                                            // ?.interpretation ||
+                                                                            // "Interpretation not available"
+                                                                            
+                                                                            }
+                                                                    </Text>
+                                                                )}
+                                                            </Space>
+                                                        )}
+                                                    </div>
+
+                                                    {/* Choices Preview for Multiple Choice */}
+                                                    {question.type === "abcd" &&
+                                                        question.choices_with_urls && (
+                                                            <div
+                                                                className="choices-preview"
+                                                                style={{
+                                                                    marginTop: 12,
+                                                                }}
+                                                            >
+                                                                <Text strong>
+                                                                    Available
+                                                                    Options:
+                                                                </Text>
+                                                                <Row
+                                                                    gutter={[
+                                                                        16, 16,
+                                                                    ]}
+                                                                    style={{
+                                                                        marginTop: 8,
+                                                                    }}
+                                                                >
+                                                                    {question.choices_with_urls.map(
+                                                                        (
+                                                                            choice,
+                                                                            choiceIndex
+                                                                        ) => (
+                                                                            <Col
+                                                                                span={
+                                                                                    12
+                                                                                }
+                                                                                key={
+                                                                                    choiceIndex
+                                                                                }
+                                                                            >
+                                                                                <Card
+                                                                                    size="small"
+                                                                                    style={{
+                                                                                        border:
+                                                                                            choice.letter ===
+                                                                                            question
+                                                                                                .pivot
+                                                                                                ?.answer
+                                                                                                ? "2px solid #1890ff"
+                                                                                                : "1px solid #d9d9d9",
+                                                                                    }}
+                                                                                >
+                                                                                    <Space align="start">
+                                                                                        <Badge
+                                                                                            count={
+                                                                                                choice.letter
+                                                                                            }
+                                                                                            style={{
+                                                                                                backgroundColor:
+                                                                                                    choice.letter ===
+                                                                                                    question
+                                                                                                        .pivot
+                                                                                                        ?.answer
+                                                                                                        ? "#1890ff"
+                                                                                                        : "#d9d9d9",
+                                                                                            }}
+                                                                                        />
+                                                                                        <Space
+                                                                                            direction="vertical"
+                                                                                            size={
+                                                                                                0
+                                                                                            }
+                                                                                        >
+                                                                                            {choice.image && (
+                                                                                                <Image
+                                                                                                    width={
+                                                                                                        60
+                                                                                                    }
+                                                                                                    height={
+                                                                                                        60
+                                                                                                    }
+                                                                                                    src={
+                                                                                                        choice.image
+                                                                                                    }
+                                                                                                    alt={
+                                                                                                        choice.interpretation
+                                                                                                    }
+                                                                                                    style={{
+                                                                                                        objectFit:
+                                                                                                            "cover",
+                                                                                                        borderRadius: 4,
+                                                                                                    }}
+                                                                                                    fallback="https://via.placeholder.com/60?text=No+Image"
+                                                                                                />
+                                                                                            )}
+                                                                                            <Text
+                                                                                                style={{
+                                                                                                    fontSize:
+                                                                                                        "12px",
+                                                                                                }}
+                                                                                            >
+                                                                                                {
+                                                                                                    choice.interpretation
+                                                                                                }
+                                                                                            </Text>
+                                                                                        </Space>
+                                                                                    </Space>
+                                                                                </Card>
+                                                                            </Col>
+                                                                        )
+                                                                    )}
+                                                                </Row>
+                                                            </div>
+                                                        )}
+
+                                                    {/* Rating Scale Info */}
+                                                    {question.type ===
+                                                        "rate" && (
+                                                        <div
+                                                            className="rating-info"
+                                                            style={{
+                                                                marginTop: 8,
+                                                            }}
+                                                        >
+                                                            <Text
+                                                                type="secondary"
+                                                                style={{
+                                                                    fontSize:
+                                                                        "12px",
+                                                                }}
+                                                            >
+                                                                Scale: 1
+                                                                (Lowest) - 5
+                                                                (Highest)
+                                                            </Text>
+                                                        </div>
+                                                    )}
+                                                </Space>
+                                            </div>
+                                        </List.Item>
+                                    )}
+                                />
+                            </Card>
+
+                            {/* Summary Stats */}
+                            <Card title="Summary" style={{ marginTop: 16 }}>
+                                <Row gutter={16}>
+                                    <Col span={8}>
+                                        <Statistic
+                                            title="Total Questions"
+                                            value={
+                                                viewingQuizResult.questions
+                                                    ?.length || 0
+                                            }
+                                        />
+                                    </Col>
+                                    <Col span={8}>
+                                        <Statistic
+                                            title="Required Questions"
+                                            value={
+                                                viewingQuizResult.questions?.filter(
+                                                    (q) => q.required
+                                                )?.length || 0
+                                            }
+                                        />
+                                    </Col>
+                                    <Col span={8}>
+                                        <Statistic
+                                            title="Completion Date"
+                                            value={new Date(
+                                                viewingQuizResult.created_at
+                                            ).toLocaleDateString()}
+                                        />
+                                    </Col>
+                                </Row>
+                            </Card>
+                        </div>
+                    )}
                 </Modal>
             </div>
         </Layout>

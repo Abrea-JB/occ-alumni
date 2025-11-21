@@ -27,8 +27,12 @@ class CreateCoursesTable extends Migration
                 'course_name' => 'Bachelor in Teacher Education'
             ],
             [
-                'course_code' => 'CBA',
-                'course_name' => 'College of Business Administration'
+                'course_code' => 'BEED',
+                'course_name' => 'Bachelor of elementary and education'
+            ],
+                [
+                'course_code' => 'BSBA',
+                'course_name' => 'Bachelor of Science and business administration'
             ],
         ]);
     }

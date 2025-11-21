@@ -14,14 +14,14 @@ return new class extends Migration
             $table->unsignedBigInteger('employment_status_id')->nullable();
             $table->unsignedBigInteger('femployment_status_id')->nullable();
             $table->unsignedBigInteger('course_id')->nullable();
-            $table->string('application_id')->unique();
+            $table->string('application_id',30)->unique();
 
             // Personal Information
             $table->string('first_name');
             $table->string('last_name');
             $table->string('middle_name')->nullable();
             $table->string('suffix')->nullable();
-            $table->string('email')->unique();
+            $table->string('email',100)->unique();
             $table->string('phone');
             $table->text('address');
             $table->date('birth_date');
@@ -34,7 +34,9 @@ return new class extends Migration
             $table->string('student_id')->nullable();
             $table->integer('graduation_year');
             $table->integer('enrollment_year')->nullable();
-            $table->json('honors')->nullable();
+            //$table->json('honors')->nullable();
+            $table->text('honors')->nullable();
+            
             $table->string('thesis_title')->nullable();
             $table->text('academic_achievements')->nullable();
             $table->text('extracurricular')->nullable();
@@ -57,13 +59,13 @@ return new class extends Migration
             $table->string('twitter')->nullable();
 
             // Skills
-            $table->json('technical_skills')->nullable();
-            $table->json('soft_skills')->nullable();
-            $table->json('certifications')->nullable();
-            $table->json('languages')->nullable();
+            $table->text('technical_skills')->nullable();
+            $table->text('soft_skills')->nullable();
+            $table->text('certifications')->nullable();
+            $table->text('languages')->nullable();
             $table->text('professional_interests')->nullable();
             $table->text('hobbies')->nullable();
-            $table->json('volunteer_interests')->nullable();
+            $table->text('volunteer_interests')->nullable();
             $table->boolean('willing_to_mentor')->default(false);
 
             // Agreements

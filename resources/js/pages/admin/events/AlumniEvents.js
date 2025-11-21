@@ -98,6 +98,7 @@ import "./AlumniEvents.css";
 import { Layout, Breadcrumb } from "~/components";
 import axiosConfig from "~/utils/axiosConfig";
 import useEvents from "~/hooks/useEvents";
+import secureLocalStorage from "react-secure-storage";
 
 const { Title, Text, Paragraph } = Typography;
 const { Option } = Select;
@@ -518,7 +519,7 @@ const EventDetailsModal = ({ event, visible, onClose, onEdit }) => {
                                 <Progress
                                     percent={Math.round(
                                         (event.registered / event.capacity) *
-                                            100
+                                        100
                                     )}
                                     status="active"
                                     strokeColor={{
@@ -1098,19 +1099,27 @@ const EventCard = ({ event, showEventDetails }) => {
                     </div>
                 }
                 actions={[
+                    // Everyone can see
                     <Tooltip title="View Details" key="view">
                         <EyeOutlined onClick={() => showEventDetails(event)} />
                     </Tooltip>,
-                    <Tooltip title="Register" key="register">
-                        <UserOutlined />
-                    </Tooltip>,
-                    <Tooltip title="Share" key="share">
-                        <ShareAltOutlined />
-                    </Tooltip>,
-                    <Dropdown overlay={menu} trigger={["click"]} key="more">
-                        <MoreOutlined />
-                    </Dropdown>,
+
+                    // Admin only
+                    ...(secureLocalStorage.getItem("userRole") === "admin"
+                        ? [
+                            <Tooltip title="Register" key="register">
+                                <UserOutlined />
+                            </Tooltip>,
+                            <Tooltip title="Share" key="share">
+                                <ShareAltOutlined />
+                            </Tooltip>,
+                            <Dropdown overlay={menu} trigger={["click"]} key="more">
+                                <MoreOutlined />
+                            </Dropdown>,
+                        ]
+                        : []),
                 ]}
+
             >
                 <div className="event-card-content">
                     <div className="event-header">
@@ -1145,7 +1154,8 @@ const EventCard = ({ event, showEventDetails }) => {
                         <div className="detail-item">
                             <ClockCircleOutlined />
                             <Text>
-                                {event.start_time} - {event.end_time}
+                                {moment(event.start_time, "HH:mm").format("hh:mm A")} -
+                                {moment(event.end_time, "HH:mm").format("hh:mm A")}
                             </Text>
                         </div>
                         <div className="detail-item">
@@ -1224,6 +1234,7 @@ const AlumniEvents = () => {
     const [selectedEvent, setSelectedEvent] = useState(null);
     const [form] = Form.useForm();
     const [currentStep, setCurrentStep] = useState(0);
+    const role = secureLocalStorage.getItem("userRole");
 
     // Filter states
     const [filters, setFilters] = useState({
@@ -1644,14 +1655,15 @@ const AlumniEvents = () => {
                         </div>
 
                         <div className="controls-right">
-                            <Button
-                                type="primary"
-                                icon={<PlusOutlined />}
-                                onClick={showCreateModal}
-                                size="large"
-                            >
-                                Create Event
-                            </Button>
+                            {role === "admin" && (
+                                <Button
+                                    type="primary"
+                                    icon={<PlusOutlined />}
+                                    onClick={showCreateModal}
+                                    size="large"
+                                >
+                                    Create Event
+                                </Button>)}
                         </div>
                     </div>
                 </Card>
@@ -1893,7 +1905,8 @@ const AlumniEvents = () => {
                                                             width: "100%",
                                                         }}
                                                         size="large"
-                                                        format="HH:mm"
+                                                        format="hh:mm A"   // <-- 12-hour format with AM/PM
+                                                        use12Hours          // <-- Enables AM/PM selector
                                                         className="form-timepicker"
                                                     />
                                                 </Form.Item>
@@ -1932,6 +1945,12 @@ const AlumniEvents = () => {
                                                 <Form.Item
                                                     name="price"
                                                     label="Ticket Price (₱)"
+                                                    rules={[
+                                                        {
+                                                            required: true,
+                                                            message: "Please enter ticket price",
+                                                        },
+                                                    ]}
                                                 >
                                                     <InputNumber
                                                         style={{
@@ -1999,10 +2018,16 @@ const AlumniEvents = () => {
                                                 </Form.Item>
                                             </Col>
                                         </Row>
-
                                         <Form.Item
                                             name="tags"
                                             label="Event Tags"
+                                            rules={[
+                                                {
+                                                    type: "array",
+                                                    required: true,
+                                                    message: "Please add at least one tag",
+                                                },
+                                            ]}
                                         >
                                             <Select
                                                 mode="tags"
@@ -2013,9 +2038,17 @@ const AlumniEvents = () => {
                                             />
                                         </Form.Item>
 
+
+
                                         <Form.Item
                                             name="agenda"
                                             label="Event Agenda"
+                                            rules={[
+                                                {
+                                                    required: true,
+                                                    message: "Please enter the event agenda",
+                                                },
+                                            ]}
                                         >
                                             <TextArea
                                                 rows={4}
@@ -2023,6 +2056,7 @@ const AlumniEvents = () => {
                                                 className="form-textarea"
                                             />
                                         </Form.Item>
+
                                     </div>
                                 </div>
 

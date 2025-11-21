@@ -13,7 +13,7 @@ class CreateQuizzesTable extends Migration
             $table->id();
             $table->string('title');
             $table->string('type',30);
-            $table->integer('isActive',1);
+            $table->boolean('isActive')->default(1);
             $table->text('description')->nullable();
             $table->foreignId('user_id')->constrained()->onDelete('cascade');
             $table->timestamps();

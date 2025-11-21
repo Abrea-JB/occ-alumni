@@ -14,7 +14,7 @@ class CreateQuestionsTable extends Migration
             $table->text('question');
             $table->text('description')->nullable();
             $table->boolean('required')->default(true);
-            $table->json('choices')->nullable(); // For ABCD type: {letter, image, interpretation}
+            $table->text('choices')->nullable(); // For ABCD type: {letter, image, interpretation}
             $table->foreignId('user_id')->constrained()->onDelete('cascade');
             $table->timestamps();
         });

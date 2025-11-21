@@ -50,6 +50,7 @@ import {
     ExclamationCircleOutlined,
     BookOutlined,
     DollarOutlined,
+    BellOutlined,
 } from "@ant-design/icons";
 import moment from "moment";
 import "./AlumniList.css";
@@ -76,7 +77,7 @@ const employmentStatusOptions = [
     { value: "employed", label: "Employed", color: "green" },
     { value: "unemployed", label: "Unemployed", color: "red" },
     { value: "under_employed", label: "Under Employed", color: "orange" },
-    { value: "graduate_school", label: "Graduate School", color: "blue" },
+    // { value: "graduate_school", label: "Graduate School", color: "blue" },
 ];
 
 const statusOptions = [
@@ -301,6 +302,15 @@ const StatusUpdateModal = ({
 
 const AlumniCard = ({ alumnus, handleView, handleStatusUpdate }) => {
     const role = secureLocalStorage.getItem("userRole");
+
+ const isRecentlyUpdated = useMemo(() => {
+        if (!alumnus.updated_at) return false;
+        const updated = moment(alumnus.updated_at);
+        const now = moment();
+    
+        return now.diff(updated, 'seconds') < 30 && alumnus.created_at !== alumnus.updated_at;
+    }, [alumnus.updated_at, alumnus.created_at]);
+
     return (
         <Badge.Ribbon
             text="Featured"
@@ -344,6 +354,14 @@ const AlumniCard = ({ alumnus, handleView, handleStatusUpdate }) => {
                                 {alumnus.major} • Class of{" "}
                                 {alumnus.graduation_year}
                             </Text>
+
+                             {role === "admin" && isRecentlyUpdated && (
+                                <div style={{ marginTop: 8 }}>
+                                    <Tag color="blue" icon={<BellOutlined />}>
+                                        New Updated Information
+                                    </Tag>
+                                </div>
+                            )}
                         </div>
                     </div>
 
@@ -458,7 +476,7 @@ const AlumniList = () => {
     const [sortBy, setSortBy] = useState("name-asc");
 
     const handleView = (values) => {
-        const previewData = {
+       const previewData = {
             // Personal Information
             first_name: values.first_name,
             last_name: values.last_name,
@@ -473,30 +491,30 @@ const AlumniList = () => {
 
             // Academic Information
             course_id: values.course_id,
-            studentId: values.studentId,
-            graduationYear: values.graduationYear,
-            enrollmentYear: values.enrollmentYear,
+            student_id: values.student_id,
+            graduation_year: values.graduation_year,
+            enrollment_year: values.enrollment_year,
             honors:
                 typeof values.honors === "string" && values.honors.trim() !== ""
                     ? JSON.parse(values.honors)
                     : Array.isArray(values.honors)
                     ? values.honors
                     : [],
-            thesisTitle: values.thesisTitle,
-            academicAchievements: values.academicAchievements,
+            thesis_title: values.thesis_title,
+            academic_achievements: values.academic_achievements,
             extracurricular: values.extracurricular,
-            continueEducation: values.continueEducation,
+            continue_education: values.continue_education,
 
             // Career Information
             employment_status_id: values.employment_status_id,
-            currentCompany: values.currentCompany,
-            jobTitle: values.jobTitle,
+            current_company: values.current_company,
+            job_title: values.job_title,
             industry: values.industry,
-            yearsExperience: values.yearsExperience,
-            salaryRange: values.salaryRange,
-            workLocation: values.workLocation,
-            careerGoals: values.careerGoals,
-            previousCompanies: values.previousCompanies,
+            years_experience: values.years_experience,
+            salary_range: values.salary_range,
+            work_location: values.work_location,
+            career_goals: values.career_goals,
+            previous_companies: values.previous_companies,
 
             // Social media
             linkedin: values.linkedin,
@@ -517,6 +535,9 @@ const AlumniList = () => {
         setPreviewData(previewData);
         setIsModalVisible(true);
     };
+
+
+
 
     const handleStatusUpdate = (alumnus, status) => {
         setSelectedAlumnus(alumnus);
