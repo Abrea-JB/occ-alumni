@@ -1,873 +1,788 @@
-import React, { useState, useMemo } from "react";
-import {
-    Card,
-    Row,
-    Col,
-    Button,
-    Input,
-    Select,
-    Typography,
-    Space,
-    Divider,
-    Tabs,
-    Form,
-    Radio,
-    Rate,
-    Upload,
-    message,
-    Modal,
-    List,
-    Tag,
-    Switch,
-    InputNumber,
-    Avatar,
-    Tooltip,
-    Popconfirm,
-    Image,
-    Table,
-    Checkbox,
-    Badge,
-    Drawer,
-    Empty,
-    Statistic,
-} from "antd";
-import {
-    PlusOutlined,
-    EditOutlined,
-    DeleteOutlined,
-    EyeOutlined,
-    CopyOutlined,
-    UploadOutlined,
-    PictureOutlined,
-    StarOutlined,
-    UnorderedListOutlined,
-    QuestionCircleOutlined,
-    SaveOutlined,
-    CloseOutlined,
-    SearchOutlined,
-    FilterOutlined,
-    MenuOutlined,
-    ArrowLeftOutlined,
-    ArrowRightOutlined,
-    FullscreenOutlined,
-    CheckSquareOutlined,
-    OrderedListOutlined,
-} from "@ant-design/icons";
-import { Layout } from "~/components";
-import { DragDropContext, Droppable, Draggable } from "react-beautiful-dnd";
-import "./QuestionsPage.css";
-import axiosConfig from "~/utils/axiosConfig";
-import useQuestions from "~/hooks/useQuestions";
-import useQuiz from "~/hooks/useQuiz";
-import useQuizResult from "~/hooks/useQuizResult";
+"use client"
 
-const { Title, Text, Paragraph } = Typography;
-const { Option } = Select;
-const { TabPane } = Tabs;
-const { TextArea } = Input;
+import { useState, useMemo } from "react"
+import {
+  Card,
+  Row,
+  Col,
+  Button,
+  Input,
+  Select,
+  Typography,
+  Space,
+  Tabs,
+  Form,
+  Radio,
+  Rate,
+  Upload,
+  message,
+  Modal,
+  List,
+  Tag,
+  Switch,
+  Tooltip,
+  Popconfirm,
+  Image,
+  Table,
+  Badge,
+  Drawer,
+  Empty,
+  Statistic,
+} from "antd"
+import {
+  PlusOutlined,
+  EditOutlined,
+  DeleteOutlined,
+  EyeOutlined,
+  PictureOutlined,
+  StarOutlined,
+  UnorderedListOutlined,
+  QuestionCircleOutlined,
+  SearchOutlined,
+  MenuOutlined,
+  FullscreenOutlined,
+  CheckSquareOutlined,
+  OrderedListOutlined,
+} from "@ant-design/icons"
+import { Layout } from "~/components"
+import { DragDropContext, Droppable, Draggable } from "react-beautiful-dnd"
+import "./QuestionsPage.css"
+import axiosConfig from "~/utils/axiosConfig"
+import useQuestions from "~/hooks/useQuestions"
+import useQuiz from "~/hooks/useQuiz"
+import useQuizResult from "~/hooks/useQuizResult"
+
+const { Title, Text, Paragraph } = Typography
+const { Option } = Select
+const { TabPane } = Tabs
+const { TextArea } = Input
 
 const AlumniQuestionsPage = () => {
-    const {
-        isLoading,
-        data: questions = [],
-        isFetching,
-        refetch,
-    } = useQuestions();
-    const {
-        isLoading: isLoadingQuizzes,
-        data: quizzes = [],
-        isFetching: isFetchingQuizzes,
-        refetch: refetchQuizzes,
-    } = useQuiz();
+  const { isLoading, data: questions = [], isFetching, refetch } = useQuestions()
+  const {
+    isLoading: isLoadingQuizzes,
+    data: quizzes = [],
+    isFetching: isFetchingQuizzes,
+    refetch: refetchQuizzes,
+  } = useQuiz()
 
-    const {
-        isLoading: isLoadingQuizzesResult,
-        data: quizzes_result = [],
-        isFetching: isFetchingQuizzesResult,
-        refetch: refetchQuizzesResult,
-    } = useQuizResult();
+  const {
+    isLoading: isLoadingQuizzesResult,
+    data: quizzes_result = [],
+    isFetching: isFetchingQuizzesResult,
+    refetch: refetchQuizzesResult,
+  } = useQuizResult()
 
-    //const [questions, setQuestions] = useState([]);
-    // const [quizzes, setQuizzes] = useState([]);
-    const [isModalVisible, setIsModalVisible] = useState(false);
-    const [editingQuestion, setEditingQuestion] = useState(null);
-    const [activeTab, setActiveTab] = useState("quizzes-result");
-    const [selectedQuestions, setSelectedQuestions] = useState([]);
-    const [isQuizDrawerVisible, setIsQuizDrawerVisible] = useState(false);
-    const [currentQuiz, setCurrentQuiz] = useState(null);
-    const [quizQuestions, setQuizQuestions] = useState([]);
-    const [searchTerm, setSearchTerm] = useState("");
-    const [title, setTitle] = useState("");
-    const [filterType, setFilterType] = useState("all");
-    const [isSaving, setIsSaving] = useState(false);
-    const [form] = Form.useForm();
+  //const [questions, setQuestions] = useState([]);
+  // const [quizzes, setQuizzes] = useState([]);
+  const [isModalVisible, setIsModalVisible] = useState(false)
+  const [editingQuestion, setEditingQuestion] = useState(null)
+  const [activeTab, setActiveTab] = useState("quizzes-result")
+  const [selectedQuestions, setSelectedQuestions] = useState([])
+  const [isQuizDrawerVisible, setIsQuizDrawerVisible] = useState(false)
+  const [currentQuiz, setCurrentQuiz] = useState(null)
+  const [quizQuestions, setQuizQuestions] = useState([])
+  const [searchTerm, setSearchTerm] = useState("")
+  const [title, setTitle] = useState("")
+  const [filterType, setFilterType] = useState("all")
+  const [isSaving, setIsSaving] = useState(false)
+  const [form] = Form.useForm()
 
-    // New state for quiz details modal
-    const [isQuizDetailsModalVisible, setIsQuizDetailsModalVisible] =
-        useState(false);
-    const [viewingQuiz, setViewingQuiz] = useState(null);
+  // New state for quiz details modal
+  const [isQuizDetailsModalVisible, setIsQuizDetailsModalVisible] = useState(false)
+  const [viewingQuiz, setViewingQuiz] = useState(null)
 
-    // Question types
-    const questionTypes = [
-        { value: "rate", label: "Rating Question", icon: <StarOutlined /> },
-        {
-            value: "abcd",
-            label: "Multiple Choice (ABCD)",
-            icon: <UnorderedListOutlined />,
-        },
-    ];
+  // Question types
+  const questionTypes = [
+    { value: "rate", label: "Rating Question", icon: <StarOutlined /> },
+    {
+      value: "abcd",
+      label: "Multiple Choice (ABCD)",
+      icon: <UnorderedListOutlined />,
+    },
+  ]
 
-    // Filtered questions for the drawer
-    const filteredQuestions = useMemo(() => {
-        const list = Array.isArray(questions) ? questions : [];
+  // Filtered questions for the drawer
+  const filteredQuestions = useMemo(() => {
+    const list = Array.isArray(questions) ? questions : []
 
-        return list.filter((question) => {
-            const matchesSearch =
-                question.question
-                    ?.toLowerCase()
-                    .includes(searchTerm.toLowerCase()) ||
-                question.description
-                    ?.toLowerCase()
-                    .includes(searchTerm.toLowerCase());
+    return list.filter((question) => {
+      const matchesSearch =
+        question.question?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        question.description?.toLowerCase().includes(searchTerm.toLowerCase())
 
-            const matchesType =
-                filterType === "all" || question.type === filterType;
+      const matchesType = filterType === "all" || question.type === filterType
 
-            return matchesSearch && matchesType;
-        });
-    }, [questions, searchTerm, filterType]);
+      return matchesSearch && matchesType
+    })
+  }, [questions, searchTerm, filterType])
 
-    // Show modal for adding/editing question
-    const showModal = (question = null) => {
-        setEditingQuestion(question);
-        if (question) {
-            form.setFieldsValue({
-                type: question.type,
-                question: question.question,
-                description: question.description,
-                required: question.required,
-                choices: question.choices || [],
-            });
-        } else {
-            form.resetFields();
-            form.setFieldsValue({
-                type: "rate",
-                required: true,
-            });
-        }
-        setIsModalVisible(true);
-    };
+  // Show modal for adding/editing question
+  const showModal = (question = null) => {
+    setEditingQuestion(question)
+    if (question) {
+      form.setFieldsValue({
+        type: question.type,
+        question: question.question,
+        description: question.description,
+        required: question.required,
+        choices: question.choices || [],
+      })
+    } else {
+      form.resetFields()
+      form.setFieldsValue({
+        type: "rate",
+        required: true,
+      })
+    }
+    setIsModalVisible(true)
+  }
 
-    // Handle modal cancel
-    const handleCancel = () => {
-        setIsModalVisible(false);
-        setEditingQuestion(null);
-        form.resetFields();
-    };
+  // Handle modal cancel
+  const handleCancel = () => {
+    setIsModalVisible(false)
+    setEditingQuestion(null)
+    form.resetFields()
+  }
 
-    // Handle form submission
-    const handleSubmit = async (values) => {
-        try {
-            const formData = new FormData();
+  // Handle form submission
+  const handleSubmit = async (values) => {
+    try {
+      const formData = new FormData()
 
-            // Append question fields
-            formData.append("type", values.type);
-            formData.append("question", values.question);
-            formData.append("description", values.description || "");
-            formData.append("required", values.required);
+      // Append question fields
+      formData.append("type", values.type)
+      formData.append("question", values.question)
+      formData.append("description", values.description || "")
+      formData.append("required", values.required)
 
-            // Append choices only for MCQ
-            if (values.type === "abcd" && values.choices) {
-                values.choices.forEach((choice, index) => {
-                    formData.append(
-                        `choices[${index}][interpretation]`,
-                        choice.interpretation || ""
-                    );
+      // Append choices only for MCQ
+      if (values.type === "abcd" && values.choices) {
+        values.choices.forEach((choice, index) => {
+          formData.append(`choices[${index}][interpretation]`, choice.interpretation || "")
 
-                    // Just send the file directly if it exists
-                    if (choice.image?.file) {
-                        formData.append(
-                            `choices[${index}][image]`,
-                            choice.image.file
-                        );
-                    }
-                });
-            }
+          // Just send the file directly if it exists
+          if (choice.image?.file) {
+            formData.append(`choices[${index}][image]`, choice.image.file)
+          }
+        })
+      }
 
-            // POST Create Question
-            const response = await axiosConfig.post("/questions", formData, {
-                headers: { "Content-Type": "multipart/form-data" },
-            });
+      // POST Create Question
+      const response = await axiosConfig.post("/questions", formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      })
 
-            if (response.data.success) {
-                refetch();
-                message.success("Question added successfully!");
-            }
+      if (response.data.success) {
+        refetch()
+        message.success("Question added successfully!")
+      }
 
-            handleCancel(); // close modal
-        } catch (error) {
-            message.error("Failed to save question");
-            console.error("❌ Error saving question:", error);
-        }
-    };
+      handleCancel() // close modal
+    } catch (error) {
+      message.error("Failed to save question")
+      console.error("❌ Error saving question:", error)
+    }
+  }
 
-    const setActive = async (item) => {
-        try {
-            const formData = new FormData();
+  const setActive = async (item) => {
+    try {
+      const formData = new FormData()
 
-            formData.append("id", item?.id);
-            formData.append("type", item?.type);
+      formData.append("id", item?.id)
+      formData.append("type", item?.type)
 
-            const response = await axiosConfig.post("/quiz-active", formData, {
-                headers: { "Content-Type": "multipart/form-data" },
-            });
+      const response = await axiosConfig.post("/quiz-active", formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      })
 
-            if (response.data.success) {
-                refetchQuizzes();
-                message.success("Quiz set active!");
-            }
-        } catch (error) {
-            message.error("Failed to save question");
-            console.error("❌ Error saving question:", error);
-        }
-    };
+      if (response.data.success) {
+        refetchQuizzes()
+        message.success("Quiz set active!")
+      }
+    } catch (error) {
+      message.error("Failed to save question")
+      console.error("❌ Error saving question:", error)
+    }
+  }
 
+  // const handleDelete = async (questionId) => {
+  //     try {
+  //         const response = await axiosConfig.delete(`/questions/${questionId}`);
 
-// const handleDelete = async (questionId) => {
-//     try {
-//         const response = await axiosConfig.delete(`/questions/${questionId}`);
+  //         if (response.data.success) {
+  //             message.success("Question deleted successfully!");
 
-//         if (response.data.success) {
-//             message.success("Question deleted successfully!");
+  //             // Reload from server
+  //             refetch();
+  //         } else {
+  //             message.error(response.data.message || "Failed to delete question");
+  //         }
+  //     } catch (error) {
+  //         console.error("Delete error:", error);
+  //         message.error("Deletion failed");
+  //     }
+  // };
 
-//             // Reload from server
-//             refetch();
-//         } else {
-//             message.error(response.data.message || "Failed to delete question");
-//         }
-//     } catch (error) {
-//         console.error("Delete error:", error);
-//         message.error("Deletion failed");
-//     }
-// };
-
-
-const handleDelete = (questionId) => {
-    message.success("Question removed in frontend only!");
+  const handleDelete = (questionId) => {
+    message.success("Question removed in frontend only!")
 
     // Remove locally from UI
     refetch({
-        // TEMPORARY override: filter out deleted item in UI only
-        select: (old) => old.filter((q) => q.id !== questionId),
-    });
-};
+      // TEMPORARY override: filter out deleted item in UI only
+      select: (old) => old.filter((q) => q.id !== questionId),
+    })
+  }
 
+  // // Delete question
+  // const handleDelete = (questionId) => {
+  //     setQuestions((prev) => prev.filter((q) => q.id !== questionId));
+  //     setSelectedQuestions((prev) => prev.filter((id) => id !== questionId));
+  //     message.success("Question deleted successfully!");
+  // };
 
+  // Open quiz creation drawer
+  const openQuizDrawer = (quiz = null) => {
+    setCurrentQuiz(quiz)
+    setQuizQuestions(quiz ? quiz.questions : [])
+    setIsQuizDrawerVisible(true)
+  }
 
+  // Close quiz drawer
+  const closeQuizDrawer = () => {
+    setIsQuizDrawerVisible(false)
+    setCurrentQuiz(null)
+    setQuizQuestions([])
+    setSearchTerm("")
+    setFilterType("all")
+  }
 
-
-    // // Delete question
-    // const handleDelete = (questionId) => {
-    //     setQuestions((prev) => prev.filter((q) => q.id !== questionId));
-    //     setSelectedQuestions((prev) => prev.filter((id) => id !== questionId));
-    //     message.success("Question deleted successfully!");
-    // };
-
-    // Open quiz creation drawer
-    const openQuizDrawer = (quiz = null) => {
-        setCurrentQuiz(quiz);
-        setQuizQuestions(quiz ? quiz.questions : []);
-        setIsQuizDrawerVisible(true);
-    };
-
-    // Close quiz drawer
-    const closeQuizDrawer = () => {
-        setIsQuizDrawerVisible(false);
-        setCurrentQuiz(null);
-        setQuizQuestions([]);
-        setSearchTerm("");
-        setFilterType("all");
-    };
-
-    // Add question to quiz
-    const addQuestionToQuiz = (question) => {
-        if (quizQuestions.find((q) => q.id === question.id)) {
-            message.warning("Question already added to quiz");
-            return;
-        }
-
-        setQuizQuestions((prev) => [
-            ...prev,
-            {
-                ...question,
-                displayOrder: prev.length + 1,
-            },
-        ]);
-        message.success("Question added to quiz");
-    };
-
-    // Remove question from quiz
-    const removeQuestionFromQuiz = (questionId) => {
-        setQuizQuestions((prev) => prev.filter((q) => q.id !== questionId));
-        message.success("Question removed from quiz");
-    };
-
-    // Handle drag and drop reordering
-    const handleDragEnd = (result) => {
-        if (!result.destination) return;
-
-        const items = Array.from(quizQuestions);
-        const [reorderedItem] = items.splice(result.source.index, 1);
-        items.splice(result.destination.index, 0, reorderedItem);
-
-        // Update display order
-        const updatedItems = items.map((item, index) => ({
-            ...item,
-            displayOrder: index + 1,
-        }));
-
-        setQuizQuestions(updatedItems);
-    };
-
-    // Save quiz
-    const saveQuiz = async () => {
-        if (filterType === "all") {
-            message.error("Please select a question category");
-            return;
-        }
-
-        if (!title?.trim()) {
-            message.error("Please enter a quiz title");
-            return;
-        }
-
-        setIsSaving(true);
-        const questionIds = quizQuestions.map((question) => question.id);
-        try {
-            const formData = new FormData();
-            formData.append("type", filterType);
-            formData.append("questions", questionIds);
-            formData.append("title", title.trim());
-
-            const response = await axiosConfig.post("/quizzes", formData, {
-                headers: { "Content-Type": "multipart/form-data" },
-            });
-
-            if (response.data.success) {
-                message.success("🎉 Quiz created successfully!");
-                refetchQuizzes();
-                closeQuizDrawer();
-            } else {
-                message.error("❌ Failed to create quiz");
-            }
-        } catch (error) {
-            message.error("❌ Failed to save quiz");
-            console.error("Error:", error);
-        } finally {
-            setIsSaving(false);
-        }
-    };
-
-    // Delete quiz
-    // const deleteQuiz = (quizId) => {
-    //     setQuizzes((prev) => prev.filter((q) => q.id !== quizId));
-    //     message.success("Quiz deleted successfully!");
-    // };
-
-
-const deleteQuiz = async (quizId) => {
-    try {
-        const { data } = await axiosConfig.delete(`/quizzes/${quizId}`);
-
-        if (data.success) {
-            message.success("Quiz deleted successfully!");
-
-            // Reload quizzes from backend
-            refetchQuizzes();
-        } else {
-            message.error(data.message || "Failed to delete quiz");
-        }
-    } catch (error) {
-        console.error("Quiz deletion error:", error);
-        message.error("Deletion failed");
+  // Add question to quiz
+  const addQuestionToQuiz = (question) => {
+    if (quizQuestions.find((q) => q.id === question.id)) {
+      message.warning("Question already added to quiz")
+      return
     }
-};
 
+    setQuizQuestions((prev) => [
+      ...prev,
+      {
+        ...question,
+        displayOrder: prev.length + 1,
+      },
+    ])
+    message.success("Question added to quiz")
+  }
 
+  // Remove question from quiz
+  const removeQuestionFromQuiz = (questionId) => {
+    setQuizQuestions((prev) => prev.filter((q) => q.id !== questionId))
+    message.success("Question removed from quiz")
+  }
 
-    // View quiz details in modal
-    const viewQuizDetails = (quiz) => {
-        setViewingQuiz(quiz);
-        setIsQuizDetailsModalVisible(true);
-    };
+  // Handle drag and drop reordering
+  const handleDragEnd = (result) => {
+    if (!result.destination) return
 
-    // Close quiz details modal
-    const closeQuizDetailsModal = () => {
-        setIsQuizDetailsModalVisible(false);
-        setViewingQuiz(null);
-    };
+    const items = Array.from(quizQuestions)
+    const [reorderedItem] = items.splice(result.source.index, 1)
+    items.splice(result.destination.index, 0, reorderedItem)
 
-    // Quiz columns for table
-    const quizColumns = [
-        {
-            title: "Quiz Name",
-            dataIndex: "title",
-            key: "title",
-            render: (text, record) => (
-                <div>
-                    <Text strong>{text}</Text>
-                    <div>
-                        <Text type="secondary" style={{ fontSize: "12px" }}>
-                            {record.questions?.length || 0} questions • Updated{" "}
-                            {new Date(record.updated_at).toLocaleDateString()}
-                        </Text>
-                    </div>
-                </div>
-            ),
-        },
-        {
-            title: "Type",
-            dataIndex: "type",
-            key: "type",
-            width: 120,
-            render: (type, record) => {
-                const color = type === "rate" ? "blue" : "green";
-                return <Tag color={color}>{type}</Tag>;
-            },
-        },
-        {
-            title: "Active ?",
-            dataIndex: "isActive",
-            key: "isActive",
-            width: 120,
-            render: (isActive, record) =>
-                isActive ? <Tag color="green">Yes</Tag> : null,
-        },
-        {
-            title: "Created",
-            dataIndex: "createdAt",
-            key: "createdAt",
-            width: 120,
-            render: (_, record) =>
-                new Date(record.created_at).toLocaleDateString(),
-        },
-        {
-            title: "Actions",
-            key: "actions",
-            width: 200,
-            render: (_, record) => (
-                <Space size="small">
-                    <Tooltip title="View Details">
-                        <Button
-                            type="text"
-                            icon={<EyeOutlined />}
-                            onClick={() => viewQuizDetails(record)}
-                        />
-                    </Tooltip>
-                    <Tooltip title="Edit Quiz">
-                        <Button
-                            type="text"
-                            icon={<EditOutlined />}
-                            onClick={() => openQuizDrawer(record)}
-                            style={{ color: "#1890ff" }}
-                        />
-                    </Tooltip>
-                    <Tooltip title="Set Active">
-                        <Button
-                            type="text"
-                            icon={<CheckSquareOutlined />}
-                            onClick={() => setActive(record)}
-                            style={{ color: "#52c41a" }} // Green color
-                        />
-                    </Tooltip>
-                    <Popconfirm
-                        title="Delete Quiz"
-                        description="Are you sure you want to delete this quiz?"
-                        onConfirm={() => deleteQuiz(record.id)}
-                        okText="Yes"
-                        cancelText="No"
-                    >
-                        <Tooltip title="Delete">
-                            <Button
-                                type="text"
-                                danger
-                                icon={<DeleteOutlined />}
-                            />
-                        </Tooltip>
-                    </Popconfirm>
-                </Space>
-            ),
-        },
-    ];
+    // Update display order
+    const updatedItems = items.map((item, index) => ({
+      ...item,
+      displayOrder: index + 1,
+    }))
 
-    // Question columns for drawer
-    const questionColumns = [
-        {
-            title: "Type",
-            dataIndex: "type",
-            key: "type",
-            width: 120,
-            render: (type) => (
-                <Tag
-                    color={type === "rate" ? "blue" : "green"}
-                    icon={
-                        type === "rate" ? (
-                            <StarOutlined />
-                        ) : (
-                            <UnorderedListOutlined />
-                        )
-                    }
-                >
-                    {type === "rate" ? "Rating" : "Multiple Choice"}
-                </Tag>
-            ),
-        },
-        {
-            title: "Question",
-            dataIndex: "question",
-            key: "question",
-            ellipsis: true,
-            render: (text, record) => (
-                <div>
-                    <Text strong>{text}</Text>
-                    {record.description && (
-                        <div>
-                            <Text type="secondary" style={{ fontSize: "12px" }}>
-                                {record.description}
-                            </Text>
-                        </div>
-                    )}
-                </div>
-            ),
-        },
-        {
-            title: "Action",
-            key: "action",
-            width: 100,
-            render: (_, record) => (
-                <Button
-                    type="primary"
-                    size="small"
-                    onClick={() => addQuestionToQuiz(record)}
-                    disabled={quizQuestions.find((q) => q.id === record.id)}
-                >
-                    Add
+    setQuizQuestions(updatedItems)
+  }
+
+  // Save quiz
+  const saveQuiz = async () => {
+    if (filterType === "all") {
+      message.error("Please select a question category")
+      return
+    }
+
+    if (!title?.trim()) {
+      message.error("Please enter a quiz title")
+      return
+    }
+
+    setIsSaving(true)
+    const questionIds = quizQuestions.map((question) => question.id)
+    try {
+      const formData = new FormData()
+      formData.append("type", filterType)
+      formData.append("questions", questionIds)
+      formData.append("title", title.trim())
+
+      const response = await axiosConfig.post("/quizzes", formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      })
+
+      if (response.data.success) {
+        message.success("🎉 Quiz created successfully!")
+        refetchQuizzes()
+        closeQuizDrawer()
+      }
+    } catch (error) {
+      message.error("❌ Failed to save quiz")
+      console.error("Error:", error)
+    } finally {
+      setIsSaving(false)
+    }
+  }
+
+  // Delete quiz
+  // const deleteQuiz = (quizId) => {
+  //     setQuizzes((prev) => prev.filter((q) => q.id !== quizId));
+  //     message.success("Quiz deleted successfully!");
+  // };
+
+  const deleteQuiz = async (quizId) => {
+    try {
+      const { data } = await axiosConfig.delete(`/quizzes/${quizId}`)
+
+      if (data.success) {
+        message.success("Quiz deleted successfully!")
+
+        // Reload quizzes from backend
+        refetchQuizzes()
+      } else {
+        message.error(data.message || "Failed to delete quiz")
+      }
+    } catch (error) {
+      console.error("Quiz deletion error:", error)
+      message.error("Deletion failed")
+    }
+  }
+
+  // View quiz details in modal
+  const viewQuizDetails = (quiz) => {
+    setViewingQuiz(quiz)
+    setIsQuizDetailsModalVisible(true)
+  }
+
+  // Close quiz details modal
+  const closeQuizDetailsModal = () => {
+    setIsQuizDetailsModalVisible(false)
+    setViewingQuiz(null)
+  }
+
+  // Quiz columns for table
+  const quizColumns = [
+    {
+      title: "Quiz Name",
+      dataIndex: "title",
+      key: "title",
+      render: (text, record) => (
+        <div>
+          <Text strong>{text}</Text>
+          <div>
+            <Text type="secondary" style={{ fontSize: "12px" }}>
+              {record.questions?.length || 0} questions • Updated {new Date(record.updated_at).toLocaleDateString()}
+            </Text>
+          </div>
+        </div>
+      ),
+    },
+    {
+      title: "Type",
+      dataIndex: "type",
+      key: "type",
+      width: 120,
+      render: (type, record) => {
+        const color = type === "rate" ? "blue" : "green"
+        return <Tag color={color}>{type}</Tag>
+      },
+    },
+    {
+      title: "Active ?",
+      dataIndex: "isActive",
+      key: "isActive",
+      width: 120,
+      render: (isActive, record) => (isActive ? <Tag color="green">Yes</Tag> : null),
+    },
+    {
+      title: "Created",
+      dataIndex: "createdAt",
+      key: "createdAt",
+      width: 120,
+      render: (_, record) => new Date(record.created_at).toLocaleDateString(),
+    },
+    {
+      title: "Actions",
+      key: "actions",
+      width: 200,
+      render: (_, record) => (
+        <Space size="small">
+          <Tooltip title="View Details">
+            <Button type="text" icon={<EyeOutlined />} onClick={() => viewQuizDetails(record)} />
+          </Tooltip>
+          <Tooltip title="Edit Quiz">
+            <Button
+              type="text"
+              icon={<EditOutlined />}
+              onClick={() => openQuizDrawer(record)}
+              style={{ color: "#1890ff" }}
+            />
+          </Tooltip>
+          <Tooltip title="Set Active">
+            <Button
+              type="text"
+              icon={<CheckSquareOutlined />}
+              onClick={() => setActive(record)}
+              style={{ color: "#52c41a" }} // Green color
+            />
+          </Tooltip>
+          <Popconfirm
+            title="Delete Quiz"
+            description="Are you sure you want to delete this quiz?"
+            onConfirm={() => deleteQuiz(record.id)}
+            okText="Yes"
+            cancelText="No"
+          >
+            <Tooltip title="Delete">
+              <Button type="text" danger icon={<DeleteOutlined />} />
+            </Tooltip>
+          </Popconfirm>
+        </Space>
+      ),
+    },
+  ]
+
+  // Question columns for drawer
+  const questionColumns = [
+    {
+      title: "Type",
+      dataIndex: "type",
+      key: "type",
+      width: 120,
+      render: (type) => (
+        <Tag
+          color={type === "rate" ? "blue" : "green"}
+          icon={type === "rate" ? <StarOutlined /> : <UnorderedListOutlined />}
+        >
+          {type === "rate" ? "Rating" : "Multiple Choice"}
+        </Tag>
+      ),
+    },
+    {
+      title: "Question",
+      dataIndex: "question",
+      key: "question",
+      ellipsis: true,
+      render: (text, record) => (
+        <div>
+          <Text strong>{text}</Text>
+          {record.description && (
+            <div>
+              <Text type="secondary" style={{ fontSize: "12px" }}>
+                {record.description}
+              </Text>
+            </div>
+          )}
+        </div>
+      ),
+    },
+    {
+      title: "Action",
+      key: "action",
+      width: 100,
+      render: (_, record) => (
+        <Button
+          type="primary"
+          size="small"
+          onClick={() => addQuestionToQuiz(record)}
+          disabled={quizQuestions.find((q) => q.id === record.id)}
+        >
+          Add
+        </Button>
+      ),
+    },
+  ]
+
+  const quizResultColumns = [
+    {
+      title: "Name",
+      dataIndex: "user",
+      key: "user",
+      render: (record) => (
+        <div>
+          <Text strong>{record?.name}</Text>
+        </div>
+      ),
+    },
+    {
+      title: "Type",
+      dataIndex: "type",
+      key: "type",
+      width: 120,
+      render: (type, record) => {
+        const color = type === "rate" ? "blue" : "green"
+        return <Tag color={color}>{type}</Tag>
+      },
+    },
+    {
+      title: "Created",
+      dataIndex: "createdAt",
+      key: "createdAt",
+      width: 120,
+      align: "center",
+      render: (_, record) => new Date(record.created_at).toLocaleDateString(),
+    },
+    {
+      title: "Actions",
+      key: "actions",
+      width: 200,
+      align: "center",
+      render: (_, record) => (
+        <Space size="small">
+          <Tooltip title="View Details">
+            <Button type="text" icon={<EyeOutlined />} onClick={() => viewQuizResultDetails(record)} />
+          </Tooltip>
+        </Space>
+      ),
+    },
+  ]
+
+  const [isQuizResultDetailsModalVisible, setIsQuizResultDetailsModalVisible] = useState(false)
+  const [viewingQuizResult, setViewingQuizResult] = useState(null)
+
+  // Add this function to view quiz result details
+  const viewQuizResultDetails = (record) => {
+    setViewingQuizResult(record)
+    setIsQuizResultDetailsModalVisible(true)
+  }
+
+  // Close quiz result details modal
+  const closeQuizResultDetailsModal = () => {
+    setIsQuizResultDetailsModalVisible(false)
+    setViewingQuizResult(null)
+  }
+
+  return (
+    <Layout>
+      <div className="alumni-dashboard">
+        {/* Header */}
+        <Card className="dashboard-header-card">
+          <div className="dashboard-header">
+            <div>
+              <Title level={2}>Quiz Management</Title>
+              <Text type="secondary">Create and manage quizzes for your events and surveys</Text>
+            </div>
+            <div className="header-controls">
+              <Space>
+                <Button icon={<PlusOutlined />} onClick={() => openQuizDrawer()} size="large">
+                  Create New Quiz
                 </Button>
-            ),
-        },
-    ];
+                <Button icon={<PlusOutlined />} onClick={() => showModal()} size="large">
+                  Add Question
+                </Button>
+              </Space>
+            </div>
+          </div>
+        </Card>
 
-    const quizResultColumns = [
-        {
-            title: "Name",
-            dataIndex: "user",
-            key: "user",
-            render: (record) => (
-                <div>
-                    <Text strong>{record?.name}</Text>
-                </div>
-            ),
-        },
-        {
-            title: "Type",
-            dataIndex: "type",
-            key: "type",
-            width: 120,
-            render: (type, record) => {
-                const color = type === "rate" ? "blue" : "green";
-                return <Tag color={color}>{type}</Tag>;
-            },
-        },
-        {
-            title: "Created",
-            dataIndex: "createdAt",
-            key: "createdAt",
-            width: 120,
-            align: "center",
-            render: (_, record) =>
-                new Date(record.created_at).toLocaleDateString(),
-        },
-        {
-            title: "Actions",
-            key: "actions",
-            width: 200,
-            align: "center",
-            render: (_, record) => (
-                <Space size="small">
-                    <Tooltip title="View Details">
-                        <Button
-                            type="text"
-                            icon={<EyeOutlined />}
-                            onClick={() => viewQuizResultDetails(record)}
-                        />
-                    </Tooltip>
-                </Space>
-            ),
-        },
-    ];
+        {/* Tabs */}
+        <Card style={{ marginTop: 20 }}>
+          <Tabs activeKey={activeTab} onChange={setActiveTab} className="questions-tabs">
+            <TabPane
+              tab={
+                <span>
+                  <OrderedListOutlined />
+                  Quizzes Result
+                  <Badge
+                    count={quizzes_result.length}
+                    style={{
+                      backgroundColor: "#1890ff",
+                      marginLeft: 8,
+                    }}
+                  />
+                </span>
+              }
+              key="quizzes-result"
+            />
+            <TabPane
+              tab={
+                <span>
+                  <UnorderedListOutlined />
+                  All Quizzes
+                  <Badge
+                    count={quizzes.length}
+                    style={{
+                      backgroundColor: "#1890ff",
+                      marginLeft: 8,
+                    }}
+                  />
+                </span>
+              }
+              key="quizzes"
+            />
+            <TabPane
+              tab={
+                <span>
+                  <QuestionCircleOutlined />
+                  All Questions
+                  <Badge
+                    count={questions.length}
+                    style={{
+                      backgroundColor: "#52c41a",
+                      marginLeft: 8,
+                    }}
+                  />
+                </span>
+              }
+              key="questions"
+            />
+          </Tabs>
 
-    const [
-        isQuizResultDetailsModalVisible,
-        setIsQuizResultDetailsModalVisible,
-    ] = useState(false);
-    const [viewingQuizResult, setViewingQuizResult] = useState(null);
-
-    // Add this function to view quiz result details
-    const viewQuizResultDetails = (record) => {
-        setViewingQuizResult(record);
-        setIsQuizResultDetailsModalVisible(true);
-    };
-
-    // Close quiz result details modal
-    const closeQuizResultDetailsModal = () => {
-        setIsQuizResultDetailsModalVisible(false);
-        setViewingQuizResult(null);
-    };
-
-    return (
-        <Layout>
-            <div className="alumni-dashboard">
-                {/* Header */}
-                <Card className="dashboard-header-card">
-                    <div className="dashboard-header">
-                        <div>
-                            <Title level={2}>Quiz Management</Title>
-                            <Text type="secondary">
-                                Create and manage quizzes for your events and
-                                surveys
-                            </Text>
-                        </div>
-                        <div className="header-controls">
-                            <Space>
-                                <Button
-                                    icon={<PlusOutlined />}
-                                    onClick={() => openQuizDrawer()}
-                                    size="large"
-                                >
-                                    Create New Quiz
-                                </Button>
-                                <Button
-                                    icon={<PlusOutlined />}
-                                    onClick={() => showModal()}
-                                    size="large"
-                                >
-                                    Add Question
-                                </Button>
-                            </Space>
-                        </div>
-                    </div>
+          {activeTab === "quizzes-result" && (
+            <div className="quizzes-tab-content">
+              {quizzes.length === 0 ? (
+                <Card className="empty-state-card">
+                  <div className="empty-state-content">
+                    <UnorderedListOutlined
+                      style={{
+                        fontSize: 48,
+                        color: "#d9d9d9",
+                      }}
+                    />
+                    <Title level={4}>No Quizzes Result</Title>
+                  </div>
                 </Card>
+              ) : (
+                <Table
+                  columns={quizResultColumns}
+                  dataSource={quizzes_result}
+                  rowKey="id"
+                  pagination={{
+                    pageSize: 10,
+                    showSizeChanger: true,
+                  }}
+                />
+              )}
+            </div>
+          )}
 
-                {/* Tabs */}
-                <Card style={{ marginTop: 20 }}>
-                    <Tabs
-                        activeKey={activeTab}
-                        onChange={setActiveTab}
-                        className="questions-tabs"
+          {/* Quizzes Tab Content */}
+          {activeTab === "quizzes" && (
+            <div className="quizzes-tab-content">
+              {quizzes.length === 0 ? (
+                <Card className="empty-state-card">
+                  <div className="empty-state-content">
+                    <UnorderedListOutlined
+                      style={{
+                        fontSize: 48,
+                        color: "#d9d9d9",
+                      }}
+                    />
+                    <Title level={4}>No Quizzes Created</Title>
+                    <Text type="secondary">Create your first quiz to get started with assessments</Text>
+                    <br />
+                    <Button type="primary" onClick={() => openQuizDrawer()}>
+                      Create First Quiz
+                    </Button>
+                  </div>
+                </Card>
+              ) : (
+                <Table
+                  columns={quizColumns}
+                  dataSource={quizzes}
+                  rowKey="id"
+                  pagination={{
+                    pageSize: 10,
+                    showSizeChanger: true,
+                  }}
+                />
+              )}
+            </div>
+          )}
+
+          {/* Questions Tab Content */}
+          {activeTab === "questions" && (
+            <div className="questions-tab-content">
+              <div className="table-header">
+                <Text strong>
+                  Total Questions: {filteredQuestions.length}
+                  {filteredQuestions.length !== questions.length && ` (${questions.length} total)`}
+                </Text>
+                <Space>
+                  <Input
+                    placeholder="Search questions..."
+                    prefix={<SearchOutlined />}
+                    style={{ width: 250 }}
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                  />
+                  <Select
+                    placeholder="Filter by type"
+                    style={{ width: 150 }}
+                    value={filterType}
+                    onChange={setFilterType}
+                  >
+                    <Option value="all">All Types</Option>
+                    <Option value="rate">Rating</Option>
+                    <Option value="abcd">Multiple Choice</Option>
+                  </Select>
+                </Space>
+              </div>
+
+              {filteredQuestions.length === 0 && questions.length > 0 ? (
+                <Card className="empty-state-card">
+                  <div className="empty-state-content">
+                    <SearchOutlined
+                      style={{
+                        fontSize: 48,
+                        color: "#d9d9d9",
+                      }}
+                    />
+                    <Title level={4}>No Questions Found</Title>
+                    <Text type="secondary">No questions match your search or filter criteria</Text>
+                    <br />
+                    <Button
+                      type="default"
+                      onClick={() => {
+                        setSearchTerm("")
+                        setFilterType("all")
+                      }}
                     >
-                        <TabPane
-                            tab={
-                                <span>
-                                    <OrderedListOutlined />
-                                    Quizzes Result
-                                    <Badge
-                                        count={quizzes_result.length}
-                                        style={{
-                                            backgroundColor: "#1890ff",
-                                            marginLeft: 8,
-                                        }}
-                                    />
-                                </span>
-                            }
-                            key="quizzes-result"
-                        />
-                        <TabPane
-                            tab={
-                                <span>
-                                    <UnorderedListOutlined />
-                                    All Quizzes
-                                    <Badge
-                                        count={quizzes.length}
-                                        style={{
-                                            backgroundColor: "#1890ff",
-                                            marginLeft: 8,
-                                        }}
-                                    />
-                                </span>
-                            }
-                            key="quizzes"
-                        />
-                        <TabPane
-                            tab={
-                                <span>
-                                    <QuestionCircleOutlined />
-                                    All Questions
-                                    <Badge
-                                        count={questions.length}
-                                        style={{
-                                            backgroundColor: "#52c41a",
-                                            marginLeft: 8,
-                                        }}
-                                    />
-                                </span>
-                            }
-                            key="questions"
-                        />
-                    </Tabs>
-
-                    {activeTab === "quizzes-result" && (
-                        <div className="quizzes-tab-content">
-                            {quizzes.length === 0 ? (
-                                <Card className="empty-state-card">
-                                    <div className="empty-state-content">
-                                        <UnorderedListOutlined
-                                            style={{
-                                                fontSize: 48,
-                                                color: "#d9d9d9",
-                                            }}
-                                        />
-                                        <Title level={4}>
-                                            No Quizzes Result
-                                        </Title>
-                                    </div>
-                                </Card>
-                            ) : (
-                                <Table
-                                    columns={quizResultColumns}
-                                    dataSource={quizzes_result}
-                                    rowKey="id"
-                                    pagination={{
-                                        pageSize: 10,
-                                        showSizeChanger: true,
-                                    }}
-                                />
-                            )}
-                        </div>
-                    )}
-
-                    {/* Quizzes Tab Content */}
-                    {activeTab === "quizzes" && (
-                        <div className="quizzes-tab-content">
-                            {quizzes.length === 0 ? (
-                                <Card className="empty-state-card">
-                                    <div className="empty-state-content">
-                                        <UnorderedListOutlined
-                                            style={{
-                                                fontSize: 48,
-                                                color: "#d9d9d9",
-                                            }}
-                                        />
-                                        <Title level={4}>
-                                            No Quizzes Created
-                                        </Title>
-                                        <Text type="secondary">
-                                            Create your first quiz to get
-                                            started with assessments
-                                        </Text>
-                                        <br />
-                                        <Button
-                                            type="primary"
-                                            onClick={() => openQuizDrawer()}
-                                        >
-                                            Create First Quiz
-                                        </Button>
-                                    </div>
-                                </Card>
-                            ) : (
-                                <Table
-                                    columns={quizColumns}
-                                    dataSource={quizzes}
-                                    rowKey="id"
-                                    pagination={{
-                                        pageSize: 10,
-                                        showSizeChanger: true,
-                                    }}
-                                />
-                            )}
-                        </div>
-                    )}
-
-                    {/* Questions Tab Content */}
-                    {activeTab === "questions" && (
-                        <div className="questions-tab-content">
-                            <div className="table-header">
-                                <Text strong>
-                                    Total Questions: {questions.length}
-                                </Text>
-                                <Space>
-                                    <Input
-                                        placeholder="Search questions..."
-                                        prefix={<SearchOutlined />}
-                                        style={{ width: 250 }}
-                                        value={searchTerm}
-                                        onChange={(e) =>
-                                            setSearchTerm(e.target.value)
-                                        }
-                                    />
-                                    <Select
-                                        placeholder="Filter by type"
-                                        style={{ width: 150 }}
-                                        value={filterType}
-                                        onChange={setFilterType}
-                                    >
-                                        <Option value="all">All Types</Option>
-                                        <Option value="rate">Rating</Option>
-                                        <Option value="abcd">
-                                            Multiple Choice
-                                        </Option>
-                                    </Select>
-                                </Space>
-                            </div>
-
-                            {questions.length === 0 ? (
-                                <Card className="empty-state-card">
-                                    <div className="empty-state-content">
-                                        <QuestionCircleOutlined
-                                            style={{
-                                                fontSize: 48,
-                                                color: "#d9d9d9",
-                                            }}
-                                        />
-                                        <Title level={4}>
-                                            No Questions Available
-                                        </Title>
-                                        <Text type="secondary">
-                                            Create some questions first to build
-                                            your quizzes
-                                        </Text>
-                                        <br />
-                                        <Button
-                                            type="primary"
-                                            onClick={() => showModal()}
-                                        >
-                                            Create First Question
-                                        </Button>
-                                    </div>
-                                </Card>
-                            ) : (
-                                <Table
-                                    columns={[
-                                        ...questionColumns,
-                                        {
-                                            title: "Actions",
-                                            key: "actions",
-                                            width: 120,
-                                            render: (_, record) => (
-                                                <Space size="small">
-                                                    <Tooltip title="Edit">
-                                                        <Button
-                                                            type="text"
-                                                            icon={
-                                                                <EditOutlined />
-                                                            }
-                                                            onClick={() =>
-                                                                showModal(
-                                                                    record
-                                                                )
-                                                            }
-                                                        />
-                                                    </Tooltip>
-                                                    {/* <Popconfirm
+                      Clear Filters
+                    </Button>
+                  </div>
+                </Card>
+              ) : questions.length === 0 ? (
+                <Card className="empty-state-card">
+                  <div className="empty-state-content">
+                    <QuestionCircleOutlined
+                      style={{
+                        fontSize: 48,
+                        color: "#d9d9d9",
+                      }}
+                    />
+                    <Title level={4}>No Questions Available</Title>
+                    <Text type="secondary">Create some questions first to build your quizzes</Text>
+                    <br />
+                    <Button type="primary" onClick={() => showModal()}>
+                      Create First Question
+                    </Button>
+                  </div>
+                </Card>
+              ) : (
+                <Table
+                  columns={[
+                    ...questionColumns,
+                    {
+                      title: "Actions",
+                      key: "actions",
+                      width: 120,
+                      render: (_, record) => (
+                        <Space size="small">
+                          <Tooltip title="Edit">
+                            <Button type="text" icon={<EditOutlined />} onClick={() => showModal(record)} />
+                          </Tooltip>
+                          {/* <Popconfirm
                                                         title="Delete Question"
                                                         description="Are you sure you want to delete this question?"
                                                         onConfirm={() =>
@@ -888,1124 +803,700 @@ const deleteQuiz = async (quizId) => {
                                                             />
                                                         </Tooltip>
                                                     </Popconfirm> */}
-                                                </Space>
-                                            ),
-                                        },
-                                    ]}
-                                    dataSource={questions}
-                                    rowKey="id"
-                                    pagination={{
-                                        pageSize: 10,
-                                        showSizeChanger: true,
-                                    }}
-                                />
-                            )}
-                        </div>
-                    )}
-                </Card>
-
-                {/* Quiz Details Modal */}
-                <Modal
-                    title={
-                        <Space>
-                            <Text strong>Quiz Details</Text>
-                            {viewingQuiz && (
-                                <Badge
-                                    count={`${
-                                        viewingQuiz.questions?.length || 0
-                                    } questions`}
-                                    style={{ backgroundColor: "#1890ff" }}
-                                />
-                            )}
                         </Space>
-                    }
-                    open={isQuizDetailsModalVisible}
-                    onCancel={closeQuizDetailsModal}
-                    width={800}
-                    footer={[
-                        <Button
-                            key="edit"
-                            onClick={() => {
-                                closeQuizDetailsModal();
-                                openQuizDrawer(viewingQuiz);
-                            }}
-                        >
-                            Edit Quiz
-                        </Button>,
-                        <Button
-                            key="preview"
-                            type="primary"
-                            icon={<FullscreenOutlined />}
-                        >
-                            Preview Quiz
-                        </Button>,
-                        <Button key="close" onClick={closeQuizDetailsModal}>
-                            Close
-                        </Button>,
-                    ]}
-                >
-                    {viewingQuiz && (
-                        <div className="quiz-details-content">
-                            <Card
-                                title={
-                                    <Space>
-                                        <Text strong>{viewingQuiz.title}</Text>
-                                        <Tag
-                                            color={
-                                                viewingQuiz.type === "rate"
-                                                    ? "blue"
-                                                    : "green"
-                                            }
-                                        >
-                                            {viewingQuiz.type === "rate"
-                                                ? "Rating Quiz"
-                                                : "Multiple Choice Quiz"}
-                                        </Tag>
-                                        {viewingQuiz.isActive && (
-                                            <Tag color="green">Active</Tag>
-                                        )}
-                                    </Space>
-                                }
-                                style={{ marginBottom: 16 }}
-                            >
-                                <Space
-                                    direction="vertical"
-                                    style={{ width: "100%" }}
-                                >
-                                    <Text>
-                                        <strong>Created:</strong>{" "}
-                                        {new Date(
-                                            viewingQuiz.created_at
-                                        ).toLocaleDateString()}
-                                    </Text>
-                                    <Text>
-                                        <strong>Updated:</strong>{" "}
-                                        {new Date(
-                                            viewingQuiz.updated_at
-                                        ).toLocaleDateString()}
-                                    </Text>
-                                </Space>
-                            </Card>
-
-                            <List
-                                dataSource={viewingQuiz.questions || []}
-                                renderItem={(question, index) => (
-                                    <List.Item className="quiz-question-item">
-                                        <div className="question-number">
-                                            <Text strong>#{index + 1}</Text>
-                                        </div>
-                                        <div className="question-content">
-                                            <Space
-                                                direction="vertical"
-                                                style={{ width: "100%" }}
-                                            >
-                                                <div className="question-header">
-                                                    <Space>
-                                                        <Tag
-                                                            color={
-                                                                question.type ===
-                                                                "rate"
-                                                                    ? "blue"
-                                                                    : "green"
-                                                            }
-                                                        >
-                                                            {question.type ===
-                                                            "rate"
-                                                                ? "Rating"
-                                                                : "Multiple Choice"}
-                                                        </Tag>
-                                                        {question.required && (
-                                                            <Tag color="red">
-                                                                Required
-                                                            </Tag>
-                                                        )}
-                                                    </Space>
-                                                </div>
-                                                <Text strong>
-                                                    {question.question}
-                                                </Text>
-                                                {question.description && (
-                                                    <Text type="secondary">
-                                                        {question.description}
-                                                    </Text>
-                                                )}
-                                                {question.type === "abcd" &&
-                                                    question.choices && (
-                                                        <div className="choices-preview">
-                                                            <Text strong>
-                                                                Options:
-                                                            </Text>
-                                                            <Row
-                                                                gutter={[
-                                                                    16, 16,
-                                                                ]}
-                                                                style={{
-                                                                    marginTop: 8,
-                                                                }}
-                                                            >
-                                                                {question.choices.map(
-                                                                    (
-                                                                        choice,
-                                                                        choiceIndex
-                                                                    ) => (
-                                                                        <Col
-                                                                            span={
-                                                                                12
-                                                                            }
-                                                                            key={
-                                                                                choiceIndex
-                                                                            }
-                                                                        >
-                                                                            <Card size="small">
-                                                                                <Space>
-                                                                                    <Text
-                                                                                        strong
-                                                                                    >
-                                                                                        {
-                                                                                            choice.letter
-                                                                                        }
-                                                                                    </Text>
-                                                                                    <Text>
-                                                                                        {
-                                                                                            choice.interpretation
-                                                                                        }
-                                                                                    </Text>
-                                                                                </Space>
-                                                                            </Card>
-                                                                        </Col>
-                                                                    )
-                                                                )}
-                                                            </Row>
-                                                        </div>
-                                                    )}
-                                            </Space>
-                                        </div>
-                                    </List.Item>
-                                )}
-                            />
-                        </div>
-                    )}
-                </Modal>
-
-                {/* Quiz Creation/Editing Drawer */}
-                <Drawer
-                    title={
-                        <Space>
-                            {currentQuiz ? "Edit Quiz" : "Create New Quiz"}
-                            {currentQuiz && (
-                                <Tag color="blue">{currentQuiz.title}</Tag>
-                            )}
-                        </Space>
-                    }
-                    placement="right"
-                    size="large"
-                    open={isQuizDrawerVisible}
-                    onClose={closeQuizDrawer}
-                    width="90vw"
-                    className="quiz-drawer"
-                    extra={
-                        <Space>
-                            <Text type="secondary">
-                                {quizQuestions.length} questions selected
-                            </Text>
-                            <Button onClick={closeQuizDrawer}>Cancel</Button>
-                            <Button
-                                loading={isSaving}
-                                disabled={!title || filterType === "all"}
-                                type="primary"
-                                onClick={saveQuiz}
-                            >
-                                {currentQuiz ? "Update Quiz" : "Create Quiz"}
-                            </Button>
-                        </Space>
-                    }
-                >
-                    <div className="quiz-drawer-content">
-                        {/* Left Side - Questions List */}
-                        <div className="questions-panel">
-                            <Card
-                                title="Available Questions"
-                                className="questions-list-card"
-                                extra={
-                                    <Space>
-                                        <Text type="secondary">
-                                            {filteredQuestions.length} questions
-                                        </Text>
-                                    </Space>
-                                }
-                            >
-                                <div className="search-filters">
-                                    <Input
-                                        placeholder="Search questions..."
-                                        prefix={<SearchOutlined />}
-                                        value={searchTerm}
-                                        onChange={(e) =>
-                                            setSearchTerm(e.target.value)
-                                        }
-                                        style={{ marginBottom: 16 }}
-                                    />
-                                    <Input
-                                        placeholder="Enter title"
-                                        value={title}
-                                        onChange={(e) =>
-                                            setTitle(e.target.value)
-                                        }
-                                        style={{ marginBottom: 16 }}
-                                    />
-                                    <Select
-                                        value={filterType}
-                                        onChange={setFilterType}
-                                        style={{
-                                            width: "100%",
-                                            marginBottom: 16,
-                                        }}
-                                    >
-                                        <Option value="all">
-                                            All Question Types
-                                        </Option>
-                                        <Option value="rate">
-                                            Rating Questions
-                                        </Option>
-                                        <Option value="abcd">
-                                            Multiple Choice
-                                        </Option>
-                                    </Select>
-                                </div>
-
-                                {filteredQuestions.length === 0 ? (
-                                    <Empty
-                                        description="No questions found"
-                                        image={Empty.PRESENTED_IMAGE_SIMPLE}
-                                    />
-                                ) : (
-                                    <Table
-                                        columns={questionColumns}
-                                        dataSource={filteredQuestions}
-                                        rowKey="id"
-                                        pagination={false}
-                                        scroll={{ y: 400 }}
-                                        size="small"
-                                    />
-                                )}
-                            </Card>
-                        </div>
-
-                        {/* Right Side - Quiz Builder */}
-                        <div className="quiz-builder-panel">
-                            <Card
-                                title="Quiz Builder"
-                                className="quiz-builder-card"
-                                extra={
-                                    <Space>
-                                        <Text strong>Display Order</Text>
-                                        <Text type="secondary">
-                                            Drag to reorder
-                                        </Text>
-                                    </Space>
-                                }
-                            >
-                                {quizQuestions.length === 0 ? (
-                                    <Empty
-                                        description="No questions added to quiz"
-                                        image={Empty.PRESENTED_IMAGE_SIMPLE}
-                                    />
-                                ) : (
-                                    <DragDropContext onDragEnd={handleDragEnd}>
-                                        <Droppable droppableId="quiz-questions">
-                                            {(provided) => (
-                                                <div
-                                                    {...provided.droppableProps}
-                                                    ref={provided.innerRef}
-                                                    className="quiz-questions-list"
-                                                >
-                                                    {quizQuestions.map(
-                                                        (question, index) => (
-                                                            <Draggable
-                                                                key={
-                                                                    question.id
-                                                                }
-                                                                draggableId={question.id.toString()}
-                                                                index={index}
-                                                            >
-                                                                {(
-                                                                    provided,
-                                                                    snapshot
-                                                                ) => (
-                                                                    <div
-                                                                        ref={
-                                                                            provided.innerRef
-                                                                        }
-                                                                        {...provided.draggableProps}
-                                                                        className={`quiz-question-item ${
-                                                                            snapshot.isDragging
-                                                                                ? "dragging"
-                                                                                : ""
-                                                                        }`}
-                                                                    >
-                                                                        <div
-                                                                            className="question-drag-handle"
-                                                                            {...provided.dragHandleProps}
-                                                                        >
-                                                                            <MenuOutlined />
-                                                                        </div>
-                                                                        <div className="question-content">
-                                                                            <div className="question-header">
-                                                                                <Space>
-                                                                                    <Tag
-                                                                                        color={
-                                                                                            question.type ===
-                                                                                            "rate"
-                                                                                                ? "blue"
-                                                                                                : "green"
-                                                                                        }
-                                                                                    >
-                                                                                        {question.type ===
-                                                                                        "rate"
-                                                                                            ? "Rating"
-                                                                                            : "Multiple Choice"}
-                                                                                    </Tag>
-                                                                                    <Text
-                                                                                        strong
-                                                                                    >
-                                                                                        #
-                                                                                        {index +
-                                                                                            1}
-                                                                                    </Text>
-                                                                                    {question.required && (
-                                                                                        <Tag color="red">
-                                                                                            Required
-                                                                                        </Tag>
-                                                                                    )}
-                                                                                </Space>
-                                                                                <Button
-                                                                                    type="text"
-                                                                                    danger
-                                                                                    icon={
-                                                                                        <DeleteOutlined />
-                                                                                    }
-                                                                                    onClick={() =>
-                                                                                        removeQuestionFromQuiz(
-                                                                                            question.id
-                                                                                        )
-                                                                                    }
-                                                                                />
-                                                                            </div>
-                                                                            <Text
-                                                                                strong
-                                                                                style={{
-                                                                                    display:
-                                                                                        "block",
-                                                                                    marginTop: 4,
-                                                                                }}
-                                                                            >
-                                                                                {
-                                                                                    question.question
-                                                                                }
-                                                                            </Text>
-                                                                            {question.description && (
-                                                                                <Text
-                                                                                    type="secondary"
-                                                                                    style={{
-                                                                                        display:
-                                                                                            "block",
-                                                                                        marginTop: 4,
-                                                                                    }}
-                                                                                >
-                                                                                    {
-                                                                                        question.description
-                                                                                    }
-                                                                                </Text>
-                                                                            )}
-                                                                            {question.type ===
-                                                                                "abcd" &&
-                                                                                question.choices && (
-                                                                                    <div className="choices-preview">
-                                                                                        <Text
-                                                                                            type="secondary"
-                                                                                            style={{
-                                                                                                fontSize:
-                                                                                                    "12px",
-                                                                                                marginTop: 8,
-                                                                                            }}
-                                                                                        >
-                                                                                            {
-                                                                                                question
-                                                                                                    .choices
-                                                                                                    .length
-                                                                                            }{" "}
-                                                                                            options
-                                                                                            with
-                                                                                            images
-                                                                                        </Text>
-                                                                                    </div>
-                                                                                )}
-                                                                        </div>
-                                                                    </div>
-                                                                )}
-                                                            </Draggable>
-                                                        )
-                                                    )}
-                                                    {provided.placeholder}
-                                                </div>
-                                            )}
-                                        </Droppable>
-                                    </DragDropContext>
-                                )}
-                            </Card>
-                        </div>
-                    </div>
-                </Drawer>
-
-                {/* Add/Edit Question Modal */}
-                <Modal
-                    title={
-                        editingQuestion ? "Edit Question" : "Add New Question"
-                    }
-                    open={isModalVisible}
-                    onCancel={handleCancel}
-                    footer={null}
-                    width={800}
-                    className="question-modal"
-                >
-                    <Form
-                        form={form}
-                        layout="vertical"
-                        onFinish={handleSubmit}
-                        className="question-form"
-                    >
-                        <div className="form-sections">
-                            {/* Basic Information */}
-                            <div className="form-section">
-                                <div className="section-header">
-                                    <h3>Question Details</h3>
-                                    <div className="section-divider"></div>
-                                </div>
-                                <div className="section-content">
-                                    <Form.Item
-                                        name="type"
-                                        label="Question Type"
-                                        rules={[
-                                            {
-                                                required: true,
-                                                message:
-                                                    "Please select question type",
-                                            },
-                                        ]}
-                                    >
-                                        <Radio.Group>
-                                            <Space direction="vertical">
-                                                {questionTypes.map((type) => (
-                                                    <Radio
-                                                        key={type.value}
-                                                        value={type.value}
-                                                    >
-                                                        <Space>
-                                                            {type.icon}
-                                                            {type.label}
-                                                        </Space>
-                                                    </Radio>
-                                                ))}
-                                            </Space>
-                                        </Radio.Group>
-                                    </Form.Item>
-
-                                    <Form.Item
-                                        name="question"
-                                        label="Question Text"
-                                        rules={[
-                                            {
-                                                required: true,
-                                                message:
-                                                    "Please enter question text",
-                                            },
-                                        ]}
-                                    >
-                                        <Input.TextArea
-                                            rows={3}
-                                            placeholder="Enter your question here..."
-                                            className="form-textarea"
-                                        />
-                                    </Form.Item>
-
-                                    <Form.Item
-                                        name="description"
-                                        label="Description (Optional)"
-                                    >
-                                        <Input.TextArea
-                                            rows={2}
-                                            placeholder="Additional context or instructions for this question..."
-                                            className="form-textarea"
-                                        />
-                                    </Form.Item>
-
-                                    <Form.Item
-                                        name="required"
-                                        label="Required"
-                                        valuePropName="checked"
-                                    >
-                                        <Switch
-                                            checkedChildren="Required"
-                                            unCheckedChildren="Optional"
-                                        />
-                                    </Form.Item>
-                                </div>
-                            </div>
-
-                            {/* Choices Section (Only for ABCD type) */}
-                            <Form.Item
-                                noStyle
-                                shouldUpdate={(prevValues, currentValues) =>
-                                    prevValues.type !== currentValues.type
-                                }
-                            >
-                                {({ getFieldValue }) =>
-                                    getFieldValue("type") === "abcd" && (
-                                        <div className="form-section">
-                                            <div className="section-header">
-                                                <h3>Multiple Choice Options</h3>
-                                                <div className="section-divider"></div>
-                                            </div>
-                                            <div className="section-content">
-                                                <Form.List name="choices">
-                                                    {(
-                                                        fields,
-                                                        { add, remove }
-                                                    ) => (
-                                                        <>
-                                                            {fields.map(
-                                                                (
-                                                                    field,
-                                                                    index
-                                                                ) => (
-                                                                    <div
-                                                                        key={
-                                                                            field.key
-                                                                        }
-                                                                        className="choice-item"
-                                                                    >
-                                                                        <Row
-                                                                            gutter={
-                                                                                16
-                                                                            }
-                                                                            align="middle"
-                                                                        >
-                                                                            <Col
-                                                                                span={
-                                                                                    2
-                                                                                }
-                                                                            >
-                                                                                <div className="choice-letter">
-                                                                                    {String.fromCharCode(
-                                                                                        65 +
-                                                                                            index
-                                                                                    )}
-                                                                                </div>
-                                                                            </Col>
-                                                                            <Col
-                                                                                span={
-                                                                                    10
-                                                                                }
-                                                                            >
-                                                                                <Form.Item
-                                                                                    {...field}
-                                                                                    name={[
-                                                                                        field.name,
-                                                                                        "image",
-                                                                                    ]}
-                                                                                    fieldKey={[
-                                                                                        field.fieldKey,
-                                                                                        "image",
-                                                                                    ]}
-                                                                                    label="Option Image"
-                                                                                >
-                                                                                    <Upload
-                                                                                        listType="picture-card"
-                                                                                        beforeUpload={() =>
-                                                                                            false
-                                                                                        }
-                                                                                        maxCount={
-                                                                                            1
-                                                                                        }
-                                                                                    >
-                                                                                        <div>
-                                                                                            <PictureOutlined />
-                                                                                            <div
-                                                                                                style={{
-                                                                                                    marginTop: 8,
-                                                                                                }}
-                                                                                            >
-                                                                                                Upload
-                                                                                            </div>
-                                                                                        </div>
-                                                                                    </Upload>
-                                                                                </Form.Item>
-                                                                            </Col>
-                                                                            <Col
-                                                                                span={
-                                                                                    10
-                                                                                }
-                                                                            >
-                                                                                <Form.Item
-                                                                                    {...field}
-                                                                                    name={[
-                                                                                        field.name,
-                                                                                        "interpretation",
-                                                                                    ]}
-                                                                                    fieldKey={[
-                                                                                        field.fieldKey,
-                                                                                        "interpretation",
-                                                                                    ]}
-                                                                                    label="Interpretation Text"
-                                                                                    rules={[
-                                                                                        {
-                                                                                            required: true,
-                                                                                            message:
-                                                                                                "Please enter interpretation text",
-                                                                                        },
-                                                                                    ]}
-                                                                                >
-                                                                                    <Input.TextArea
-                                                                                        rows={
-                                                                                            2
-                                                                                        }
-                                                                                        placeholder="Enter what this choice represents..."
-                                                                                    />
-                                                                                </Form.Item>
-                                                                            </Col>
-                                                                            <Col
-                                                                                span={
-                                                                                    2
-                                                                                }
-                                                                            >
-                                                                                {fields.length >
-                                                                                    2 && (
-                                                                                    <Button
-                                                                                        type="text"
-                                                                                        danger
-                                                                                        icon={
-                                                                                            <DeleteOutlined />
-                                                                                        }
-                                                                                        onClick={() =>
-                                                                                            remove(
-                                                                                                field.name
-                                                                                            )
-                                                                                        }
-                                                                                    />
-                                                                                )}
-                                                                            </Col>
-                                                                        </Row>
-                                                                    </div>
-                                                                )
-                                                            )}
-                                                            <Form.Item>
-                                                                <Button
-                                                                    type="dashed"
-                                                                    onClick={() =>
-                                                                        add()
-                                                                    }
-                                                                    icon={
-                                                                        <PlusOutlined />
-                                                                    }
-                                                                    block
-                                                                    disabled={
-                                                                        fields.length >=
-                                                                        4
-                                                                    }
-                                                                >
-                                                                    Add Choice{" "}
-                                                                    {
-                                                                        fields.length
-                                                                    }
-                                                                    /4
-                                                                </Button>
-                                                            </Form.Item>
-                                                        </>
-                                                    )}
-                                                </Form.List>
-                                            </div>
-                                        </div>
-                                    )
-                                }
-                            </Form.Item>
-                        </div>
-
-                        <div className="form-actions">
-                            <Button onClick={handleCancel}>Cancel</Button>
-                            <Button type="primary" htmlType="submit">
-                                {editingQuestion
-                                    ? "Update Question"
-                                    : "Add Question"}
-                            </Button>
-                        </div>
-                    </Form>
-                </Modal>
-
-                {/* Quiz Result Details Modal */}
-                <Modal
-                    title={
-                        <Space>
-                            <Text strong>Quiz Result Details</Text>
-                            {viewingQuizResult && (
-                                <Badge
-                                    count={`${
-                                        viewingQuizResult.questions?.length || 0
-                                    } questions`}
-                                    style={{ backgroundColor: "#1890ff" }}
-                                />
-                            )}
-                        </Space>
-                    }
-                    open={isQuizResultDetailsModalVisible}
-                    onCancel={closeQuizResultDetailsModal}
-                    width={900}
-                    footer={[
-                        <Button
-                            key="close"
-                            onClick={closeQuizResultDetailsModal}
-                        >
-                            Close
-                        </Button>,
-                    ]}
-                >
-                    {viewingQuizResult && (
-                        <div className="quiz-result-details-content">
-                            {/* User Information */}
-                            <Card
-                                title="User Information"
-                                style={{ marginBottom: 16 }}
-                            >
-                                <Space
-                                    direction="vertical"
-                                    style={{ width: "100%" }}
-                                >
-                                    <Text strong>
-                                        Name:{" "}
-                                        {viewingQuizResult.user?.name || "N/A"}
-                                    </Text>
-                                    <Text type="secondary">
-                                        Submitted:{" "}
-                                        {new Date(
-                                            viewingQuizResult.created_at
-                                        ).toLocaleDateString()}
-                                    </Text>
-                                    <Tag
-                                        color={
-                                            viewingQuizResult.type === "rate"
-                                                ? "blue"
-                                                : "green"
-                                        }
-                                    >
-                                        {viewingQuizResult.type === "rate"
-                                            ? "Rating Quiz"
-                                            : "Multiple Choice Quiz"}
-                                    </Tag>
-                                </Space>
-                            </Card>
-
-                            {/* Questions and Answers */}
-                            <Card title="Questions & Answers">
-                                <List
-                                    dataSource={
-                                        viewingQuizResult.questions || []
-                                    }
-                                    renderItem={(question, index) => (
-                                        <List.Item className="quiz-result-question-item">
-                                            <div className="question-number">
-                                                <Text strong>#{index + 1}</Text>
-                                            </div>
-                                            <div
-                                                className="question-content"
-                                                style={{ width: "100%" }}
-                                            >
-                                                <Space
-                                                    direction="vertical"
-                                                    style={{ width: "100%" }}
-                                                >
-                                                    <div className="question-header">
-                                                        <Space>
-                                                            <Tag
-                                                                color={
-                                                                    question.type ===
-                                                                    "rate"
-                                                                        ? "blue"
-                                                                        : "green"
-                                                                }
-                                                            >
-                                                                {question.type ===
-                                                                "rate"
-                                                                    ? "Rating"
-                                                                    : "Multiple Choice"}
-                                                            </Tag>
-                                                            {question.required && (
-                                                                <Tag color="red">
-                                                                    Required
-                                                                </Tag>
-                                                            )}
-                                                        </Space>
-                                                    </div>
-
-                                                    <Text strong>
-                                                        {question.question}
-                                                    </Text>
-
-                                                    {question.description && (
-                                                        <Text type="secondary">
-                                                            {
-                                                                question.description
-                                                            }
-                                                        </Text>
-                                                    )}
-
-                                                    {/* User's Answer */}
-                                                    <div
-                                                        className="user-answer-section"
-                                                        style={{
-                                                            marginTop: 12,
-                                                            padding: 12,
-                                                            backgroundColor:
-                                                                "#f5f5f5",
-                                                            borderRadius: 6,
-                                                        }}
-                                                    >
-                                                        <Text strong>
-                                                            User's Answer:{" "}
-                                                        </Text>
-                                                        {question.type ===
-                                                        "rate" ? (
-                                                            <Space>
-                                                                <Rate
-                                                                    value={
-                                                                        parseInt(
-                                                                            question
-                                                                                .pivot
-                                                                                ?.answer
-                                                                        ) || 0
-                                                                    }
-                                                                    disabled
-                                                                    style={{
-                                                                        marginLeft: 8,
-                                                                    }}
-                                                                />
-                                                                <Text>
-                                                                    (
-                                                                    {question
-                                                                        .pivot
-                                                                        ?.answer ||
-                                                                        "No answer"}
-                                                                    )
-                                                                </Text>
-                                                            </Space>
-                                                        ) : (
-                                                            <Space>
-                                                                <Text
-                                                                    strong
-                                                                    style={{
-                                                                        color: "#1890ff",
-                                                                    }}
-                                                                >
-                                                                    {question
-                                                                        .pivot
-                                                                        ?.answer ||
-                                                                        "No answer"}
-                                                                </Text>
-                                                                {question.choices_with_urls && (
-                                                                    <Text>
-                                                                        -{" "}
-                                                                        {question.choices_with_urls.find(
-                                                                            (
-                                                                                choice
-                                                                            ) =>
-                                                                                choice.letter ===
-                                                                                question
-                                                                                    .pivot
-                                                                                    ?.answer
-                                                                        )
-                                                                            ?.interpretation ||
-                                                                            "Interpretation not available"
-                                                                            
-                                                                            }
-                                                                    </Text>
-                                                                )}
-                                                            </Space>
-                                                        )}
-                                                    </div>
-
-                                                    {/* Choices Preview for Multiple Choice */}
-                                                    {question.type === "abcd" &&
-                                                        question.choices_with_urls && (
-                                                            <div
-                                                                className="choices-preview"
-                                                                style={{
-                                                                    marginTop: 12,
-                                                                }}
-                                                            >
-                                                                <Text strong>
-                                                                    Available
-                                                                    Options:
-                                                                </Text>
-                                                                <Row
-                                                                    gutter={[
-                                                                        16, 16,
-                                                                    ]}
-                                                                    style={{
-                                                                        marginTop: 8,
-                                                                    }}
-                                                                >
-                                                                    {question.choices_with_urls.map(
-                                                                        (
-                                                                            choice,
-                                                                            choiceIndex
-                                                                        ) => (
-                                                                            <Col
-                                                                                span={
-                                                                                    12
-                                                                                }
-                                                                                key={
-                                                                                    choiceIndex
-                                                                                }
-                                                                            >
-                                                                                <Card
-                                                                                    size="small"
-                                                                                    style={{
-                                                                                        border:
-                                                                                            choice.letter ===
-                                                                                            question
-                                                                                                .pivot
-                                                                                                ?.answer
-                                                                                                ? "2px solid #1890ff"
-                                                                                                : "1px solid #d9d9d9",
-                                                                                    }}
-                                                                                >
-                                                                                    <Space align="start">
-                                                                                        <Badge
-                                                                                            count={
-                                                                                                choice.letter
-                                                                                            }
-                                                                                            style={{
-                                                                                                backgroundColor:
-                                                                                                    choice.letter ===
-                                                                                                    question
-                                                                                                        .pivot
-                                                                                                        ?.answer
-                                                                                                        ? "#1890ff"
-                                                                                                        : "#d9d9d9",
-                                                                                            }}
-                                                                                        />
-                                                                                        <Space
-                                                                                            direction="vertical"
-                                                                                            size={
-                                                                                                0
-                                                                                            }
-                                                                                        >
-                                                                                            {choice.image && (
-                                                                                                <Image
-                                                                                                    width={
-                                                                                                        60
-                                                                                                    }
-                                                                                                    height={
-                                                                                                        60
-                                                                                                    }
-                                                                                                    src={
-                                                                                                        choice.image
-                                                                                                    }
-                                                                                                    alt={
-                                                                                                        choice.interpretation
-                                                                                                    }
-                                                                                                    style={{
-                                                                                                        objectFit:
-                                                                                                            "cover",
-                                                                                                        borderRadius: 4,
-                                                                                                    }}
-                                                                                                    fallback="https://via.placeholder.com/60?text=No+Image"
-                                                                                                />
-                                                                                            )}
-                                                                                            <Text
-                                                                                                style={{
-                                                                                                    fontSize:
-                                                                                                        "12px",
-                                                                                                }}
-                                                                                            >
-                                                                                                {
-                                                                                                    choice.interpretation
-                                                                                                }
-                                                                                            </Text>
-                                                                                        </Space>
-                                                                                    </Space>
-                                                                                </Card>
-                                                                            </Col>
-                                                                        )
-                                                                    )}
-                                                                </Row>
-                                                            </div>
-                                                        )}
-
-                                                    {/* Rating Scale Info */}
-                                                    {question.type ===
-                                                        "rate" && (
-                                                        <div
-                                                            className="rating-info"
-                                                            style={{
-                                                                marginTop: 8,
-                                                            }}
-                                                        >
-                                                            <Text
-                                                                type="secondary"
-                                                                style={{
-                                                                    fontSize:
-                                                                        "12px",
-                                                                }}
-                                                            >
-                                                                Scale: 1
-                                                                (Lowest) - 5
-                                                                (Highest)
-                                                            </Text>
-                                                        </div>
-                                                    )}
-                                                </Space>
-                                            </div>
-                                        </List.Item>
-                                    )}
-                                />
-                            </Card>
-
-                            {/* Summary Stats */}
-                            <Card title="Summary" style={{ marginTop: 16 }}>
-                                <Row gutter={16}>
-                                    <Col span={8}>
-                                        <Statistic
-                                            title="Total Questions"
-                                            value={
-                                                viewingQuizResult.questions
-                                                    ?.length || 0
-                                            }
-                                        />
-                                    </Col>
-                                    <Col span={8}>
-                                        <Statistic
-                                            title="Required Questions"
-                                            value={
-                                                viewingQuizResult.questions?.filter(
-                                                    (q) => q.required
-                                                )?.length || 0
-                                            }
-                                        />
-                                    </Col>
-                                    <Col span={8}>
-                                        <Statistic
-                                            title="Completion Date"
-                                            value={new Date(
-                                                viewingQuizResult.created_at
-                                            ).toLocaleDateString()}
-                                        />
-                                    </Col>
-                                </Row>
-                            </Card>
-                        </div>
-                    )}
-                </Modal>
+                      ),
+                    },
+                  ]}
+                  dataSource={filteredQuestions}
+                  rowKey="id"
+                  pagination={{
+                    pageSize: 10,
+                    showSizeChanger: true,
+                  }}
+                />
+              )}
             </div>
-        </Layout>
-    );
-};
+          )}
+        </Card>
 
-export default AlumniQuestionsPage;
+        {/* Quiz Details Modal */}
+        <Modal
+          title={
+            <Space>
+              <Text strong>Quiz Details</Text>
+              {viewingQuiz && (
+                <Badge
+                  count={`${viewingQuiz.questions?.length || 0} questions`}
+                  style={{ backgroundColor: "#1890ff" }}
+                />
+              )}
+            </Space>
+          }
+          open={isQuizDetailsModalVisible}
+          onCancel={closeQuizDetailsModal}
+          width={800}
+          footer={[
+            <Button
+              key="edit"
+              onClick={() => {
+                closeQuizDetailsModal()
+                openQuizDrawer(viewingQuiz)
+              }}
+            >
+              Edit Quiz
+            </Button>,
+            <Button key="preview" type="primary" icon={<FullscreenOutlined />}>
+              Preview Quiz
+            </Button>,
+            <Button key="close" onClick={closeQuizDetailsModal}>
+              Close
+            </Button>,
+          ]}
+        >
+          {viewingQuiz && (
+            <div className="quiz-details-content">
+              <Card
+                title={
+                  <Space>
+                    <Text strong>{viewingQuiz.title}</Text>
+                    <Tag color={viewingQuiz.type === "rate" ? "blue" : "green"}>
+                      {viewingQuiz.type === "rate" ? "Rating Quiz" : "Multiple Choice Quiz"}
+                    </Tag>
+                    {viewingQuiz.isActive && <Tag color="green">Active</Tag>}
+                  </Space>
+                }
+                style={{ marginBottom: 16 }}
+              >
+                <Space direction="vertical" style={{ width: "100%" }}>
+                  <Text>
+                    <strong>Created:</strong> {new Date(viewingQuiz.created_at).toLocaleDateString()}
+                  </Text>
+                  <Text>
+                    <strong>Updated:</strong> {new Date(viewingQuiz.updated_at).toLocaleDateString()}
+                  </Text>
+                </Space>
+              </Card>
+
+              <List
+                dataSource={viewingQuiz.questions || []}
+                renderItem={(question, index) => (
+                  <List.Item className="quiz-question-item">
+                    <div className="question-number">
+                      <Text strong>#{index + 1}</Text>
+                    </div>
+                    <div className="question-content">
+                      <Space direction="vertical" style={{ width: "100%" }}>
+                        <div className="question-header">
+                          <Space>
+                            <Tag color={question.type === "rate" ? "blue" : "green"}>
+                              {question.type === "rate" ? "Rating" : "Multiple Choice"}
+                            </Tag>
+                            {question.required && <Tag color="red">Required</Tag>}
+                          </Space>
+                        </div>
+                        <Text strong>{question.question}</Text>
+                        {question.description && <Text type="secondary">{question.description}</Text>}
+                        {question.type === "abcd" && question.choices && (
+                          <div className="choices-preview">
+                            <Text strong>Options:</Text>
+                            <Row
+                              gutter={[16, 16]}
+                              style={{
+                                marginTop: 8,
+                              }}
+                            >
+                              {question.choices.map((choice, choiceIndex) => (
+                                <Col span={12} key={choiceIndex}>
+                                  <Card size="small">
+                                    <Space>
+                                      <Text strong>{choice.letter}</Text>
+                                      <Text>{choice.interpretation}</Text>
+                                    </Space>
+                                  </Card>
+                                </Col>
+                              ))}
+                            </Row>
+                          </div>
+                        )}
+                      </Space>
+                    </div>
+                  </List.Item>
+                )}
+              />
+            </div>
+          )}
+        </Modal>
+
+        {/* Quiz Creation/Editing Drawer */}
+        <Drawer
+          title={
+            <Space>
+              {currentQuiz ? "Edit Quiz" : "Create New Quiz"}
+              {currentQuiz && <Tag color="blue">{currentQuiz.title}</Tag>}
+            </Space>
+          }
+          placement="right"
+          size="large"
+          open={isQuizDrawerVisible}
+          onClose={closeQuizDrawer}
+          width="90vw"
+          className="quiz-drawer"
+          extra={
+            <Space>
+              <Text type="secondary">{quizQuestions.length} questions selected</Text>
+              <Button onClick={closeQuizDrawer}>Cancel</Button>
+              <Button loading={isSaving} disabled={!title || filterType === "all"} type="primary" onClick={saveQuiz}>
+                {currentQuiz ? "Update Quiz" : "Create Quiz"}
+              </Button>
+            </Space>
+          }
+        >
+          <div className="quiz-drawer-content">
+            {/* Left Side - Questions List */}
+            <div className="questions-panel">
+              <Card
+                title="Available Questions"
+                className="questions-list-card"
+                extra={
+                  <Space>
+                    <Text type="secondary">{filteredQuestions.length} questions</Text>
+                  </Space>
+                }
+              >
+                <div className="search-filters">
+                  <Input
+                    placeholder="Search questions..."
+                    prefix={<SearchOutlined />}
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    style={{ marginBottom: 16 }}
+                  />
+                  <Input
+                    placeholder="Enter title"
+                    value={title}
+                    onChange={(e) => setTitle(e.target.value)}
+                    style={{ marginBottom: 16 }}
+                  />
+                  <Select
+                    value={filterType}
+                    onChange={setFilterType}
+                    style={{
+                      width: "100%",
+                      marginBottom: 16,
+                    }}
+                  >
+                    <Option value="all">All Question Types</Option>
+                    <Option value="rate">Rating Questions</Option>
+                    <Option value="abcd">Multiple Choice</Option>
+                  </Select>
+                </div>
+
+                {filteredQuestions.length === 0 ? (
+                  <Empty description="No questions found" image={Empty.PRESENTED_IMAGE_SIMPLE} />
+                ) : (
+                  <Table
+                    columns={questionColumns}
+                    dataSource={filteredQuestions}
+                    rowKey="id"
+                    pagination={false}
+                    scroll={{ y: 400 }}
+                    size="small"
+                  />
+                )}
+              </Card>
+            </div>
+
+            {/* Right Side - Quiz Builder */}
+            <div className="quiz-builder-panel">
+              <Card
+                title="Quiz Builder"
+                className="quiz-builder-card"
+                extra={
+                  <Space>
+                    <Text strong>Display Order</Text>
+                    <Text type="secondary">Drag to reorder</Text>
+                  </Space>
+                }
+              >
+                {quizQuestions.length === 0 ? (
+                  <Empty description="No questions added to quiz" image={Empty.PRESENTED_IMAGE_SIMPLE} />
+                ) : (
+                  <DragDropContext onDragEnd={handleDragEnd}>
+                    <Droppable droppableId="quiz-questions">
+                      {(provided) => (
+                        <div {...provided.droppableProps} ref={provided.innerRef} className="quiz-questions-list">
+                          {quizQuestions.map((question, index) => (
+                            <Draggable key={question.id} draggableId={question.id.toString()} index={index}>
+                              {(provided, snapshot) => (
+                                <div
+                                  ref={provided.innerRef}
+                                  {...provided.draggableProps}
+                                  className={`quiz-question-item ${snapshot.isDragging ? "dragging" : ""}`}
+                                >
+                                  <div className="question-drag-handle" {...provided.dragHandleProps}>
+                                    <MenuOutlined />
+                                  </div>
+                                  <div className="question-content">
+                                    <div className="question-header">
+                                      <Space>
+                                        <Tag color={question.type === "rate" ? "blue" : "green"}>
+                                          {question.type === "rate" ? "Rating" : "Multiple Choice"}
+                                        </Tag>
+                                        <Text strong>#{index + 1}</Text>
+                                        {question.required && <Tag color="red">Required</Tag>}
+                                      </Space>
+                                      <Button
+                                        type="text"
+                                        danger
+                                        icon={<DeleteOutlined />}
+                                        onClick={() => removeQuestionFromQuiz(question.id)}
+                                      />
+                                    </div>
+                                    <Text
+                                      strong
+                                      style={{
+                                        display: "block",
+                                        marginTop: 4,
+                                      }}
+                                    >
+                                      {question.question}
+                                    </Text>
+                                    {question.description && (
+                                      <Text
+                                        type="secondary"
+                                        style={{
+                                          display: "block",
+                                          marginTop: 4,
+                                        }}
+                                      >
+                                        {question.description}
+                                      </Text>
+                                    )}
+                                    {question.type === "abcd" && question.choices && (
+                                      <div className="choices-preview">
+                                        <Text
+                                          type="secondary"
+                                          style={{
+                                            fontSize: "12px",
+                                            marginTop: 8,
+                                          }}
+                                        >
+                                          {question.choices.length} options with images
+                                        </Text>
+                                      </div>
+                                    )}
+                                  </div>
+                                </div>
+                              )}
+                            </Draggable>
+                          ))}
+                          {provided.placeholder}
+                        </div>
+                      )}
+                    </Droppable>
+                  </DragDropContext>
+                )}
+              </Card>
+            </div>
+          </div>
+        </Drawer>
+
+        {/* Add/Edit Question Modal */}
+        <Modal
+          title={editingQuestion ? "Edit Question" : "Add New Question"}
+          open={isModalVisible}
+          onCancel={handleCancel}
+          footer={null}
+          width={800}
+          className="question-modal"
+        >
+          <Form form={form} layout="vertical" onFinish={handleSubmit} className="question-form">
+            <div className="form-sections">
+              {/* Basic Information */}
+              <div className="form-section">
+                <div className="section-header">
+                  <h3>Question Details</h3>
+                  <div className="section-divider"></div>
+                </div>
+                <div className="section-content">
+                  <Form.Item
+                    name="type"
+                    label="Question Type"
+                    rules={[
+                      {
+                        required: true,
+                        message: "Please select question type",
+                      },
+                    ]}
+                  >
+                    <Radio.Group>
+                      <Space direction="vertical">
+                        {questionTypes.map((type) => (
+                          <Radio key={type.value} value={type.value}>
+                            <Space>
+                              {type.icon}
+                              {type.label}
+                            </Space>
+                          </Radio>
+                        ))}
+                      </Space>
+                    </Radio.Group>
+                  </Form.Item>
+
+                  <Form.Item
+                    name="question"
+                    label="Question Text"
+                    rules={[
+                      {
+                        required: true,
+                        message: "Please enter question text",
+                      },
+                    ]}
+                  >
+                    <Input.TextArea rows={3} placeholder="Enter your question here..." className="form-textarea" />
+                  </Form.Item>
+
+                  <Form.Item
+  name="description"
+  label="Description"
+  rules={[
+    {
+      required: true,
+      message: "Description is required",
+    },
+  ]}
+>
+  <Input.TextArea
+    rows={2}
+    placeholder="Additional context or instructions for this question..."
+    className="form-textarea"
+  />
+</Form.Item>
+
+                  <Form.Item name="required" label="Required" valuePropName="checked">
+                    <Switch checkedChildren="Required" unCheckedChildren="Optional" />
+                  </Form.Item>
+                </div>
+              </div>
+
+              {/* Choices Section (Only for ABCD type) */}
+              <Form.Item noStyle shouldUpdate={(prevValues, currentValues) => prevValues.type !== currentValues.type}>
+                {({ getFieldValue }) =>
+                  getFieldValue("type") === "abcd" && (
+                    <div className="form-section">
+                      <div className="section-header">
+                        <h3>Multiple Choice Options</h3>
+                        <div className="section-divider"></div>
+                      </div>
+                      <div className="section-content">
+                        <Form.List name="choices">
+                          {(fields, { add, remove }) => (
+                            <>
+                              {fields.map((field, index) => (
+                                <div key={field.key} className="choice-item">
+                                  <Row gutter={16} align="middle">
+                                    <Col span={2}>
+                                      <div className="choice-letter">{String.fromCharCode(65 + index)}</div>
+                                    </Col>
+                                    <Col span={10}>
+                                      <Form.Item
+                                        {...field}
+                                        name={[field.name, "image"]}
+                                        fieldKey={[field.fieldKey, "image"]}
+                                        label="Option Image"
+                                      >
+                                        <Upload listType="picture-card" beforeUpload={() => false} maxCount={1}>
+                                          <div>
+                                            <PictureOutlined />
+                                            <div
+                                              style={{
+                                                marginTop: 8,
+                                              }}
+                                            >
+                                              Upload
+                                            </div>
+                                          </div>
+                                        </Upload>
+                                      </Form.Item>
+                                    </Col>
+                                    <Col span={10}>
+                                      <Form.Item
+                                        {...field}
+                                        name={[field.name, "interpretation"]}
+                                        fieldKey={[field.fieldKey, "interpretation"]}
+                                        label="Interpretation Text"
+                                        rules={[
+                                          {
+                                            required: true,
+                                            message: "Please enter interpretation text",
+                                          },
+                                        ]}
+                                      >
+                                        <Input.TextArea rows={2} placeholder="Enter what this choice represents..." />
+                                      </Form.Item>
+                                    </Col>
+                                    <Col span={2}>
+                                      {fields.length > 2 && (
+                                        <Button
+                                          type="text"
+                                          danger
+                                          icon={<DeleteOutlined />}
+                                          onClick={() => remove(field.name)}
+                                        />
+                                      )}
+                                    </Col>
+                                  </Row>
+                                </div>
+                              ))}
+                              <Form.Item>
+                                <Button
+                                  type="dashed"
+                                  onClick={() => add()}
+                                  icon={<PlusOutlined />}
+                                  block
+                                  disabled={fields.length >= 4}
+                                >
+                                  Add Choice {fields.length}
+                                  /4
+                                </Button>
+                              </Form.Item>
+                            </>
+                          )}
+                        </Form.List>
+                      </div>
+                    </div>
+                  )
+                }
+              </Form.Item>
+            </div>
+
+            <div className="form-actions">
+              <Button onClick={handleCancel}>Cancel</Button>
+              <Button type="primary" htmlType="submit">
+                {editingQuestion ? "Update Question" : "Add Question"}
+              </Button>
+            </div>
+          </Form>
+        </Modal>
+
+        {/* Quiz Result Details Modal */}
+        <Modal
+          title={
+            <Space>
+              <Text strong>Quiz Result Details</Text>
+              {viewingQuizResult && (
+                <Badge
+                  count={`${viewingQuizResult.questions?.length || 0} questions`}
+                  style={{ backgroundColor: "#1890ff" }}
+                />
+              )}
+            </Space>
+          }
+          open={isQuizResultDetailsModalVisible}
+          onCancel={closeQuizResultDetailsModal}
+          width={900}
+          footer={[
+            <Button key="close" onClick={closeQuizResultDetailsModal}>
+              Close
+            </Button>,
+          ]}
+        >
+          {viewingQuizResult && (
+            <div className="quiz-result-details-content">
+              {/* User Information */}
+              <Card title="User Information" style={{ marginBottom: 16 }}>
+                <Space direction="vertical" style={{ width: "100%" }}>
+                  <Text strong>Name: {viewingQuizResult.user?.name || "N/A"}</Text>
+                  <Text type="secondary">Submitted: {new Date(viewingQuizResult.created_at).toLocaleDateString()}</Text>
+                  <Tag color={viewingQuizResult.type === "rate" ? "blue" : "green"}>
+                    {viewingQuizResult.type === "rate" ? "Rating Quiz" : "Multiple Choice Quiz"}
+                  </Tag>
+                </Space>
+              </Card>
+
+              {/* Questions and Answers */}
+              <Card title="Questions & Answers">
+                <List
+                  dataSource={viewingQuizResult.questions || []}
+                  renderItem={(question, index) => (
+                    <List.Item className="quiz-result-question-item">
+                      <div className="question-number">
+                        <Text strong>#{index + 1}</Text>
+                      </div>
+                      <div className="question-content" style={{ width: "100%" }}>
+                        <Space direction="vertical" style={{ width: "100%" }}>
+                          <div className="question-header">
+                            <Space>
+                              <Tag color={question.type === "rate" ? "blue" : "green"}>
+                                {question.type === "rate" ? "Rating" : "Multiple Choice"}
+                              </Tag>
+                              {question.required && <Tag color="red">Required</Tag>}
+                            </Space>
+                          </div>
+
+                          <Text strong>{question.question}</Text>
+
+                          {question.description && <Text type="secondary">{question.description}</Text>}
+
+                          {/* User's Answer */}
+                          <div
+                            className="user-answer-section"
+                            style={{
+                              marginTop: 12,
+                              padding: 12,
+                              backgroundColor: "#f5f5f5",
+                              borderRadius: 6,
+                            }}
+                          >
+                            <Text strong>User's Answer: </Text>
+                            {question.type === "rate" ? (
+                              <Space>
+                                <Rate
+                                  value={Number.parseInt(question.pivot?.answer) || 0}
+                                  disabled
+                                  style={{
+                                    marginLeft: 8,
+                                  }}
+                                />
+                                <Text>({question.pivot?.answer || "No answer"})</Text>
+                              </Space>
+                            ) : (
+                              <Space>
+                                <Text
+                                  strong
+                                  style={{
+                                    color: "#1890ff",
+                                  }}
+                                >
+                                  {question.pivot?.answer || "No answer"}
+                                </Text>
+                                {question.choices_with_urls && (
+                                  <Text>
+                                    -{" "}
+                                    {question.choices_with_urls.find(
+                                      (choice) => choice.letter === question.pivot?.answer,
+                                    )?.interpretation || "Interpretation not available"}
+                                  </Text>
+                                )}
+                              </Space>
+                            )}
+                          </div>
+
+                          {/* Choices Preview for Multiple Choice */}
+                          {question.type === "abcd" && question.choices_with_urls && (
+                            <div
+                              className="choices-preview"
+                              style={{
+                                marginTop: 12,
+                              }}
+                            >
+                              <Text strong>Available Options:</Text>
+                              <Row
+                                gutter={[16, 16]}
+                                style={{
+                                  marginTop: 8,
+                                }}
+                              >
+                                {question.choices_with_urls.map((choice, choiceIndex) => (
+                                  <Col span={12} key={choiceIndex}>
+                                    <Card
+                                      size="small"
+                                      style={{
+                                        border:
+                                          choice.letter === question.pivot?.answer
+                                            ? "2px solid #1890ff"
+                                            : "1px solid #d9d9d9",
+                                      }}
+                                    >
+                                      <Space align="start">
+                                        <Badge
+                                          count={choice.letter}
+                                          style={{
+                                            backgroundColor:
+                                              choice.letter === question.pivot?.answer ? "#1890ff" : "#d9d9d9",
+                                          }}
+                                        />
+                                        <Space direction="vertical" size={0}>
+                                          {choice.image && (
+                                            <Image
+                                              width={60}
+                                              height={60}
+                                              src={choice.image || "/placeholder.svg"}
+                                              alt={choice.interpretation}
+                                              style={{
+                                                objectFit: "cover",
+                                                borderRadius: 4,
+                                              }}
+                                              fallback="https://via.placeholder.com/60?text=No+Image"
+                                            />
+                                          )}
+                                          <Text
+                                            style={{
+                                              fontSize: "12px",
+                                            }}
+                                          >
+                                            {choice.interpretation}
+                                          </Text>
+                                        </Space>
+                                      </Space>
+                                    </Card>
+                                  </Col>
+                                ))}
+                              </Row>
+                            </div>
+                          )}
+
+                          {/* Rating Scale Info */}
+                          {question.type === "rate" && (
+                            <div
+                              className="rating-info"
+                              style={{
+                                marginTop: 8,
+                              }}
+                            >
+                              <Text
+                                type="secondary"
+                                style={{
+                                  fontSize: "12px",
+                                }}
+                              >
+                                Scale: 1 (Lowest) - 5 (Highest)
+                              </Text>
+                            </div>
+                          )}
+                        </Space>
+                      </div>
+                    </List.Item>
+                  )}
+                />
+              </Card>
+
+              {/* Summary Stats */}
+              <Card title="Summary" style={{ marginTop: 16 }}>
+                <Row gutter={16}>
+                  <Col span={8}>
+                    <Statistic title="Total Questions" value={viewingQuizResult.questions?.length || 0} />
+                  </Col>
+                  <Col span={8}>
+                    <Statistic
+                      title="Required Questions"
+                      value={viewingQuizResult.questions?.filter((q) => q.required)?.length || 0}
+                    />
+                  </Col>
+                  <Col span={8}>
+                    <Statistic
+                      title="Completion Date"
+                      value={new Date(viewingQuizResult.created_at).toLocaleDateString()}
+                    />
+                  </Col>
+                </Row>
+              </Card>
+            </div>
+          )}
+        </Modal>
+      </div>
+    </Layout>
+  )
+}
+
+export default AlumniQuestionsPage

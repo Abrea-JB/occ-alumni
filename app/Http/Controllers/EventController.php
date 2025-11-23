@@ -125,16 +125,30 @@ class EventController extends Controller
                 }
             }
 
+            $currentDateTime = now();
+            $eventDate = $request->date;
+            $startTime = $request->start_time ?? ($request->input('timeRange.0') ?? null);
+            $endTime = $request->end_time ?? ($request->input('timeRange.1') ?? null);
+            
+            $eventDateTime = \Carbon\Carbon::parse($eventDate . ' ' . $startTime);
+            $eventEndDateTime = \Carbon\Carbon::parse($eventDate . ' ' . $endTime);
+            
+            $status = 'upcoming';
+            if ($currentDateTime->greaterThan($eventEndDateTime)) {
+                $status = 'completed';
+            } elseif ($currentDateTime->between($eventDateTime, $eventEndDateTime)) {
+                $status = 'ongoing';
+            }
+
             // Update event
             $event->update([
                 'title' => $request->title,
                 'description' => $request->description,
                 'event_type' => $request->event_type,
                 'category' => $request->category,
-                'date' => $request->date,
-                'start_time' => $request->start_time ?? ($request->timeRange[0] ?? null),
-                'end_time' => $request->end_time ?? ($request->timeRange[1] ?? null),
-
+                'date' => $eventDate,
+                'start_time' => $startTime,
+                'end_time' => $endTime,
                 'location' => $request->location,
                 'price' => $request->price ?? 0,
                 'capacity' => $request->capacity,
@@ -143,12 +157,13 @@ class EventController extends Controller
                 'agenda' => $request->agenda,
                 'featured' => $request->featured ?? false,
                 'images' => $imagePaths,
+                'status' => $status,
             ]);
 
             return response()->json([
                 'success' => true,
                 'message' => 'Event updated successfully!',
-                'data' => $event->load('user')
+                'data' => $event->fresh('user')
             ]);
         } catch (\Exception $e) {
             return response()->json([

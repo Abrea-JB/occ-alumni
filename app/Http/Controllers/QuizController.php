@@ -3,14 +3,16 @@
 
 namespace App\Http\Controllers;
 
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Validator;
 use App\Models\Quiz;
 use App\Models\AlumniQuiz;
+use Illuminate\Http\Request;
 use App\Models\AlumniQuizQuestion;
 use App\Http\Requests\StoreQuizRequest;
 use App\Http\Requests\UpdateQuizOrderRequest;
-use Illuminate\Http\Request;
-use DB;
-use Log;
+
 
 class QuizController extends Controller
 {
@@ -52,7 +54,7 @@ class QuizController extends Controller
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Failed to create quiz: ' . $e->getMessage()
+                'message' => 'Please add first the Question atleast 1'
             ], 500);
         }
     }
@@ -264,10 +266,10 @@ class QuizController extends Controller
     public function saveAlumniQuiz(Request $request)
     {
         try {
-            \Log::info('Alumni Quiz Submission Received', $request->all());
+            Log::info('Alumni Quiz Submission Received', $request->all());
 
             // Validate the request
-            $validator = \Validator::make($request->all(), [
+            $validator = Validator::make($request->all(), [
                 'quizId' => 'required',
                 'timeSpent' => 'required|integer|min:1',
                 'type' => 'required|string|max:30',
@@ -277,7 +279,7 @@ class QuizController extends Controller
             ]);
 
             if ($validator->fails()) {
-                \Log::error('Validation failed', $validator->errors()->toArray());
+                Log::error('Validation failed', $validator->errors()->toArray());
                 return response()->json([
                     'success' => false,
                     'message' => 'Validation failed',
@@ -294,7 +296,7 @@ class QuizController extends Controller
                 ], 401);
             }
 
-            \DB::beginTransaction();
+            DB::beginTransaction();
 
             // Create alumni quiz record
             $alumniQuiz = AlumniQuiz::create([
@@ -316,11 +318,11 @@ class QuizController extends Controller
 
             // Calculate average rating directly from AlumniQuizQuestion
             $averageRating = AlumniQuizQuestion::where('alumni_quiz_id', $alumniQuiz->id)
-                ->avg(\DB::raw('CAST(answer AS DECIMAL(10,2))'));
+                ->avg(DB::raw('CAST(answer AS DECIMAL(10,2))'));
 
-            \DB::commit();
+            DB::commit();
 
-            \Log::info('Alumni Quiz submitted successfully', [
+            Log::info('Alumni Quiz submitted successfully', [
                 'alumni_quiz_id' => $alumniQuiz->id,
                 'user_id' => $user->id,
                 'average_rating' => $averageRating,
@@ -336,8 +338,8 @@ class QuizController extends Controller
                 'totalQuestions' => count($answersData),
             ]);
         } catch (\Exception $e) {
-            \DB::rollBack();
-            \Log::error('Error saving alumni quiz: ' . $e->getMessage(), [
+            DB::rollBack();
+            Log::error('Error saving alumni quiz: ' . $e->getMessage(), [
                 'trace' => $e->getTraceAsString()
             ]);
 

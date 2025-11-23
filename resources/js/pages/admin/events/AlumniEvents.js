@@ -584,52 +584,46 @@ const EventDetailsModal = ({ event, visible, onClose, onEdit, onDelete }) => {
           <Col span={8}>
             {/* Pricing & Registration Card */}
             <Card className="pricing-card">
-             <div className="pricing-header">
-  <Title level={3} style={{ margin: 0 }}>
-    {event.price === 0
-      ? "FREE"
-      : `₱${Number(event.price).toLocaleString()}`}
-  </Title>
+              <div className="pricing-header">
+                <Title level={3} style={{ margin: 0 }}>
+                  {event.price === 0 ? "FREE" : `₱${Number(event.price).toLocaleString()}`}
+                </Title>
 
-  {event.earlyBirdPrice && isEarlyBirdAvailable(event) && (
-    <div className="early-bird-pricing">
-      <Text delete type="secondary">
-        ₱{Number(event.price).toLocaleString()}
-      </Text>
+                {event.earlyBirdPrice && isEarlyBirdAvailable(event) && (
+                  <div className="early-bird-pricing">
+                    <Text delete type="secondary">
+                      ₱{Number(event.price).toLocaleString()}
+                    </Text>
 
-      <Text
-        strong
-        style={{
-          color: "#ff4d4f",
-          fontSize: "20px",
-        }}
-      >
-        ₱{Number(event.earlyBirdPrice).toLocaleString()}
-      </Text>
+                    <Text
+                      strong
+                      style={{
+                        color: "#ff4d4f",
+                        fontSize: "20px",
+                      }}
+                    >
+                      ₱{Number(event.earlyBirdPrice).toLocaleString()}
+                    </Text>
 
-      <Tag color="red">Early Bird</Tag>
-    </div>
-  )}
-</div>
-
+                    <Tag color="red">Early Bird</Tag>
+                  </div>
+                )}
+              </div>
 
               {/* <Button
-                                type="primary"
-                                size="large"
-                                block
-                                onClick={handleRegister}
-                                disabled={
-                                    isRegistered ||
-                                    event.registered >= event.capacity
-                                }
-                                className="register-btn"
-                            >
-                                {isRegistered
-                                    ? <CheckCircleOutlined /> + " Registered"
-                                    : event.registered >= event.capacity
-                                    ? "Sold Out"
-                                    : "Register Now"}
-                            </Button> */}
+                type="primary"
+                size="large"
+                block
+                onClick={handleRegister}
+                disabled={isRegistered || event.registered >= event.capacity}
+                className="register-btn"
+              >
+                {isRegistered
+                  ? <CheckCircleOutlined /> + " Registered"
+                  : event.registered >= event.capacity
+                    ? "Sold Out"
+                    : "Register Now"}
+              </Button> */}
 
               {event.registered >= event.capacity && (
                 <Text
@@ -1161,14 +1155,11 @@ const EventCard = ({ event, showEventDetails, onEdit, onDelete }) => {
             </div>
           </div>
 
-         <div className="event-pricing">
-  <Text strong className="regular-price">
-    {Number.parseFloat(event.price) === 0
-      ? "FREE"
-      : `₱${Number(event.price).toLocaleString()}`}
-  </Text>
-</div>
-
+          <div className="event-pricing">
+            <Text strong className="regular-price">
+              {Number.parseFloat(event.price) === 0 ? "FREE" : `₱${Number(event.price).toLocaleString()}`}
+            </Text>
+          </div>
 
           <div className="event-tags">
             {event.tags.map((tag) => (
@@ -1219,7 +1210,7 @@ const getStatusTag = (status) => {
 }
 
 const AlumniEvents = () => {
-  const { isLoading, data: events = [], isFetching, refetch } = useEvents()
+  const { isLoading, data: events = [], isFetching, refetch: fetchEvents } = useEvents()
   //const [events, setEvents] = useState(initialEvents);
   const [viewMode, setViewMode] = useState("grid")
   const [activeTab, setActiveTab] = useState("all")
@@ -1246,11 +1237,11 @@ const AlumniEvents = () => {
 
   useEffect(() => {
     const interval = setInterval(() => {
-      refetch()
+      fetchEvents()
     }, 30000) // Poll every 30 seconds
 
     return () => clearInterval(interval)
-  }, [refetch])
+  }, [fetchEvents])
 
   const showEventDetails = (event) => {
     console.log({ event })
@@ -1271,7 +1262,7 @@ const AlumniEvents = () => {
         message.success("Event deleted successfully!")
         setIsDetailModalVisible(false)
         setSelectedEvent(null)
-        refetch()
+        fetchEvents()
       }
     } catch (error) {
       message.error("Failed to delete event")
@@ -1318,82 +1309,89 @@ const AlumniEvents = () => {
 
   // Filter and sort events
   const filteredAndSortedEvents = useMemo(() => {
-    const filtered = events.filter((event) => {
-      // Tab filter
-      if (activeTab !== "all" && event.status !== activeTab) {
-        return false
-      }
-
-      // Search filter
-      if (filters.search) {
-        const searchLower = filters.search.toLowerCase()
-        const matchesSearch =
-          event.title.toLowerCase().includes(searchLower) ||
-          event.description.toLowerCase().includes(searchLower) ||
-          event.location.toLowerCase().includes(searchLower) ||
-          event.organizer.toLowerCase().includes(searchLower) ||
-          event.tags.some((tag) => tag.toLowerCase().includes(searchLower))
-        if (!matchesSearch) return false
-      }
-
-      // Event type filter
-      if (filters.eventType !== "all" && (event.eventType || event.event_type) !== filters.eventType) {
-        return false
-      }
-
-      // Category filter
-      if (filters.category !== "all" && event.category !== filters.category) {
-        return false
-      }
-
-      // Status filter
-      if (filters.status !== "all" && event.status !== filters.status) {
-        return false
-      }
-
-      // Price range filter
-      if (filters.priceRange !== "all") {
-        switch (filters.priceRange) {
-          case "free":
-            if (event.price !== 0) return false
-            break
-          case "0-50":
-            if (event.price === 0 || event.price > 50) return false
-            break
-          case "50-100":
-            if (event.price < 50 || event.price > 100) return false
-            break
-          case "100-200":
-            if (event.price < 100 || event.price > 200) return false
-            break
-          case "200+":
-            if (event.price < 200) return false
-            break
-          default:
-            break
+    const filtered = events
+      .filter((event) => {
+        if (activeTab === "featured") {
+          // Featured tab - only show featured events
+          if (!event.featured) return false
+        } else if (activeTab !== "all") {
+          // Status tabs (upcoming, ongoing, completed) - filter by status
+          if (event.status !== activeTab) return false
         }
-      }
 
-      // Featured filter
-      if (filters.featured !== "all") {
-        const isFeatured = filters.featured === "featured"
-        if (event.featured !== isFeatured) return false
-      }
+        // Search filter
+        if (filters.search) {
+          const searchLower = filters.search.toLowerCase()
+          return (
+            event.title.toLowerCase().includes(searchLower) ||
+            event.description.toLowerCase().includes(searchLower) ||
+            event.location.toLowerCase().includes(searchLower) ||
+            event.organizer.toLowerCase().includes(searchLower) ||
+            (event.tags && event.tags.some((tag) => tag.toLowerCase().includes(searchLower))) // Added check for event.tags
+          )
+        }
 
-      // Date range filter
-      // Date range filter
-      if (filters.dateRange && filters.dateRange.length === 2) {
-        const eventDate = moment(event.date || event.event_date)
-        const startDate = filters.dateRange[0]
-        const endDate = filters.dateRange[1]
-
-        if (!eventDate.isBetween(startDate, endDate, "day", "[]")) {
+        return true
+      })
+      .filter((event) => {
+        // Event type filter
+        if (filters.eventType !== "all" && (event.eventType || event.event_type) !== filters.eventType) {
           return false
         }
-      }
 
-      return true
-    })
+        // Category filter
+        if (filters.category !== "all" && event.category !== filters.category) {
+          return false
+        }
+
+        // Status filter
+        if (filters.status !== "all" && event.status !== filters.status) {
+          return false
+        }
+
+        // Price range filter
+        if (filters.priceRange !== "all") {
+          switch (filters.priceRange) {
+            case "free":
+              if (event.price !== 0) return false
+              break
+            case "0-50":
+              if (event.price === 0 || event.price > 50) return false
+              break
+            case "50-100":
+              if (event.price < 50 || event.price > 100) return false
+              break
+            case "100-200":
+              if (event.price < 100 || event.price > 200) return false
+              break
+            case "200+":
+              if (event.price < 200) return false
+              break
+            default:
+              break
+          }
+        }
+
+        // Featured filter
+        if (filters.featured !== "all") {
+          const isFeatured = filters.featured === "featured"
+          if (event.featured !== isFeatured) return false
+        }
+
+        // Date range filter
+        // Date range filter
+        if (filters.dateRange && filters.dateRange.length === 2) {
+          const eventDate = moment(event.date || event.event_date)
+          const startDate = filters.dateRange[0]
+          const endDate = filters.dateRange[1]
+
+          if (!eventDate.isBetween(startDate, endDate, "day", "[]")) {
+            return false
+          }
+        }
+
+        return true
+      })
 
     // Sort events
     filtered.sort((a, b) => {
@@ -1466,8 +1464,8 @@ const AlumniEvents = () => {
       formData.append("event_type", values.event_type)
       formData.append("category", values.category)
       formData.append("date", values.date.format("YYYY-MM-DD"))
-      formData.append("start_time", values.timeRange[0].format("HH:mm"))
-      formData.append("end_time", values.timeRange[1].format("HH:mm"))
+      formData.append("timeRange[0]", values.timeRange[0].format("HH:mm"))
+      formData.append("timeRange[1]", values.timeRange[1].format("HH:mm"))
       formData.append("location", values.location)
       formData.append("price", values.price || 0)
       formData.append("capacity", values.capacity)
@@ -1493,31 +1491,27 @@ const AlumniEvents = () => {
       let response
       if (selectedEvent) {
         // Update existing event
-        formData.append("_method", "PUT")
-        response = await axiosConfig.post(`/events/${selectedEvent.id}`, formData, {
-          headers: {
-            "Content-Type": "multipart/form-data",
-          },
+        response = await axiosConfig.post(`/events/${selectedEvent.id}?_method=PUT`, formData, {
+          headers: { "Content-Type": "multipart/form-data" },
         })
       } else {
         // Create new event
         response = await axiosConfig.post("/events", formData, {
-          headers: {
-            "Content-Type": "multipart/form-data",
-          },
+          headers: { "Content-Type": "multipart/form-data" },
         })
       }
 
       if (response.data.success) {
-        message.success(selectedEvent ? "Event updated successfully!" : "Event created successfully!")
+        message.success(response.data.message || "Event saved successfully!")
+        setIsModalVisible(false)
         form.resetFields()
         setFileList([])
-        handleCancel()
-        refetch()
+        setSelectedEvent(null)
+        fetchEvents()
       }
     } catch (error) {
-      message.error(selectedEvent ? "Failed to update event" : "Failed to create event")
-      console.error("Event operation error:", error)
+      console.error("Error creating/updating event:", error)
+      message.error(error.response?.data?.message || "Failed to save event")
     }
   }
 
@@ -1632,13 +1626,29 @@ const AlumniEvents = () => {
                   <Badge
                     count={stats.completed}
                     style={{
-                      backgroundColor: "#faad14",
+                      backgroundColor: "#8c8c8c",
                       marginLeft: 8,
                     }}
                   />
                 </span>
               }
               key="completed"
+            />
+            <TabPane
+              tab={
+                <span>
+                  <StarOutlined />
+                  Featured
+                  <Badge
+                    count={stats.featured}
+                    style={{
+                      backgroundColor: "#faad14",
+                      marginLeft: 8,
+                    }}
+                  />
+                </span>
+              }
+              key="featured"
             />
           </Tabs>
         </Card>
@@ -1866,7 +1876,6 @@ const AlumniEvents = () => {
                             }}
                             size="large"
                             format="hh:mm A"
-                            use12Hours
                             className="form-timepicker"
                           />
                         </Form.Item>
@@ -1924,28 +1933,38 @@ const AlumniEvents = () => {
                           />
                         </Form.Item>
                       </Col>
-                      <Col span={8}>
-                        <Form.Item
-                          name="capacity"
-                          label="Capacity"
-                          rules={[
-                            {
-                              required: true,
-                              message: "Please enter event capacity",
-                            },
-                          ]}
-                        >
-                          <InputNumber
-                            style={{
-                              width: "100%",
-                            }}
-                            size="large"
-                            min={1}
-                            placeholder="50"
-                            className="form-input-number"
-                          />
-                        </Form.Item>
-                      </Col>
+                <Col span={8}>
+  <Form.Item
+    name="capacity"
+    label="Capacity"
+    rules={[
+      {
+        required: true,
+        message: "Please enter event capacity",
+      },
+      {
+        type: "number",
+        max: 50,
+        message: "Capacity cannot exceed 50",
+      },
+      {
+        type: "number",
+        min: 1,
+        message: "Capacity must be at least 1",
+      },
+    ]}
+  >
+    <InputNumber
+      style={{ width: "100%" }}
+      size="large"
+      min={1}
+      max={50}
+      placeholder="50"
+      className="form-input-number"
+    />
+  </Form.Item>
+</Col>
+
                       <Col span={8}>
                         <Form.Item
                           name="organizer"
