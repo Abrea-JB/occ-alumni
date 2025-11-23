@@ -232,12 +232,46 @@ const AlumniQuestionsPage = () => {
         }
     };
 
-    // Delete question
-    const handleDelete = (questionId) => {
-        setQuestions((prev) => prev.filter((q) => q.id !== questionId));
-        setSelectedQuestions((prev) => prev.filter((id) => id !== questionId));
-        message.success("Question deleted successfully!");
-    };
+
+// const handleDelete = async (questionId) => {
+//     try {
+//         const response = await axiosConfig.delete(`/questions/${questionId}`);
+
+//         if (response.data.success) {
+//             message.success("Question deleted successfully!");
+
+//             // Reload from server
+//             refetch();
+//         } else {
+//             message.error(response.data.message || "Failed to delete question");
+//         }
+//     } catch (error) {
+//         console.error("Delete error:", error);
+//         message.error("Deletion failed");
+//     }
+// };
+
+
+const handleDelete = (questionId) => {
+    message.success("Question removed in frontend only!");
+
+    // Remove locally from UI
+    refetch({
+        // TEMPORARY override: filter out deleted item in UI only
+        select: (old) => old.filter((q) => q.id !== questionId),
+    });
+};
+
+
+
+
+
+    // // Delete question
+    // const handleDelete = (questionId) => {
+    //     setQuestions((prev) => prev.filter((q) => q.id !== questionId));
+    //     setSelectedQuestions((prev) => prev.filter((id) => id !== questionId));
+    //     message.success("Question deleted successfully!");
+    // };
 
     // Open quiz creation drawer
     const openQuizDrawer = (quiz = null) => {
@@ -335,10 +369,31 @@ const AlumniQuestionsPage = () => {
     };
 
     // Delete quiz
-    const deleteQuiz = (quizId) => {
-        setQuizzes((prev) => prev.filter((q) => q.id !== quizId));
-        message.success("Quiz deleted successfully!");
-    };
+    // const deleteQuiz = (quizId) => {
+    //     setQuizzes((prev) => prev.filter((q) => q.id !== quizId));
+    //     message.success("Quiz deleted successfully!");
+    // };
+
+
+const deleteQuiz = async (quizId) => {
+    try {
+        const { data } = await axiosConfig.delete(`/quizzes/${quizId}`);
+
+        if (data.success) {
+            message.success("Quiz deleted successfully!");
+
+            // Reload quizzes from backend
+            refetchQuizzes();
+        } else {
+            message.error(data.message || "Failed to delete quiz");
+        }
+    } catch (error) {
+        console.error("Quiz deletion error:", error);
+        message.error("Deletion failed");
+    }
+};
+
+
 
     // View quiz details in modal
     const viewQuizDetails = (quiz) => {
@@ -812,7 +867,7 @@ const AlumniQuestionsPage = () => {
                                                             }
                                                         />
                                                     </Tooltip>
-                                                    <Popconfirm
+                                                    {/* <Popconfirm
                                                         title="Delete Question"
                                                         description="Are you sure you want to delete this question?"
                                                         onConfirm={() =>
@@ -832,7 +887,7 @@ const AlumniQuestionsPage = () => {
                                                                 }
                                                             />
                                                         </Tooltip>
-                                                    </Popconfirm>
+                                                    </Popconfirm> */}
                                                 </Space>
                                             ),
                                         },
@@ -1765,8 +1820,8 @@ const AlumniQuestionsPage = () => {
                                                                                     .pivot
                                                                                     ?.answer
                                                                         )
-                                                                            // ?.interpretation ||
-                                                                            // "Interpretation not available"
+                                                                            ?.interpretation ||
+                                                                            "Interpretation not available"
                                                                             
                                                                             }
                                                                     </Text>

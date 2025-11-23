@@ -627,17 +627,39 @@ const handleEdit = () => {
                 )}
             </Descriptions.Item>
 
-            <Descriptions.Item label="Salary Range">
-                {isEditMode ? (
-                    <Input
-                        value={editedValues.salary_range}
-                        onChange={(e) => handleFieldChange('salary_range', e.target.value)}
-                        placeholder="Enter salary range"
-                    />
-                ) : (
-                    detailedProfile?.professionalInfo?.salaryRange
-                )}
-            </Descriptions.Item>
+    <Descriptions.Item label="Salary Range ₱">
+    {isEditMode ? (
+        <Input
+            value={editedValues.salary_range}
+            placeholder="0 - 150,000"
+            onChange={(e) => {
+                let val = e.target.value;
+
+                // Allow only numbers, comma, dash, and spaces
+                val = val.replace(/[^0-9\-]/g, "");
+
+                if (val.includes("-")) {
+                    // Split range
+                    let [min, max] = val.split("-");
+
+                    // Format each part with commas
+                    min = min ? Number(min).toLocaleString() : "";
+                    max = max ? Number(max).toLocaleString() : "";
+
+                    val = max !== undefined ? `${min} - ${max}` : min;
+                } else {
+                    // Format single number
+                    val = val ? Number(val).toLocaleString() : "";
+                }
+
+                handleFieldChange("salary_range", val);
+            }}
+        />
+    ) : (
+        detailedProfile?.professionalInfo?.salaryRange
+    )}
+</Descriptions.Item>
+
 
             <Descriptions.Item label="Work Location">
                 {isEditMode ? (

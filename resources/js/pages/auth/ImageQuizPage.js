@@ -1241,9 +1241,9 @@ const ImageQuizPage = () => {
                                                         key={option.id}
                                                     >
                                                         <Tooltip
-                                                            title={
-                                                                option.interpretation
-                                                            }
+                                                            // title={
+                                                            //     option.interpretation
+                                                            // }
                                                         >
                                                             <div
                                                                 style={{

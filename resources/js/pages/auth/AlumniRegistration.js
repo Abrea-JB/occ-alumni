@@ -60,6 +60,8 @@ import useCourses from "~/hooks/useCourses"
 import useEmployeeStatus from "~/hooks/useEmployeeStatus"
 import { AlumniDetails } from "~/components"
 import { industryOptions } from "~/utils/constant"
+import dayjs from "dayjs";
+
 
 const { Title, Text, Paragraph } = Typography
 const { Option } = Select
@@ -172,6 +174,8 @@ const AlumniRegistration = () => {
   const [loading, setLoading] = useState(false)
   const [isPrivacyModalOpen, setIsPrivacyModalOpen] = useState(false)
   const [isTermsModalOpen, setIsTermsModalOpen] = useState(false)
+  const [selectedGradYear, setSelectedGradYear] = useState(null);
+  const [isUnemployed, setIsUnemployed] = useState(false);
 
   const steps = [
     {
@@ -336,8 +340,8 @@ const AlumniRegistration = () => {
       phone: values.phone,
       address: values.address,
       birth_date: values.birth_date
-      ? values.birth_date.format("YYYY-MM-DD")
-      : null,
+        ? values.birth_date.format("YYYY-MM-DD")
+        : null,
       gender: values.gender,
       bio: values.bio,
 
@@ -454,11 +458,11 @@ const AlumniRegistration = () => {
 
       // Format birthDate specifically
       const formattedValues = {
-  ...allFormValues,
-  birth_date: allFormValues.birth_date
-    ? allFormValues.birth_date.format("YYYY-MM-DD")
-    : null,
-}
+        ...allFormValues,
+        birth_date: allFormValues.birth_date
+          ? allFormValues.birth_date.format("YYYY-MM-DD")
+          : null,
+      }
 
 
       // Process each field
@@ -769,98 +773,98 @@ const AlumniRegistration = () => {
           </div>
         </Col>
 
-  <Col xs={24} sm={12}>
-  <Form.Item
-    name="first_name"
-    label="First Name"
-    rules={[
-      {
-        required: true,
-        message: "Please enter your first name",
-      },
-      {
-        pattern: /^[A-Za-z\s]+$/,
-        message: "First name must contain letters only",
-      },
-    ]}
-  >
-    <Input
-      size="large"
-      placeholder="Enter your first name"
-      prefix={<UserOutlined />}
-      onChange={(e) => {
-        let value = e.target.value;
+        <Col xs={24} sm={12}>
+          <Form.Item
+            name="first_name"
+            label="First Name"
+            rules={[
+              {
+                required: true,
+                message: "Please enter your first name",
+              },
+              {
+                pattern: /^[A-Za-z\s]+$/,
+                message: "First name must contain letters only",
+              },
+            ]}
+          >
+            <Input
+              size="large"
+              placeholder="Enter your first name"
+              prefix={<UserOutlined />}
+              onChange={(e) => {
+                let value = e.target.value;
 
-        // Remove numbers & special characters
-        value = value.replace(/[^A-Za-z\s]/g, "");
+                // Remove numbers & special characters
+                value = value.replace(/[^A-Za-z\s]/g, "");
 
-        // Update the form value properly
-        form.setFieldsValue({ first_name: value });
-      }}
-    />
-  </Form.Item>
-</Col>
-
-
-<Col xs={24} sm={12}>
-  <Form.Item
-    name="last_name"
-    label="Last Name"
-    rules={[
-      {
-        required: true,
-        message: "Please enter your last name",
-      },
-      {
-        pattern: /^[A-Za-z\s]+$/,
-        message: "Last name must contain letters only",
-      },
-    ]}
-  >
-    <Input
-      size="large"
-      placeholder="Enter your last name"
-      prefix={<UserOutlined />}
-      onChange={(e) => {
-        let value = e.target.value;
-
-        // Remove numbers & special characters
-        value = value.replace(/[^A-Za-z\s]/g, "");
-
-        // Update the form value properly
-        form.setFieldsValue({ last_name: value });
-      }}
-    />
-  </Form.Item>
-</Col>
+                // Update the form value properly
+                form.setFieldsValue({ first_name: value });
+              }}
+            />
+          </Form.Item>
+        </Col>
 
 
-<Col xs={24} sm={12}>
-  <Form.Item
-    name="middle_name"
-    label="Middle Name"
-    rules={[
-      {
-        pattern: /^[A-Za-z\s]*$/,
-        message: "Middle name must contain letters only",
-      },
-    ]}
-  >
-    <Input
-      size="large"
-      placeholder="Enter your middle name"
-      onChange={(e) => {
-        let value = e.target.value;
+        <Col xs={24} sm={12}>
+          <Form.Item
+            name="last_name"
+            label="Last Name"
+            rules={[
+              {
+                required: true,
+                message: "Please enter your last name",
+              },
+              {
+                pattern: /^[A-Za-z\s]+$/,
+                message: "Last name must contain letters only",
+              },
+            ]}
+          >
+            <Input
+              size="large"
+              placeholder="Enter your last name"
+              prefix={<UserOutlined />}
+              onChange={(e) => {
+                let value = e.target.value;
 
-        // Remove any number or special characters
-        value = value.replace(/[^A-Za-z\s]/g, "");
+                // Remove numbers & special characters
+                value = value.replace(/[^A-Za-z\s]/g, "");
 
-        // Update Ant Design form value properly
-        form.setFieldsValue({ middle_name: value });
-      }}
-    />
-  </Form.Item>
-</Col>
+                // Update the form value properly
+                form.setFieldsValue({ last_name: value });
+              }}
+            />
+          </Form.Item>
+        </Col>
+
+
+        <Col xs={24} sm={12}>
+          <Form.Item
+            name="middle_name"
+            label="Middle Name"
+            rules={[
+              {
+                pattern: /^[A-Za-z\s]*$/,
+                message: "Middle name must contain letters only",
+              },
+            ]}
+          >
+            <Input
+              size="large"
+              placeholder="Enter your middle name"
+              onChange={(e) => {
+                let value = e.target.value;
+
+                // Remove any number or special characters
+                value = value.replace(/[^A-Za-z\s]/g, "");
+
+                // Update Ant Design form value properly
+                form.setFieldsValue({ middle_name: value });
+              }}
+            />
+          </Form.Item>
+        </Col>
 
 
         <Col xs={24} sm={12}>
@@ -875,90 +879,90 @@ const AlumniRegistration = () => {
             </Select>
           </Form.Item>
         </Col>
-<Col xs={24} sm={12}>
-  <Form.Item
-    name="email"
-    label="Email Address"
-    rules={[
-      { required: true, message: "Please enter your email" },
-      { type: "email", message: "Please enter a valid email" },
-      {
-        validator: async (_, value) => {
-          if (!value) return Promise.resolve();
+        <Col xs={24} sm={12}>
+          <Form.Item
+            name="email"
+            label="Email Address"
+            rules={[
+              { required: true, message: "Please enter your email" },
+              { type: "email", message: "Please enter a valid email" },
+              {
+                validator: async (_, value) => {
+                  if (!value) return Promise.resolve();
 
-          // Check if Gmail
-          if (!/^[\w.+-]+@gmail\.com$/i.test(value)) {
-            return Promise.reject(new Error("Email must be a @gmail.com address"));
-          }
+                  // Check if Gmail
+                  if (!/^[\w.+-]+@gmail\.com$/i.test(value)) {
+                    return Promise.reject(new Error("Email must be a @gmail.com address"));
+                  }
 
-          // Check if email already exists in the backend
-          try {
-            const res = await axios.get(`/api/check-email?email=${value}`);
-            if (res.data.exists) {
-              return Promise.reject(new Error("This email is already in use"));
-            }
-            return Promise.resolve();
-          } catch (err) {
-            return Promise.reject(new Error("Unable to verify email"));
-          }
-        },
-      },
-    ]}
-    validateTrigger={['onBlur']}
-  >
-    <Input
-      size="large"
-      placeholder="your.email@gmail.com"
-      prefix={<MailOutlined />}
-    />
-  </Form.Item>
-</Col>
+                  // Check if email already exists in the backend
+                  try {
+                    const res = await axios.get(`/api/check-email?email=${value}`);
+                    if (res.data.exists) {
+                      return Promise.reject(new Error("This email is already in use"));
+                    }
+                    return Promise.resolve();
+                  } catch (err) {
+                    return Promise.reject(new Error("Unable to verify email"));
+                  }
+                },
+              },
+            ]}
+            validateTrigger={['onBlur']}
+          >
+            <Input
+              size="large"
+              placeholder="your.email@gmail.com"
+              prefix={<MailOutlined />}
+            />
+          </Form.Item>
+        </Col>
 
 
-<Col xs={24} sm={12}>
-  <Form.Item
-    name="phone"
-    label="Phone Number"
-    rules={[
-      { required: true, message: "Please enter your phone number" },
-      {
-        pattern: /^09\d{9}$/,
-        message: "Phone number must be 11 digits and start with 09",
-      },
-      {
-        validator: async (_, value) => {
-          if (!value) return Promise.resolve();
-          try {
-            const res = await axios.get(`/api/check-phone?phone=${value}`);
-            if (res.data.exists) {
-              return Promise.reject(new Error("This phone number is already in use"));
-            }
-            return Promise.resolve();
-          } catch (err) {
-            return Promise.reject(new Error("Unable to verify phone number"));
-          }
-        },
-      },
-    ]}
-    validateTrigger={['onBlur']} // validate when user leaves the field
-  >
-    <Input
-      size="large"
-      maxLength={11}
-      prefix={<PhoneOutlined />}
-      value={form.getFieldValue("phone")}
-      onChange={(e) => {
-        let value = e.target.value.replace(/\D/g, "");
-        if (!value.startsWith("09")) {
-          value = "09" + value.replace(/^0+/, "").slice(0, 9);
-        }
-        value = value.slice(0, 11);
-        form.setFieldsValue({ phone: value });
-      }}
-      placeholder="09XXXXXXXXX"
-    />
-  </Form.Item>
-</Col>
+        <Col xs={24} sm={12}>
+          <Form.Item
+            name="phone"
+            label="Phone Number"
+            rules={[
+              { required: true, message: "Please enter your phone number" },
+              {
+                pattern: /^09\d{9}$/,
+                message: "Phone number must be 11 digits and start with 09",
+              },
+              {
+                validator: async (_, value) => {
+                  if (!value) return Promise.resolve();
+                  try {
+                    const res = await axios.get(`/api/check-phone?phone=${value}`);
+                    if (res.data.exists) {
+                      return Promise.reject(new Error("This phone number is already in use"));
+                    }
+                    return Promise.resolve();
+                  } catch (err) {
+                    return Promise.reject(new Error("Unable to verify phone number"));
+                  }
+                },
+              },
+            ]}
+            validateTrigger={['onBlur']} // validate when user leaves the field
+          >
+            <Input
+              size="large"
+              maxLength={11}
+              prefix={<PhoneOutlined />}
+              value={form.getFieldValue("phone")}
+              onChange={(e) => {
+                let value = e.target.value.replace(/\D/g, "");
+                if (!value.startsWith("09")) {
+                  value = "09" + value.replace(/^0+/, "").slice(0, 9);
+                }
+                value = value.slice(0, 11);
+                form.setFieldsValue({ phone: value });
+              }}
+              placeholder="09XXXXXXXXX"
+            />
+          </Form.Item>
+        </Col>
 
 
 
@@ -978,19 +982,27 @@ const AlumniRegistration = () => {
         </Col>
 
         <Col xs={24} sm={12}>
-          <Form.Item
-            name="birth_date"
-            label="Date of Birth"
-            rules={[
-              {
-                required: true,
-                message: "Please select your birth date",
-              },
-            ]}
-          >
-            <DatePicker style={{ width: "100%" }} size="large" placeholder="Select your birth date" />
-          </Form.Item>
-        </Col>
+  <Form.Item
+    name="birth_date"
+    label="Date of Birth"
+    rules={[
+      {
+        required: true,
+        message: "Please select your birth date",
+      },
+    ]}
+  >
+    <DatePicker
+      style={{ width: "100%" }}
+      size="large"
+      placeholder="Select your birth date"
+      disabledDate={(current) => {
+        const twentyYearsAgo = dayjs().subtract(20, "year");
+        return current && current.isAfter(twentyYearsAgo, "day");
+      }}
+    />
+  </Form.Item>
+</Col>
 
         <Col xs={24} sm={12}>
           <Form.Item
@@ -1101,39 +1113,56 @@ const AlumniRegistration = () => {
             </Select>
           </Form.Item>
         </Col>
-<Col xs={24} sm={12}>
-  <Form.Item
-    name="studentId"
-    label="Student ID Number"
-    rules={[
-      {
-        required: true,
-        message: "Please enter your student ID",
-      },
-      {
-        validator: async (_, value) => {
-          if (!value) return Promise.resolve();
-          try {
-            const res = await axios.get(`/api/check-student-id?studentId=${value}`);
-            if (res.data.exists) {
-              return Promise.reject(new Error("This student ID is already in use"));
-            }
-            return Promise.resolve();
-          } catch (err) {
-            return Promise.reject(new Error("Unable to verify student ID"));
-          }
-        },
-      },
-    ]}
-    validateTrigger={['onBlur']}
-  >
-    <Input
-      size="large"
-      placeholder="Enter your student ID"
-      prefix={<IdcardOutlined />}
-    />
-  </Form.Item>
-</Col>
+        <Col xs={24} sm={12}>
+          <Form.Item
+            name="studentId"
+            label="Student ID Number"
+            rules={[
+              {
+                required: true,
+                message: "Please enter your student ID",
+              },
+              {
+                pattern: /^\d{4}-\d-\d{5}$/,
+                message: "Format must be YYYY-S-NNNNN (e.g., 2021-2-04062)",
+              },
+              {
+                validator: async (_, value) => {
+                  if (!value) return Promise.resolve();
+                  try {
+                    const res = await axios.get(`/api/check-student-id?studentId=${value}`);
+                    if (res.data.exists) {
+                      return Promise.reject(new Error("This student ID is already in use"));
+                    }
+                    return Promise.resolve();
+                  } catch (err) {
+                    return Promise.reject(new Error("Unable to verify student ID"));
+                  }
+                },
+              },
+            ]}
+            validateTrigger={["onBlur"]}
+          >
+            <Input
+              size="large"
+              placeholder="2021-2-04062"
+              prefix={<IdcardOutlined />}
+              maxLength={12}
+              onChange={(e) => {
+                let value = e.target.value;
+
+                // Remove all characters except numbers
+                value = value.replace(/[^0-9]/g, "");
+
+                // Apply formatting as YYYY-S-NNNNN
+                if (value.length > 4) value = value.slice(0, 4) + "-" + value.slice(4);
+                if (value.length > 6) value = value.slice(0, 6) + "-" + value.slice(6);
+
+                form.setFieldsValue({ studentId: value });
+              }}
+            />
+          </Form.Item>
+        </Col>
 
 
         <Col xs={24} sm={12}>
@@ -1147,7 +1176,14 @@ const AlumniRegistration = () => {
               },
             ]}
           >
-            <Select size="large" placeholder="Expected Graduation Year">
+            <Select
+              size="large"
+              placeholder="Expected Graduation Year"
+              onChange={(value) => {
+                setSelectedGradYear(value);
+                form.setFieldsValue({ enrollmentYear: value - 1 }); // reset enrollment
+              }}
+            >
               {Array.from({ length: 30 }, (_, i) => {
                 const year = new Date().getFullYear() - i
                 return (
@@ -1159,25 +1195,27 @@ const AlumniRegistration = () => {
             </Select>
           </Form.Item>
         </Col>
-        
-<Col xs={24} sm={12}>
+
+  <Col xs={24} sm={12}>
   <Form.Item
     name="enrollmentYear"
     label="Enrollment Year (4th Year)"
     rules={[{ required: true, message: "Please select your enrollment year" }]}
   >
-    <Select size="large" placeholder="Please select the year you enrolled for your 4th year of college.">
-      {Array.from({ length: 40 }, (_, i) => {
-        const year = new Date().getFullYear() - i;
-        return (
-          <Option key={year} value={year}>
-            {year}
-          </Option>
-        );
-      })}
+    <Select
+      size="large"
+      placeholder="Enrollment year"
+      disabled={!selectedGradYear}
+    >
+      {selectedGradYear && (
+        <Option value={selectedGradYear - 1}>
+          {selectedGradYear - 1}
+        </Option>
+      )}
     </Select>
   </Form.Item>
 </Col>
+
 
 
         <Col xs={24} sm={12}>
@@ -1186,18 +1224,18 @@ const AlumniRegistration = () => {
           </Form.Item>
         </Col>
 
-     <Col xs={24}>
-  <Form.Item
-    name="thesisTitle"
-    label="Thesis/Capstone Title"
-    rules={[{ required: true, message: "Please enter your thesis or capstone project title" }]}
-  >
-    <Input
-      size="large"
-      placeholder="Enter your thesis or capstone project title"
-    />
-  </Form.Item>
-</Col>
+        <Col xs={24}>
+          <Form.Item
+            name="thesisTitle"
+            label="Thesis/Capstone Title"
+            rules={[{ required: true, message: "Please enter your thesis or capstone project title" }]}
+          >
+            <Input
+              size="large"
+              placeholder="Enter your thesis or capstone project title"
+            />
+          </Form.Item>
+        </Col>
 
 
         <Col xs={24}>
@@ -1250,7 +1288,34 @@ const AlumniRegistration = () => {
               },
             ]}
           >
-            <Select size="large" placeholder="Select your employment status">
+            <Select
+  size="large"
+  placeholder="Select your employment status"
+  onChange={(value) => {
+    const selected = statuses.find((s) => s.id === value);
+
+    const unemployedSelected = selected?.status_name
+      ?.toLowerCase()
+      .includes("unemployed");
+
+    setIsUnemployed(unemployedSelected);
+
+    // Clear all fields when unemployed
+    if (unemployedSelected) {
+      form.setFieldsValue({
+        currentCompany: undefined,
+        jobTitle: undefined,
+        industry: undefined,
+        yearsExperience: undefined,
+        salaryRange: undefined,
+        workLocation: undefined,
+        careerGoals: undefined,
+        previousCompanies: undefined,
+      });
+    }
+  }}
+>
+
               {Array.isArray(statuses) &&
                 statuses.map((status) => (
                   <Option key={status.id} value={status.id}>
@@ -1263,19 +1328,19 @@ const AlumniRegistration = () => {
 
         <Col xs={24}>
           <Form.Item name="currentCompany" label="Current Company/Organization">
-            <Input size="large" placeholder="Enter your current company name" />
+            <Input size="large" disabled={isUnemployed} placeholder="Enter your current company name" />
           </Form.Item>
         </Col>
 
         <Col xs={24}>
           <Form.Item name="jobTitle" label="Job Title/Position">
-            <Input size="large" placeholder="Enter your current job title" />
+            <Input size="large" disabled={isUnemployed} placeholder="Enter your current job title" />
           </Form.Item>
         </Col>
 
         <Col xs={24} sm={12}>
           <Form.Item name="industry" label="Industry">
-            <Select size="large" placeholder="Select industry">
+            <Select size="large" disabled={isUnemployed} placeholder="Select industry">
               {industryOptions.map((industry) => (
                 <Option key={industry} value={industry}>
                   {industry}
@@ -1285,15 +1350,26 @@ const AlumniRegistration = () => {
           </Form.Item>
         </Col>
 
-        <Col xs={24} sm={12}>
-          <Form.Item name="yearsExperience" label="Years of Experience">
-            <InputNumber style={{ width: "100%" }} size="large" min={0} max={50} placeholder="0" />
-          </Form.Item>
-        </Col>
+       <Col xs={24} sm={12}>
+  <Form.Item name="yearsExperience" label="Years of Experience">
+    <InputNumber
+      style={{ width: "100%" }}
+      size="large"
+      disabled={isUnemployed}
+      min={0}
+      max={50}
+      step={1}               // only whole numbers
+      stringMode={false}     // prevents string values
+      parser={(value) => value.replace(/\D/g, "")} // remove ANY non-numeric characters
+      placeholder="0"
+    />
+  </Form.Item>
+</Col>
+
 
         <Col xs={24} sm={12}>
           <Form.Item name="salaryRange" label="Current Annual Salary Range (PHP)">
-            <Select size="large" placeholder="Select annual salary range">
+            <Select size="large" disabled={isUnemployed} placeholder="Select annual salary range">
               <Option value="0-150000">₱0 - ₱150,000 per year</Option>
               <Option value="150001-300000">₱150,001 - ₱300,000 per year</Option>
               <Option value="300001-500000">₱300,001 - ₱500,000 per year</Option>
@@ -1308,7 +1384,7 @@ const AlumniRegistration = () => {
 
         <Col xs={24} sm={12}>
           <Form.Item name="workLocation" label="Work Location">
-            <Input size="large" placeholder="City, State, Country" />
+            <Input size="large" disabled={isUnemployed} placeholder="City, State, Country" />
           </Form.Item>
         </Col>
 
@@ -1316,6 +1392,7 @@ const AlumniRegistration = () => {
           <Form.Item name="careerGoals" label="Career Goals & Aspirations">
             <TextArea
               rows={3}
+              disabled={isUnemployed}
               placeholder="Describe your career goals and where you see yourself in the next 5 years..."
               maxLength={400}
               showCount
@@ -1327,6 +1404,7 @@ const AlumniRegistration = () => {
           <Form.Item name="previousCompanies" label="Previous Companies/Positions">
             <TextArea
               rows={3}
+              disabled={isUnemployed}
               placeholder="List your previous work experiences (Company - Position - Duration)..."
               maxLength={500}
               showCount

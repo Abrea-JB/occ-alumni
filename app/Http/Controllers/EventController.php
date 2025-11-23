@@ -46,7 +46,7 @@ class EventController extends Controller
     {
         try {
             $imagePaths = [];
-            
+
             // Handle image uploads
             if ($request->hasFile('images')) {
                 foreach ($request->file('images') as $image) {
@@ -54,7 +54,7 @@ class EventController extends Controller
                     $imagePaths[] = $path;
                 }
             }
-            
+
             // Create event
             $event = Event::create([
                 'title' => $request->title,
@@ -62,8 +62,8 @@ class EventController extends Controller
                 'event_type' => $request->event_type,
                 'category' => $request->category,
                 'date' => $request->date,
-                'start_time' => $request->timeRange[0],
-                'end_time' => $request->timeRange[1],
+                'start_time' => $request->start_time ?? ($request->timeRange[0] ?? null),
+                'end_time' => $request->end_time ?? ($request->timeRange[1] ?? null),
                 'location' => $request->location,
                 'price' => $request->price ?? 0,
                 'capacity' => $request->capacity,
@@ -79,7 +79,6 @@ class EventController extends Controller
                 'success' => true,
                 'message' => 'Event created successfully!',
             ], 201);
-
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
@@ -91,7 +90,7 @@ class EventController extends Controller
     // Get all events (for listing)
     public function index(Request $request)
     {
-        
+
         $query = Event::with('user')->upcoming();
 
         if ($request->has('type') && $request->type !== 'all') {
@@ -111,5 +110,61 @@ class EventController extends Controller
     public function show(Event $event)
     {
         return response()->json($event->load('user'));
+    }
+
+    public function update(Request $request, Event $event)
+    {
+        try {
+            $imagePaths = $event->images ?? [];
+
+            // Handle new image uploads
+            if ($request->hasFile('images')) {
+                foreach ($request->file('images') as $image) {
+                    $path = $image->store('events/images', 'public');
+                    $imagePaths[] = $path;
+                }
+            }
+
+            // Update event
+            $event->update([
+                'title' => $request->title,
+                'description' => $request->description,
+                'event_type' => $request->event_type,
+                'category' => $request->category,
+                'date' => $request->date,
+                'start_time' => $request->start_time ?? ($request->timeRange[0] ?? null),
+                'end_time' => $request->end_time ?? ($request->timeRange[1] ?? null),
+
+                'location' => $request->location,
+                'price' => $request->price ?? 0,
+                'capacity' => $request->capacity,
+                'organizer' => $request->organizer,
+                'tags' => $request->tags,
+                'agenda' => $request->agenda,
+                'featured' => $request->featured ?? false,
+                'images' => $imagePaths,
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Event updated successfully!',
+                'data' => $event->load('user')
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to update event: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    public function destroy(Event $event)
+    {
+        $event->delete();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Event deleted successfully'
+        ]);
     }
 }

@@ -153,20 +153,41 @@ const AlumniDashboard = () => {
                     if (graduationYear && graduationYear >= currentYear - 5) {
                         activeThisYear++;
                     }
+                    
+// Process salary data
+if (salary) {
+    // Extract numbers including commas → "20,000" stays intact
+    const salaryMatch = salary.match(/[\d,]+/g);
 
-                    // Process salary data
-                    if (salary) {
-                        const salaryMatch = salary.match(/\d+/g);
-                        if (salaryMatch && salaryMatch.length > 0) {
-                            const avgSalary =
-                                salaryMatch.reduce(
-                                    (sum, num) => sum + parseInt(num),
-                                    0
-                                ) / salaryMatch.length;
-                            totalSalary += avgSalary;
-                            salaryCount++;
-                        }
-                    }
+    if (salaryMatch && salaryMatch.length > 0) {
+        // Convert "20,000" → 20000
+        const numericValues = salaryMatch.map(num =>
+            parseInt(num.replace(/,/g, ""))
+        );
+
+        const avgSalary =
+            numericValues.reduce((sum, num) => sum + num, 0) /
+            numericValues.length;
+
+        totalSalary += avgSalary;
+        salaryCount++;
+    }
+}
+
+
+                    // // Process salary data
+                    // if (salary) {
+                    //     const salaryMatch = salary.match(/\d+/g);
+                    //     if (salaryMatch && salaryMatch.length > 0) {
+                    //         const avgSalary =
+                    //             salaryMatch.reduce(
+                    //                 (sum, num) => sum + parseInt(num),
+                    //                 0
+                    //             ) / salaryMatch.length;
+                    //         totalSalary += avgSalary;
+                    //         salaryCount++;
+                    //     }
+                    // }
 
                     // Process by course data for the new chart
                     if (courseName) {
@@ -1068,7 +1089,7 @@ const AlumniDashboard = () => {
                             <Statistic
                                 title="Average Salary"
                                 value={alumniMetrics?.averageSalary || 0}
-                                prefix={<DollarOutlined />}
+                                // prefix={<DollarOutlined />}
                                 valueStyle={{ color: "#faad14" }}
                                 formatter={(value) =>
                                     `₱${value?.toLocaleString() || 0}`
