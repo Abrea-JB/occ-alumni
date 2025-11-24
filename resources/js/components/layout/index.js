@@ -742,22 +742,30 @@ useEffect(() => {
                             justify="space-between"
                             align="middle"
                         >
-                            <Col className="first">
-                                {isMobile && (
-                                    <Button
-                                        type="text"
-                                        icon={
-                                            drawerVisible ? (
-                                                <MenuUnfoldOutlined />
-                                            ) : (
-                                                <MenuFoldOutlined />
-                                            )
-                                        }
-                                        onClick={toggleDrawer}
-                                        className="burger-menu"
-                                    />
-                                )}
-                            </Col>
+                           <Col
+    className="first"
+    style={{ display: "flex", alignItems: "center", gap: 12 }}
+>
+    {isMobile && (
+        <Button
+            type="text"
+            icon={drawerVisible ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />}
+            onClick={toggleDrawer}
+            className="burger-menu"
+        />
+    )}
+
+    <Text
+        strong
+        style={{
+            fontSize: 26,
+            color: "#667eea",
+            whiteSpace: "nowrap",
+        }}
+    >
+        Alumni Tracing Management System
+    </Text>
+</Col>
                             <Col flex="230px" className="second">
                                 <Space size="middle">
                                     {/* <Dropdown

@@ -98,10 +98,10 @@ const sortOptions = [
 ]
 
 const courseFolders = [
-  { id: 1, code: "BSIT", name: "Bachelor of Science in Information Technology", color: "#1890ff" },
-  { id: 2, code: "BSEd", name: "Bachelor in Teacher Education", color: "#52c41a" },
-  { id: 3, code: "BEED", name: "Bachelor of Elementary Education", color: "#faad14" },
-  { id: 4, code: "BSBA", name: "Bachelor of Science in Business Administration", color: "#f5222d" },
+  { id: 1, code: "BSIT", name: "Bachelor of Science in Information Technology", color:  "#f5222d" },
+  { id: 2, code: "BSEd", name: "Bachelor in Teacher Education", color: "#1890ff" },
+  { id: 3, code: "BEED", name: "Bachelor of Elementary Education", color: "#1890ff" },
+  { id: 4, code: "BSBA", name: "Bachelor of Science in Business Administration", color: "#faad14" },
 ]
 
 const getStatusIcon = (status) => {

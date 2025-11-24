@@ -71,10 +71,10 @@ const { Step } = Steps
 // Company/University Information
 const companyInfo = {
   name: "Opol Community College Alumni Association",
-  logo: "https://occ.edu.ph/images/icon.png",
+  logo: "https://www.occ.edu.ph/images/icon.png",
   slogan: "Building tomorrow's leaders, one student at a time.",
-  website: "occph.com",
-  address: "123 University Avenue, Prestige City, PC 12345",
+  website: "occ-alumni.online",
+  address: "ZONE C. Salva St, Opol, 9016 Misamis Oriental",
 }
 
 const courseOptions = [

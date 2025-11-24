@@ -55,6 +55,21 @@ class EventController extends Controller
                 }
             }
 
+            $currentDateTime = now();
+            $eventDate = $request->date;
+            $startTime = $request->start_time ?? ($request->input('timeRange.0') ?? null);
+            $endTime = $request->end_time ?? ($request->input('timeRange.1') ?? null);
+            
+            $eventDateTime = \Carbon\Carbon::parse($eventDate . ' ' . $startTime);
+            $eventEndDateTime = \Carbon\Carbon::parse($eventDate . ' ' . $endTime);
+            
+            $status = 'upcoming';
+            if ($currentDateTime->greaterThan($eventEndDateTime)) {
+                $status = 'completed';
+            } elseif ($currentDateTime->between($eventDateTime, $eventEndDateTime)) {
+                $status = 'ongoing';
+            }
+
             // Create event
             $event = Event::create([
                 'title' => $request->title,
@@ -70,9 +85,10 @@ class EventController extends Controller
                 'organizer' => $request->organizer,
                 'tags' => $request->tags,
                 'agenda' => $request->agenda,
-                'featured' => $request->featured ?? false,
+                'featured' => (int) $request->featured,
                 'images' => $imagePaths,
                 'user_id' => auth()->id(),
+                'status' => $status, // Added auto-calculated status
             ]);
 
             return response()->json([
@@ -155,7 +171,7 @@ class EventController extends Controller
                 'organizer' => $request->organizer,
                 'tags' => $request->tags,
                 'agenda' => $request->agenda,
-                'featured' => $request->featured ?? false,
+                'featured' => (int) $request->featured,
                 'images' => $imagePaths,
                 'status' => $status,
             ]);

@@ -90,6 +90,9 @@ import { Layout } from "~/components"
 import axiosConfig from "~/utils/axiosConfig"
 import useEvents from "~/hooks/useEvents"
 import secureLocalStorage from "react-secure-storage"
+import dayjs from 'dayjs';
+
+
 
 const { Title, Text, Paragraph } = Typography
 const { Option } = Select
@@ -460,8 +463,8 @@ const EventDetailsModal = ({ event, visible, onClose, onEdit, onDelete }) => {
             {/* Event Status & Basic Info */}
             <Card className="event-info-card">
               <Space size="middle" style={{ marginBottom: 16 }}>
-                <Tag color={getEventTypeConfig(event.eventType).color} icon={getEventTypeConfig(event.eventType).icon}>
-                  {getEventTypeConfig(event.eventType).label}
+                <Tag color={getEventTypeConfig(event.eventType || event.event_type).color} icon={getEventTypeConfig(event.eventType || event.event_type).icon}>
+                  {getEventTypeConfig(event.eventType || event.event_type).label}
                 </Tag>
                 <Tag icon={<TagOutlined />} color="blue">
                   {getCategoryLabel(event.category)}
@@ -1222,6 +1225,31 @@ const AlumniEvents = () => {
   const role = secureLocalStorage.getItem("userRole")
   const [fileList, setFileList] = useState([])
 
+    // Watch selected date
+  const selectedDate = Form.useWatch("date", form);
+
+  // Trigger re-render every minute for real-time disabling
+  const [now, setNow] = useState(dayjs());
+  useEffect(() => {
+    const interval = setInterval(() => setNow(dayjs()), 60000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const disabledTime = () => {
+    if (!selectedDate) return {};
+
+    if (dayjs(selectedDate).isSame(now, "day")) {
+      const disabledHours = [];
+      for (let i = 0; i < now.hour(); i++) disabledHours.push(i);
+
+      const disabledMinutes = (hour) =>
+        hour === now.hour() ? Array.from({ length: now.minute() }, (_, i) => i) : [];
+
+      return { disabledHours: () => disabledHours, disabledMinutes };
+    }
+
+    return {};
+  };
   // Filter states
   const [filters, setFilters] = useState({
     search: "",
@@ -1303,7 +1331,7 @@ const AlumniEvents = () => {
       organizer: event.organizer,
       tags: event.tags,
       agenda: typeof event.agenda === "string" ? event.agenda : event.agenda?.join("\n"),
-      featured: event.featured,
+      featured: event.featured || false,
     })
   }
 
@@ -1455,23 +1483,24 @@ const AlumniEvents = () => {
   }
 
   const handleCreateEvent = async (values) => {
-    try {
-      const formData = new FormData()
+  try {
+    const formData = new FormData();
 
-      // Append all form data
-      formData.append("title", values.title)
-      formData.append("description", values.description)
-      formData.append("event_type", values.event_type)
-      formData.append("category", values.category)
-      formData.append("date", values.date.format("YYYY-MM-DD"))
-      formData.append("timeRange[0]", values.timeRange[0].format("HH:mm"))
-      formData.append("timeRange[1]", values.timeRange[1].format("HH:mm"))
-      formData.append("location", values.location)
-      formData.append("price", values.price || 0)
-      formData.append("capacity", values.capacity)
-      formData.append("organizer", values.organizer)
-      formData.append("agenda", values.agenda || "")
-      formData.append("featured", values.featured ? 1 : 0)
+    formData.append("title", values.title);
+    formData.append("description", values.description);
+    formData.append("event_type", values.event_type);
+    formData.append("category", values.category);
+    formData.append("date", values.date.format("YYYY-MM-DD"));
+    formData.append("timeRange[0]", values.timeRange[0].format("HH:mm"));
+    formData.append("timeRange[1]", values.timeRange[1].format("HH:mm"));
+    formData.append("location", values.location);
+    formData.append("price", values.price || 0);
+    formData.append("capacity", values.capacity);
+    formData.append("organizer", values.organizer);
+    formData.append("agenda", values.agenda || "");
+
+    // ⭐ THE IMPORTANT PART ⭐
+    formData.append("featured", values.featured ? 1 : 0)
 
       // Handle tags
       if (values.tags && values.tags.length > 0) {
@@ -1840,46 +1869,33 @@ const AlumniEvents = () => {
                   <div className="section-content">
                     <Row gutter={16}>
                       <Col span={12}>
-                        <Form.Item
-                          name="date"
-                          label="Event Date"
-                          rules={[
-                            {
-                              required: true,
-                              message: "Please select event date",
-                            },
-                          ]}
-                        >
-                          <DatePicker
-                            style={{
-                              width: "100%",
-                            }}
-                            size="large"
-                            className="form-datepicker"
-                          />
-                        </Form.Item>
-                      </Col>
-                      <Col span={12}>
-                        <Form.Item
-                          name="timeRange"
-                          label="Event Time"
-                          rules={[
-                            {
-                              required: true,
-                              message: "Please select event time",
-                            },
-                          ]}
-                        >
-                          <TimePicker.RangePicker
-                            style={{
-                              width: "100%",
-                            }}
-                            size="large"
-                            format="hh:mm A"
-                            className="form-timepicker"
-                          />
-                        </Form.Item>
-                      </Col>
+        <Form.Item
+          name="date"
+          label="Event Date"
+          rules={[{ required: true, message: "Please select event date" }]}
+        >
+          <DatePicker
+            style={{ width: "100%" }}
+            size="large"
+            disabledDate={(current) => current && current < dayjs().startOf("day")}
+          />
+        </Form.Item>
+      </Col>
+
+      <Col span={12}>
+        <Form.Item
+          name="timeRange"
+          label="Event Time"
+          rules={[{ required: true, message: "Please select event time" }]}
+        >
+          <TimePicker.RangePicker
+            style={{ width: "100%" }}
+            size="large"
+            format="hh:mm A"
+            disabledTime={disabledTime}
+          />
+        </Form.Item>
+      </Col>
                     </Row>
 
                     <Form.Item
@@ -1933,37 +1949,37 @@ const AlumniEvents = () => {
                           />
                         </Form.Item>
                       </Col>
-                <Col span={8}>
-  <Form.Item
-    name="capacity"
-    label="Capacity"
-    rules={[
-      {
-        required: true,
-        message: "Please enter event capacity",
-      },
-      {
-        type: "number",
-        max: 50,
-        message: "Capacity cannot exceed 50",
-      },
-      {
-        type: "number",
-        min: 1,
-        message: "Capacity must be at least 1",
-      },
-    ]}
-  >
-    <InputNumber
-      style={{ width: "100%" }}
-      size="large"
-      min={1}
-      max={50}
-      placeholder="50"
-      className="form-input-number"
-    />
-  </Form.Item>
-</Col>
+                      <Col span={8}>
+                        <Form.Item
+                          name="capacity"
+                          label="Capacity"
+                          rules={[
+                            {
+                              required: true,
+                              message: "Please enter event capacity",
+                            },
+                            {
+                              type: "number",
+                              max: 50,
+                              message: "Capacity cannot exceed 50",
+                            },
+                            {
+                              type: "number",
+                              min: 1,
+                              message: "Capacity must be at least 1",
+                            },
+                          ]}
+                        >
+                          <InputNumber
+                            style={{ width: "100%" }}
+                            size="large"
+                            min={1}
+                            max={50}
+                            placeholder="50"
+                            className="form-input-number"
+                          />
+                        </Form.Item>
+                      </Col>
 
                       <Col span={8}>
                         <Form.Item
@@ -2027,20 +2043,24 @@ const AlumniEvents = () => {
                   </div>
                   <div className="section-content">
                     <Row gutter={16}>
-                      <Col span={12}>
-                        <Form.Item name="featured" label="Featured Event" valuePropName="checked">
-                          <div className="featured-switch-container">
-                            <Switch
-                              checkedChildren="Featured"
-                              unCheckedChildren="Regular"
-                              className="featured-switch"
-                            />
-                            <span className="switch-label">
-                              Mark this event as featured to highlight it on the platform
-                            </span>
-                          </div>
-                        </Form.Item>
-                      </Col>
+                    <Col span={12}>
+  <Form.Item
+    name="featured"
+    label="Featured Event"
+    valuePropName="checked"
+    initialValue={false}
+  >
+    <Switch
+      checkedChildren="Featured"
+      unCheckedChildren="Regular"
+      className="featured-switch"
+    />
+  </Form.Item>
+
+  <span className="switch-label">
+    Mark this event as featured to highlight it on the platform
+  </span>
+</Col>
                       <Col span={12}>
                         <Form.Item name="images" label="Event Images">
                           <Upload
