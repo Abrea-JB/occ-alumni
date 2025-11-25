@@ -25,7 +25,7 @@ const Formlogin = () => {
             style={{
                 minHeight: "100vh",
                 margin: 0,
-                backgroundImage: `url(https://scontent.fcgm1-1.fna.fbcdn.net/v/t39.30808-6/514405810_1301740068624399_2900765982442406081_n.jpg?_nc_cat=106&ccb=1-7&_nc_sid=cc71e4&_nc_ohc=Dy4KxwZ_W0cQ7kNvwFNemV4&_nc_oc=AdllrPMiG9b9nB1PIbx3ee3C_PxyoWYiQvgyrF4GzDsDz74A6P056YX4TlDm13FYbZ0L6IsDW3MP6fbOtaeGJHcC&_nc_zt=23&_nc_ht=scontent.fcgm1-1.fna&_nc_gid=fdxghk4mvVwm77fbzphtdg&oh=00_Afi1QfB7pFEQuwTy8TumMt8aCAofnmgTNp7Ag1SXqy3jMQ&oe=6924A3FB)`,
+                backgroundImage: `url(https://scontent.fcgm1-1.fna.fbcdn.net/v/t39.30808-6/514405810_1301740068624399_2900765982442406081_n.jpg?_nc_cat=106&ccb=1-7&_nc_sid=cc71e4&_nc_ohc=tvlzRxtCkcoQ7kNvwElQZJY&_nc_oc=AdnE3QOHzZiEg968Sgyf40erukwqtMZnHdGBW9ExDwWawFWuLfapIqnxyDTjFHtcqjMob8XszOCbwC7vSPoPZH0f&_nc_zt=23&_nc_ht=scontent.fcgm1-1.fna&_nc_gid=cob1f9bzK9mQaJSWkFmxYQ&oh=00_AfgNGwvaqi_fmrvgaiJRlwycCUEGk72KVGj4KdF1Xe1xEg&oe=692B73BB)`,
                 backgroundSize: "cover",
                 backgroundPosition: "left",
                 backgroundRepeat: "no-repeat",
@@ -71,7 +71,7 @@ const Formlogin = () => {
                                 marginBottom: 8,
                             }}
                         >
-                            Welcome to OCC Alumini
+                            Welcome to OCC Alumni
                         </h5>
                         <p style={{ color: "#666", margin: 0 }}>
                             Login to continue

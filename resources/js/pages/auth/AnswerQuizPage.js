@@ -47,7 +47,7 @@ import axiosConfig from "~/utils/axiosConfig";
 
 const companyInfo = {
     name: "Opol Community College Alumni Association",
-    logo: "https://occph.com/build/assets/OCC_LOGO-BWCM4zrL.png",
+    logo: "https://www.sis.occph.com/build/assets/OCC_LOGO-BWCM4zrL.png",
     slogan: "Building tomorrow's leaders, one student at a time.",
     website: "occph.com",
     address: "C. Salva St, Opol, 9016 Misamis Oriental",

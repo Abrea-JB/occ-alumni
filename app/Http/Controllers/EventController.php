@@ -172,6 +172,7 @@ class EventController extends Controller
                 'tags' => $request->tags,
                 'agenda' => $request->agenda,
                 'featured' => (int) $request->featured,
+
                 'images' => $imagePaths,
                 'status' => $status,
             ]);

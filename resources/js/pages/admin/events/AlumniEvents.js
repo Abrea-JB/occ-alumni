@@ -90,9 +90,12 @@ import { Layout } from "~/components"
 import axiosConfig from "~/utils/axiosConfig"
 import useEvents from "~/hooks/useEvents"
 import secureLocalStorage from "react-secure-storage"
-import dayjs from 'dayjs';
+import dayjs from "dayjs"
+import isBetween from "dayjs/plugin/isBetween"
+import customParseFormat from "dayjs/plugin/customParseFormat"
 
-
+dayjs.extend(isBetween)
+dayjs.extend(customParseFormat)
 
 const { Title, Text, Paragraph } = Typography
 const { Option } = Select
@@ -463,7 +466,10 @@ const EventDetailsModal = ({ event, visible, onClose, onEdit, onDelete }) => {
             {/* Event Status & Basic Info */}
             <Card className="event-info-card">
               <Space size="middle" style={{ marginBottom: 16 }}>
-                <Tag color={getEventTypeConfig(event.eventType || event.event_type).color} icon={getEventTypeConfig(event.eventType || event.event_type).icon}>
+                <Tag
+                  color={getEventTypeConfig(event.eventType || event.event_type).color}
+                  icon={getEventTypeConfig(event.eventType || event.event_type).icon}
+                >
                   {getEventTypeConfig(event.eventType || event.event_type).label}
                 </Tag>
                 <Tag icon={<TagOutlined />} color="blue">
@@ -1212,8 +1218,86 @@ const getStatusTag = (status) => {
   )
 }
 
+const normalizeTime = (t) => {
+  if (!t) return null
+  // Parse both 12-hour (h:mm A) and 24-hour (HH:mm:ss) formats
+  const parsed = dayjs(t, ["h:mm A", "hh:mm A", "H:mm", "HH:mm", "HH:mm:ss"], true)
+  if (!parsed.isValid()) {
+    console.warn("Invalid time format:", t)
+    return null
+  }
+  return parsed.format("HH:mm") // Return in 24-hour format for consistent parsing
+}
+
+const computeEventStatus = (event) => {
+  const now = dayjs()
+
+  const startTime = normalizeTime(event.start_time)
+  const endTime = normalizeTime(event.end_time)
+
+  if (!startTime || !endTime) {
+    console.warn("Missing time data:", event)
+    return "upcoming"
+  }
+
+  // Parse date and combine with time in 24-hour format
+  const eventDate = dayjs(event.date).format("YYYY-MM-DD")
+  const start = dayjs(`${eventDate} ${startTime}`, "YYYY-MM-DD HH:mm")
+  const end = dayjs(`${eventDate} ${endTime}`, "YYYY-MM-DD HH:mm")
+
+  // Debug logging
+  console.log("Event Status Calculation:", {
+    title: event.title,
+    date: event.date,
+    eventDate,
+    startTime: event.start_time,
+    endTime: event.end_time,
+    normalizedStart: startTime,
+    normalizedEnd: endTime,
+    parsedStart: start.format("YYYY-MM-DD HH:mm"),
+    parsedEnd: end.format("YYYY-MM-DD HH:mm"),
+    currentTime: now.format("YYYY-MM-DD HH:mm"),
+    isStartValid: start.isValid(),
+    isEndValid: end.isValid(),
+    isBeforeStart: now.isBefore(start),
+    isBetween: now.isBetween(start, end, null, "[]"),
+    isAfterEnd: now.isAfter(end),
+  })
+
+  if (!start.isValid() || !end.isValid()) {
+    console.warn("Invalid event date/time:", event)
+    return "upcoming"
+  }
+
+  if (now.isBefore(start)) return "upcoming"
+  if (now.isBetween(start, end, null, "[]")) return "ongoing"
+  return "completed"
+}
+
 const AlumniEvents = () => {
-  const { isLoading, data: events = [], isFetching, refetch: fetchEvents } = useEvents()
+  const { isLoading, data: rawEvents = [], isFetching, refetch: fetchEvents } = useEvents()
+
+  const [now, setNow] = useState(dayjs())
+  useEffect(() => {
+    const interval = setInterval(() => setNow(dayjs()), 60000)
+    return () => clearInterval(interval)
+  }, [])
+
+  const events = useMemo(() => {
+    return rawEvents.map((e) => ({
+      ...e,
+      status: computeEventStatus(e),
+    }))
+  }, [rawEvents, now])
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      fetchEvents() // Refresh events from server
+    }, 60000) // 1 minute
+
+    return () => clearInterval(interval)
+  }, [fetchEvents])
+
   //const [events, setEvents] = useState(initialEvents);
   const [viewMode, setViewMode] = useState("grid")
   const [activeTab, setActiveTab] = useState("all")
@@ -1225,31 +1309,31 @@ const AlumniEvents = () => {
   const role = secureLocalStorage.getItem("userRole")
   const [fileList, setFileList] = useState([])
 
-    // Watch selected date
-  const selectedDate = Form.useWatch("date", form);
+  
+  const selectedDate = Form.useWatch("date", form)
 
   // Trigger re-render every minute for real-time disabling
-  const [now, setNow] = useState(dayjs());
+
   useEffect(() => {
-    const interval = setInterval(() => setNow(dayjs()), 60000);
-    return () => clearInterval(interval);
-  }, []);
+    const interval = setInterval(() => setNow(dayjs()), 60000)
+    return () => clearInterval(interval)
+  }, [])
 
   const disabledTime = () => {
-    if (!selectedDate) return {};
+    if (!selectedDate) return {}
 
     if (dayjs(selectedDate).isSame(now, "day")) {
-      const disabledHours = [];
-      for (let i = 0; i < now.hour(); i++) disabledHours.push(i);
+      const disabledHours = []
+      for (let i = 0; i < now.hour(); i++) disabledHours.push(i)
 
-      const disabledMinutes = (hour) =>
-        hour === now.hour() ? Array.from({ length: now.minute() }, (_, i) => i) : [];
+      const disabledMinutes = (hour) => (hour === now.hour() ? Array.from({ length: now.minute() }, (_, i) => i) : [])
 
-      return { disabledHours: () => disabledHours, disabledMinutes };
+      return { disabledHours: () => disabledHours, disabledMinutes }
     }
 
-    return {};
-  };
+    return {}
+  }
+
   // Filter states
   const [filters, setFilters] = useState({
     search: "",
@@ -1483,24 +1567,24 @@ const AlumniEvents = () => {
   }
 
   const handleCreateEvent = async (values) => {
-  try {
-    const formData = new FormData();
+    try {
+      const formData = new FormData()
 
-    formData.append("title", values.title);
-    formData.append("description", values.description);
-    formData.append("event_type", values.event_type);
-    formData.append("category", values.category);
-    formData.append("date", values.date.format("YYYY-MM-DD"));
-    formData.append("timeRange[0]", values.timeRange[0].format("HH:mm"));
-    formData.append("timeRange[1]", values.timeRange[1].format("HH:mm"));
-    formData.append("location", values.location);
-    formData.append("price", values.price || 0);
-    formData.append("capacity", values.capacity);
-    formData.append("organizer", values.organizer);
-    formData.append("agenda", values.agenda || "");
+      formData.append("title", values.title)
+      formData.append("description", values.description)
+      formData.append("event_type", values.event_type)
+      formData.append("category", values.category)
+      formData.append("date", values.date.format("YYYY-MM-DD"))
+      formData.append("timeRange[0]", values.timeRange[0].format("HH:mm"))
+      formData.append("timeRange[1]", values.timeRange[1].format("HH:mm"))
+      formData.append("location", values.location)
+      formData.append("price", values.price || 0)
+      formData.append("capacity", values.capacity)
+      formData.append("organizer", values.organizer)
+      formData.append("agenda", values.agenda || "")
 
-    // ⭐ THE IMPORTANT PART ⭐
-    formData.append("featured", values.featured ? 1 : 0)
+      // ⭐ THE IMPORTANT PART ⭐
+      formData.append("featured", values.featured ? 1 : 0)
 
       // Handle tags
       if (values.tags && values.tags.length > 0) {
@@ -1869,33 +1953,33 @@ const AlumniEvents = () => {
                   <div className="section-content">
                     <Row gutter={16}>
                       <Col span={12}>
-        <Form.Item
-          name="date"
-          label="Event Date"
-          rules={[{ required: true, message: "Please select event date" }]}
-        >
-          <DatePicker
-            style={{ width: "100%" }}
-            size="large"
-            disabledDate={(current) => current && current < dayjs().startOf("day")}
-          />
-        </Form.Item>
-      </Col>
+                        <Form.Item
+                          name="date"
+                          label="Event Date"
+                          rules={[{ required: true, message: "Please select event date" }]}
+                        >
+                          <DatePicker
+                            style={{ width: "100%" }}
+                            size="large"
+                            disabledDate={(current) => current && current < dayjs().startOf("day")}
+                          />
+                        </Form.Item>
+                      </Col>
 
-      <Col span={12}>
-        <Form.Item
-          name="timeRange"
-          label="Event Time"
-          rules={[{ required: true, message: "Please select event time" }]}
-        >
-          <TimePicker.RangePicker
-            style={{ width: "100%" }}
-            size="large"
-            format="hh:mm A"
-            disabledTime={disabledTime}
-          />
-        </Form.Item>
-      </Col>
+                      <Col span={12}>
+                        <Form.Item
+                          name="timeRange"
+                          label="Event Time"
+                          rules={[{ required: true, message: "Please select event time" }]}
+                        >
+                          <TimePicker.RangePicker
+                            style={{ width: "100%" }}
+                            size="large"
+                            format="hh:mm A"
+                            disabledTime={disabledTime}
+                          />
+                        </Form.Item>
+                      </Col>
                     </Row>
 
                     <Form.Item
@@ -2043,24 +2127,15 @@ const AlumniEvents = () => {
                   </div>
                   <div className="section-content">
                     <Row gutter={16}>
-                    <Col span={12}>
-  <Form.Item
-    name="featured"
-    label="Featured Event"
-    valuePropName="checked"
-    initialValue={false}
-  >
-    <Switch
-      checkedChildren="Featured"
-      unCheckedChildren="Regular"
-      className="featured-switch"
-    />
-  </Form.Item>
+                      <Col span={12}>
+                        <Form.Item name="featured" label="Featured Event" valuePropName="checked" initialValue={false}>
+                          <Switch checkedChildren="Featured" unCheckedChildren="Regular" className="featured-switch" />
+                        </Form.Item>
 
-  <span className="switch-label">
-    Mark this event as featured to highlight it on the platform
-  </span>
-</Col>
+                        <span className="switch-label">
+                          Mark this event as featured to highlight it on the platform
+                        </span>
+                      </Col>
                       <Col span={12}>
                         <Form.Item name="images" label="Event Images">
                           <Upload
