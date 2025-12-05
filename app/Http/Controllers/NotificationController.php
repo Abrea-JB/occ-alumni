@@ -5,18 +5,21 @@ namespace App\Http\Controllers;
 use App\Models\DeviceToken;
 use App\Models\Notification;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
-
 
 class NotificationController extends Controller
 {
     public function __construct()
     {
-        $this->middleware('auth:api');
+        $this->middleware('auth:api'); // keep Bearer token middleware
     }
 
     public function index(Request $request)
     {
+        $user = $request->user();
+        if (!$user) {
+            return response()->json(['error' => 'Unauthenticated'], 401);
+        }
+
         $request->validate([
             'page' => 'sometimes|integer|min:1',
             'per_page' => 'sometimes|integer|min:1|max:50',
@@ -25,12 +28,28 @@ class NotificationController extends Controller
         $perPage = $request->input('per_page', 15);
         $page = $request->input('page', 1);
 
-        $notifications = Notification::where('user_id', Auth::id())
+        $notifications = Notification::where('user_id', $user->id)
             ->orderBy('created_at', 'desc')
             ->paginate($perPage, ['*'], 'page', $page);
 
+        $formatted = collect($notifications->items())->map(function ($n) {
+            $data = $n->data ?? [];
+            return [
+                'id' => $n->id,
+                'user_id' => $n->user_id,
+                'notifiable_type' => $n->notifiable_type,
+                'title' => $n->title ?? $data['title'] ?? 'Notification',
+                'message' => $n->message ?? $data['message'] ?? '',
+                'data' => $data,
+                'read' => $n->read,
+                'read_at' => $n->read_at,
+                'created_at' => $n->created_at,
+                'updated_at' => $n->updated_at,
+            ];
+        });
+
         return response()->json([
-            'data' => $notifications->items(),
+            'data' => $formatted,
             'pagination' => [
                 'current_page' => $notifications->currentPage(),
                 'last_page' => $notifications->lastPage(),
@@ -40,94 +59,94 @@ class NotificationController extends Controller
         ]);
     }
 
-    public function count()
+    public function count(Request $request)
     {
-        $count = Notification::where('user_id', Auth::id())
-            ->where('read_at', null)
+        $user = $request->user();
+        $count = Notification::where('user_id', $user->id)
+            ->whereNull('read_at')
             ->count();
 
         return response()->json(['count' => $count]);
     }
 
-    // public function count()
-    // {
-    //     return response()->json([
-    //         'count' => Auth::user()->unreadNotifications->count()
-    //     ]);
-    // }
-
-    public function markAsRead($id)
+    public function markAsRead(Request $request, $id)
     {
-        $notification = Notification::where('user_id', Auth::id())
+        $user = $request->user();
+
+        $notification = Notification::where('user_id', $user->id)
             ->findOrFail($id);
 
-        $notification->markAsRead();
+        $notification->update([
+            'read' => true,
+            'read_at' => now(),
+        ]);
 
         return response()->json([
             'success' => true,
-            'message' => 'Notification marked as read'
+            'message' => 'Notification marked as read',
         ]);
     }
 
-    public function markAllAsRead()
+    public function markAllAsRead(Request $request)
     {
-        Notification::where('user_id', Auth::id())
+        $user = $request->user();
+
+        Notification::where('user_id', $user->id)
             ->where('read', false)
             ->update([
                 'read' => true,
-                'read_at' => now()
+                'read_at' => now(),
             ]);
 
         return response()->json([
             'success' => true,
-            'message' => 'All notifications marked as read'
+            'message' => 'All notifications marked as read',
         ]);
     }
 
-    public function unreadCount()
+    public function unreadCount(Request $request)
     {
-        $count = Notification::where('user_id', Auth::id())
+        $user = $request->user();
+        $count = Notification::where('user_id', $user->id)
             ->where('read', false)
             ->count();
 
         return response()->json(['count' => $count]);
     }
 
-    public function destroy($id)
+    public function destroy(Request $request, $id)
     {
-        $notification = Notification::where('user_id', Auth::id())
+        $user = $request->user();
+
+        $notification = Notification::where('user_id', $user->id)
             ->findOrFail($id);
 
         $notification->delete();
 
         return response()->json([
             'success' => true,
-            'message' => 'Notification deleted successfully'
+            'message' => 'Notification deleted successfully',
         ]);
     }
 
-    // Register device token
     public function registerDevice(Request $request)
     {
         $validated = $request->validate([
             'user_id' => 'required|exists:users,id',
             'device_token' => 'required|string',
             'device_uuid' => 'required|string',
-            'platform' => 'required|in:ios,android'
+            'platform' => 'required|in:ios,android',
         ]);
 
-        // Upsert the token (update if exists or create new)
         DeviceToken::updateOrCreate(
             ['token' => $validated['device_token']],
             [
                 'user_id' => $validated['user_id'],
                 'device_id' => $validated['device_uuid'],
-                'platform' => $validated['platform']
+                'platform' => $validated['platform'],
             ]
         );
 
         return response()->json(['success' => true]);
     }
-
-   
-} 
+}

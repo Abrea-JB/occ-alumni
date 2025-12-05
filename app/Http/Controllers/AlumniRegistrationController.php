@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Alumni;
 use App\Models\AlumniDocument;
+use App\Models\Notification;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
@@ -13,7 +14,6 @@ use Illuminate\Support\Facades\Log;
 use App\Models\User;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\ValidationException;
-
 
 class AlumniRegistrationController extends Controller
 {
@@ -94,17 +94,6 @@ class AlumniRegistrationController extends Controller
 
             // Process and format the birth_date after successful validation
             $validated = $validator->validated();
-
-            // Format birth_date to YYYY-MM-DD
-            // try {
-            //     $validated['birth_date'] = \Carbon\Carbon::parse($validated['birth_date'])->format('Y-m-d');
-            // } catch (\Exception $e) {
-            //     return response()->json([
-            //         'success' => false,
-            //         'message' => 'Invalid date format provided.',
-            //         'error' => 'The birth date could not be processed.'
-            //     ], 422);
-            // }
 
             $birth_date = date('Y-m-d', strtotime($request->birth_date));
 
@@ -256,49 +245,47 @@ class AlumniRegistrationController extends Controller
         ]);
     }
 
-public function checkEmail(Request $request)
-{
-    $request->validate([
-        'email' => 'required|email',
-    ]);
+    public function checkEmail(Request $request)
+    {
+        $request->validate([
+            'email' => 'required|email',
+        ]);
 
-    $existsInAlumni = Alumni::where('email', $request->email)->exists();
-    $existsInUsers = User::where('email', $request->email)->exists();
+        $existsInAlumni = Alumni::where('email', $request->email)->exists();
+        $existsInUsers = User::where('email', $request->email)->exists();
 
-    return response()->json([
-        'exists' => $existsInAlumni || $existsInUsers
-    ]);
-}
+        return response()->json([
+            'exists' => $existsInAlumni || $existsInUsers
+        ]);
+    }
 
-public function checkPhone(Request $request)
-{
-    $request->validate([
-        'phone' => 'required|string',
-    ]);
+    public function checkPhone(Request $request)
+    {
+        $request->validate([
+            'phone' => 'required|string',
+        ]);
 
-    // Check only in alumni table
-    $existsInAlumni = Alumni::where('phone', $request->phone)->exists();
+        // Check only in alumni table
+        $existsInAlumni = Alumni::where('phone', $request->phone)->exists();
 
-    return response()->json([
-        'exists' => $existsInAlumni
-    ]);
-}
+        return response()->json([
+            'exists' => $existsInAlumni
+        ]);
+    }
 
-public function checkStudentId(Request $request)
-{
-    $request->validate([
-        'studentId' => 'required|string',
-    ]);
+    public function checkStudentId(Request $request)
+    {
+        $request->validate([
+            'studentId' => 'required|string',
+        ]);
 
-    $exists = Alumni::where('student_id', $request->studentId)->exists();
+        $exists = Alumni::where('student_id', $request->studentId)->exists();
 
-    return response()->json([
-        'exists' => $exists
-    ]);
-}
+        return response()->json([
+            'exists' => $exists
+        ]);
+    }
 
-
-    
     public function updateStatus22(Request $request, $id)
     {
         $request->validate([
@@ -326,121 +313,183 @@ public function checkStudentId(Request $request)
         }
     }
 
+    public function update(Request $request, $id)
+    {
+        DB::beginTransaction();
 
-   public function update(Request $request, $id)
-{
-    DB::beginTransaction();
+        try {
+            $alumni = Alumni::findOrFail($id);
 
-    try {
-        $alumni = Alumni::findOrFail($id);
+            $validated = $request->validate([
+                'first_name' => 'sometimes|required|string|max:255',
+                'last_name' => 'sometimes|required|string|max:255',
+                'email' => [
+                    'sometimes',
+                    'email',
+                    function ($attribute, $value, $fail) use ($alumni) {
+                        if ($value) {
+                            $existsInAlumni = \App\Models\Alumni::where('email', $value)
+                                ->where('id', '!=', $alumni->id)
+                                ->exists();
 
-        $validated = $request->validate([
-            'first_name' => 'sometimes|required|string|max:255',
-            'last_name' => 'sometimes|required|string|max:255',
-            'email' => [
-                'sometimes',
-                'email',
-                function ($attribute, $value, $fail) use ($alumni) {
-                    if ($value) {
-                        $existsInAlumni = \App\Models\Alumni::where('email', $value)
-                            ->where('id', '!=', $alumni->id)
-                            ->exists();
+                            $existsInUsers = \App\Models\User::where('email', $value)
+                                ->where('id', '!=', $alumni->user_id)
+                                ->exists();
 
-                        $existsInUsers = \App\Models\User::where('email', $value)
-                            ->where('id', '!=', $alumni->user_id)
-                            ->exists();
-
-                        if ($existsInAlumni || $existsInUsers) {
-                            $fail('This email is already in use.');
+                            if ($existsInAlumni || $existsInUsers) {
+                                $fail('This email is already in use.');
+                            }
                         }
-                    }
-                },
-            ],
-            'phone' => [
-                'sometimes',
-                'string',
-                'max:20',
-                function ($attribute, $value, $fail) use ($alumni) {
-                    if ($value) {
-                        $existsInAlumni = \App\Models\Alumni::where('phone', $value)
-                            ->where('id', '!=', $alumni->id)
-                            ->exists();
+                    },
+                ],
+                'phone' => [
+                    'sometimes',
+                    'string',
+                    'max:20',
+                    function ($attribute, $value, $fail) use ($alumni) {
+                        if ($value) {
+                            $existsInAlumni = \App\Models\Alumni::where('phone', $value)
+                                ->where('id', '!=', $alumni->id)
+                                ->exists();
 
-                        if ($existsInAlumni) {
-                            $fail('This phone number is already in use.');
+                            if ($existsInAlumni) {
+                                $fail('This phone number is already in use.');
+                            }
                         }
-                    }
-                },
-            ],
-            'address' => 'nullable|string|max:255',
-            'current_company' => 'nullable|string|max:255',
-            'job_title' => 'nullable|string|max:255',
-            'industry' => 'nullable|string|max:255',
-            'years_experience' => 'nullable|integer|min:0|max:50',
-            'salary_range' => 'nullable|string|max:100',
-            'work_location' => 'nullable|string|max:255',
-            'previous_companies' => 'nullable|string',
-            'profile_image' => 'sometimes|image|max:5120',
-        ]);
+                    },
+                ],
+                'address' => 'nullable|string|max:255',
+                'current_company' => 'nullable|string|max:255',
+                'job_title' => 'nullable|string|max:255',
+                'industry' => 'nullable|string|max:255',
+                'years_experience' => 'nullable|integer|min:0|max:50',
+                'salary_range' => 'nullable|string|max:100',
+                'work_location' => 'nullable|string|max:255',
+                'previous_companies' => 'nullable|string',
+                'profile_image' => 'sometimes|image|max:5120',
+            ]);
 
-        // Handle profile image update
-        if ($request->hasFile('profile_image')) {
-            if ($alumni->profile_image) {
-                Storage::disk('public')->delete($alumni->profile_image);
+            // Handle profile image update
+            if ($request->hasFile('profile_image')) {
+                if ($alumni->profile_image) {
+                    Storage::disk('public')->delete($alumni->profile_image);
+                }
+
+                $profileImagePath = $request->file('profile_image')->store('alumni/profile-images', 'public');
+                $validated['profile_image'] = $profileImagePath;
             }
 
-            $profileImagePath = $request->file('profile_image')->store('alumni/profile-images', 'public');
-            $validated['profile_image'] = $profileImagePath;
-        }
+            $oldValues = $alumni->only(array_keys($validated));
 
-        // Update Alumni
-        $alumni->update($validated);
+            // Update Alumni
+            $alumni->update($validated);
 
-        // Update associated User email if it exists
-        if (isset($validated['email']) && $alumni->user_id) {
-            $user = \App\Models\User::find($alumni->user_id);
-            if ($user) {
-                $user->email = $validated['email'];
-                $user->save();
+            // Update associated User email if it exists
+            if (isset($validated['email']) && $alumni->user_id) {
+                $user = \App\Models\User::find($alumni->user_id);
+                if ($user) {
+                    $user->email = $validated['email'];
+                    $user->save();
+                }
             }
+
+            $this->notifyAdminsAboutProfileUpdate($alumni, $validated, $oldValues);
+
+            DB::commit();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Alumni information updated successfully!',
+                'data' => $alumni->load('documents')
+            ]);
+
+        } catch (ValidationException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation failed',
+                'errors' => $e->errors()
+            ], 422);
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Update failed. Please try again.',
+                'error' => config('app.debug') ? $e->getMessage() : null
+            ], 500);
         }
-
-        DB::commit();
-
-        return response()->json([
-            'success' => true,
-            'message' => 'Alumni information updated successfully!',
-            'data' => $alumni->load('documents')
-        ]);
-
-    } catch (ValidationException $e) {
-        // Return proper 422 with field-specific errors
-        return response()->json([
-            'success' => false,
-            'message' => 'Validation failed',
-            'errors' => $e->errors()
-        ], 422);
-
-    } catch (\Exception $e) {
-        DB::rollBack();
-
-        return response()->json([
-            'success' => false,
-            'message' => 'Update failed. Please try again.',
-            'error' => config('app.debug') ? $e->getMessage() : null
-        ], 500);
     }
-}
 
+    private function notifyAdminsAboutProfileUpdate($alumni, $newValues, $oldValues)
+    {
+        try {
+            // Get all admin users
+            $admins = User::where('role', 'admin')->get();
 
-    
-    
+            if ($admins->isEmpty()) {
+                Log::info('No admin users found to notify about profile update');
+                return;
+            }
 
+            // Build list of changed fields
+            $changedFields = [];
+            foreach ($newValues as $field => $newValue) {
+                if ($field === 'profile_image') continue; // Skip profile image in comparison
+                
+                $oldValue = $oldValues[$field] ?? null;
+                if ($oldValue !== $newValue) {
+                    $changedFields[] = ucwords(str_replace('_', ' ', $field));
+                }
+            }
+
+            // If profile image was updated, add it to changed fields
+            if (isset($newValues['profile_image'])) {
+                $changedFields[] = 'Profile Image';
+            }
+
+            if (empty($changedFields)) {
+                return; // No actual changes made
+            }
+
+            $alumniName = $alumni->first_name . ' ' . $alumni->last_name;
+            $changedFieldsStr = implode(', ', $changedFields);
+
+            $profileImageUrl = $alumni->profile_image_url;
+
+            // Create notification for each admin
+            foreach ($admins as $admin) {
+                Notification::create([
+                    'user_id' => $admin->id,
+                    'notifiable_type' => 'App\Models\Alumni',
+                    'title' => 'Alumni Profile Updated',
+                    'message' => "{$alumniName} has updated their profile information: {$changedFieldsStr}",
+                    'data' => [
+                        'alumni_id' => $alumni->id,
+                        'alumni_name' => $alumniName,
+                        'alumni_email' => $alumni->email,
+                        'alumni_profile_image' => $profileImageUrl, // Added alumni profile image URL for notification avatar sync
+                        'changed_fields' => $changedFields,
+                        'type' => 'profile_update'
+                    ],
+                    'read' => false,
+                    'read_at' => null,
+                ]);
+            }
+
+            Log::info("Profile update notifications sent to " . $admins->count() . " admins for alumni: {$alumniName}");
+
+        } catch (\Exception $e) {
+            Log::error('Failed to create admin notifications: ' . $e->getMessage());
+            // Don't throw - we don't want notification failure to break the update
+        }
+    }
 
     public function updateStatus(Request $request)
     {
-
         $alumni = Alumni::findOrFail($request->id);
+        
+        $oldStatus = $alumni->status;
 
         $alumni->update([
             'status' => $request->status,
@@ -448,19 +497,46 @@ public function checkStudentId(Request $request)
             'admin_notes' => $request->admin_notes
         ]);
 
-
-        // if ($request->status === 'rejected') {
-        //     $alumni->documents()->update([
-        //         'status' => 'rejected',
-        //         'rejection_reason' => $request->rejection_reason
-        //     ]);
-        // }
+        if ($request->status === 'approved' && $oldStatus !== 'approved') {
+            $this->notifyAlumniAboutApproval($alumni);
+        }
 
         return response()->json([
             'success' => true,
             'message' => 'Alumni status updated successfully!',
             'data' => $alumni
         ]);
+    }
+
+    private function notifyAlumniAboutApproval($alumni)
+    {
+        try {
+            if (!$alumni->user_id) {
+                Log::info('Alumni does not have an associated user account');
+                return;
+            }
+
+            $alumniName = $alumni->first_name . ' ' . $alumni->last_name;
+
+            Notification::create([
+                'user_id' => $alumni->user_id,
+                'notifiable_type' => 'account_approved',
+                'title' => 'Account Approved',
+                'message' => "Congratulations {$alumniName}! Your alumni account has been approved by the administrator. You can now login and access all alumni features.",
+                'data' => [
+                    'alumni_id' => $alumni->id,
+                    'alumni_name' => $alumniName,
+                    'type' => 'account_approved'
+                ],
+                'read' => false,
+                'read_at' => null,
+            ]);
+
+            Log::info("Account approval notification sent to alumni: {$alumniName}");
+
+        } catch (\Exception $e) {
+            Log::error('Failed to create alumni approval notification: ' . $e->getMessage());
+        }
     }
 
     public function indexPagination(Request $request)

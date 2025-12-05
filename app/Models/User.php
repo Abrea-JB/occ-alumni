@@ -9,7 +9,7 @@ use Laravel\Passport\HasApiTokens;
 
 class User extends Authenticatable
 {
-    use HasApiTokens, HasFactory, Notifiable; //HasApiTokens include for passwport
+    use HasApiTokens, HasFactory, Notifiable;
 
 
     /**
@@ -21,6 +21,8 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
+        'role',
+        'course_id', // Added course_id field for department heads
     ];
 
     /**
@@ -51,5 +53,10 @@ class User extends Authenticatable
     public function alumniQuizzes()
     {
         return $this->hasMany(AlumniQuizzes::class, 'user_id');
+    }
+
+    public function course()
+    {
+        return $this->belongsTo(Course::class, 'course_id');
     }
 }

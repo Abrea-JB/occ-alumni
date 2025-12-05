@@ -9,6 +9,8 @@ use App\Http\Controllers\EventController;
 use App\Http\Controllers\QuestionController;
 use App\Http\Controllers\QuizController;
 use App\Http\Controllers\AdminDashboardController;
+use App\Http\Controllers\NotificationController;
+use App\Http\Controllers\DepartmentHeadController; // Added DepartmentHeadController
 
 
 
@@ -44,6 +46,11 @@ Route::get('/check-student-id', [AlumniRegistrationController::class, 'checkStud
 Route::group([
     'middleware' => 'auth:api'
 ], function () {
+    // Event Registration
+    Route::post('/events/{event}/register', [EventController::class, 'register']);
+    Route::post('/events/{event}/cancel-registration', [EventController::class, 'cancelRegistration']);
+    Route::get('/events/{event}/registrations', [EventController::class, 'registrations']);
+
     Route::get('/events/data', [EventController::class, 'getEventData']);
     Route::post('/events', [EventController::class, 'store']);
     Route::get('/events', [EventController::class, 'index']);
@@ -84,7 +91,29 @@ Route::group([
     });
 
     Route::get('/profile', [GlobalAluminiController::class, 'profile']);
+
+    Route::prefix('notifications')->group(function () {
+        Route::get('/', [NotificationController::class, 'index']);
+        Route::get('/count', [NotificationController::class, 'count']);
+        Route::get('/unread-count', [NotificationController::class, 'unreadCount']);
+        Route::post('/mark-all-read', [NotificationController::class, 'markAllAsRead']);
+        Route::post('/{id}/mark-read', [NotificationController::class, 'markAsRead']);
+        Route::delete('/{id}', [NotificationController::class, 'destroy']);
+        Route::post('/register-device', [NotificationController::class, 'registerDevice']);
+    });
+
+    Route::prefix('department-heads')->group(function () {
+        Route::get('/', [DepartmentHeadController::class, 'index']);
+        Route::post('/', [DepartmentHeadController::class, 'store']);
+        Route::put('/{id}', [DepartmentHeadController::class, 'update']);
+        Route::delete('/{id}', [DepartmentHeadController::class, 'destroy']);
+    });
+
+    Route::get('/department-head/dashboard', [DepartmentHeadController::class, 'dashboard']);
+    Route::get('/department-head/alumni', [DepartmentHeadController::class, 'alumni']);
 });
+
+
 
 Route::post('/alumni/register', [AlumniRegistrationController::class, 'store']);
 Route::get('/get-courses', [GlobalAluminiController::class, 'courses']);

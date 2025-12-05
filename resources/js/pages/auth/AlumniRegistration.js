@@ -61,6 +61,7 @@ import useEmployeeStatus from "~/hooks/useEmployeeStatus"
 import { AlumniDetails } from "~/components"
 import { industryOptions } from "~/utils/constant"
 import dayjs from "dayjs";
+import logo from "~/assets/images/OCC_LOGO.png"
 
 
 const { Title, Text, Paragraph } = Typography
@@ -71,7 +72,7 @@ const { Step } = Steps
 // Company/University Information
 const companyInfo = {
   name: "Opol Community College Alumni Association",
-  logo: "https://www.occ.edu.ph/images/icon.png",
+  logo:logo,
   slogan: "Building tomorrow's leaders, one student at a time.",
   website: "occ-alumni.online",
   address: "ZONE C. Salva St, Opol, 9016 Misamis Oriental",
@@ -919,50 +920,47 @@ const AlumniRegistration = () => {
         </Col>
 
 
-        <Col xs={24} sm={12}>
-          <Form.Item
-            name="phone"
-            label="Phone Number"
-            rules={[
-              { required: true, message: "Please enter your phone number" },
-              {
-                pattern: /^09\d{9}$/,
-                message: "Phone number must be 11 digits and start with 09",
-              },
-              {
-                validator: async (_, value) => {
-                  if (!value) return Promise.resolve();
-                  try {
-                    const res = await axios.get(`/api/check-phone?phone=${value}`);
-                    if (res.data.exists) {
-                      return Promise.reject(new Error("This phone number is already in use"));
-                    }
-                    return Promise.resolve();
-                  } catch (err) {
-                    return Promise.reject(new Error("Unable to verify phone number"));
-                  }
-                },
-              },
-            ]}
-            validateTrigger={['onBlur']} // validate when user leaves the field
-          >
-            <Input
-              size="large"
-              maxLength={11}
-              prefix={<PhoneOutlined />}
-              value={form.getFieldValue("phone")}
-              onChange={(e) => {
-                let value = e.target.value.replace(/\D/g, "");
-                if (!value.startsWith("09")) {
-                  value = "09" + value.replace(/^0+/, "").slice(0, 9);
-                }
-                value = value.slice(0, 11);
-                form.setFieldsValue({ phone: value });
-              }}
-              placeholder="09XXXXXXXXX"
-            />
-          </Form.Item>
-        </Col>
+    <Col xs={24} sm={12}>
+  <Form.Item
+    name="phone"
+    label="Phone Number"
+    rules={[
+      { required: true, message: "Please enter your phone number" },
+      {
+        pattern: /^09\d{9}$/,
+        message: "Phone number must be 11 digits and start with 09",
+      },
+      {
+        validator: async (_, value) => {
+          if (!value) return Promise.resolve();
+          try {
+            const res = await axios.get(`/api/check-phone?phone=${value}`);
+            if (res.data.exists) {
+              return Promise.reject(new Error("This phone number is already in use"));
+            }
+            return Promise.resolve();
+          } catch (err) {
+            return Promise.reject(new Error("Unable to verify phone number"));
+          }
+        },
+      },
+    ]}
+    validateTrigger={["onBlur"]}
+  >
+    <Input
+      size="large"
+      maxLength={11}
+      prefix={<PhoneOutlined />}
+      onChange={(e) => {
+        // only allow numbers — BUT do not force starting with 09
+        const value = e.target.value.replace(/\D/g, "").slice(0, 11);
+        form.setFieldsValue({ phone: value });
+      }}
+      placeholder="09XXXXXXXXX"
+    />
+  </Form.Item>
+</Col>
+
 
 
 
@@ -1338,33 +1336,43 @@ const AlumniRegistration = () => {
           </Form.Item>
         </Col>
 
-        <Col xs={24} sm={12}>
-          <Form.Item name="industry" label="Industry">
-            <Select size="large" disabled={isUnemployed} placeholder="Select industry">
-              {industryOptions.map((industry) => (
-                <Option key={industry} value={industry}>
-                  {industry}
-                </Option>
-              ))}
-            </Select>
-          </Form.Item>
-        </Col>
+   <Col xs={24} sm={12}>
+  <Form.Item name="industry" label="Industry">
+    <Select
+      size="large"
+      disabled={isUnemployed}
+      placeholder="Select industry"
+      showSearch
+      filterOption={(input, option) =>
+        option?.children?.toLowerCase().includes(input.toLowerCase())
+      }
+    >
+      {industryOptions.map((industry) => (
+        <Option key={industry} value={industry}>
+          {industry}
+        </Option>
+      ))}
+    </Select>
+  </Form.Item>
+</Col>
 
-       <Col xs={24} sm={12}>
+<Col xs={24} sm={12}>
   <Form.Item name="yearsExperience" label="Years of Experience">
     <InputNumber
       style={{ width: "100%" }}
       size="large"
       disabled={isUnemployed}
-      min={0}
-      max={50}
-      step={1}               // only whole numbers
-      stringMode={false}     // prevents string values
-      parser={(value) => value.replace(/\D/g, "")} // remove ANY non-numeric characters
-      placeholder="0"
+      min={1}          // minimum 1
+      max={10}         // maximum 10
+      step={1}         // only whole numbers
+      stringMode={false}
+      parser={(value) => value.replace(/\D/g, "")} // remove non-numeric characters
+      placeholder="1"
     />
   </Form.Item>
 </Col>
+
+
 
 
         <Col xs={24} sm={12}>

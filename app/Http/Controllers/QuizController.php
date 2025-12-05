@@ -12,6 +12,8 @@ use Illuminate\Http\Request;
 use App\Models\AlumniQuizQuestion;
 use App\Http\Requests\StoreQuizRequest;
 use App\Http\Requests\UpdateQuizOrderRequest;
+use App\Models\Notification;
+use App\Models\User;
 
 
 class QuizController extends Controller
@@ -319,6 +321,46 @@ class QuizController extends Controller
             // Calculate average rating directly from AlumniQuizQuestion
             $averageRating = AlumniQuizQuestion::where('alumni_quiz_id', $alumniQuiz->id)
                 ->avg(DB::raw('CAST(answer AS DECIMAL(10,2))'));
+
+            $alumni = \App\Models\Alumni::where('user_id', $user->id)->first();
+            $adminUsers = User::where('role', 'admin')->get();
+
+            foreach ($adminUsers as $admin) {
+                Notification::create([
+                    'user_id' => $admin->id,
+                    'notifiable_type' => 'quiz_submission',
+                    'data' => json_encode([
+                        'title' => 'Quiz Submission',
+                        'message' => 'An alumni has submitted the ' . ucfirst($request->type) . ' quiz.',
+                        'alumni_quiz_id' => $alumniQuiz->id,
+                        'alumni_id' => $alumni ? $alumni->id : null,
+                        'alumni_name' => $alumni ? ($alumni->first_name . ' ' . $alumni->last_name) : $user->name,
+                        'alumni_profile_image' => $alumni ? $alumni->profile_image_url : null,
+                        'quiz_type' => $request->type,
+                        'average_rating' => round($averageRating, 2),
+                        'time_spent' => $request->timeSpent,
+                        'submitted_at' => now()->toIso8601String(),
+                    ]),
+                    'read' => false,
+                ]);
+            }
+
+            $quizTypeName = $request->type === 'rating' ? 'Rating Quiz' : 'ABCD Quiz';
+            Notification::create([
+                'user_id' => $user->id,
+                'notifiable_type' => 'quiz_completed',
+                'data' => json_encode([
+                    'title' => 'Quiz Completed Successfully',
+                    'message' => 'Congratulations! You have successfully completed the ' . $quizTypeName . '.',
+                    'alumni_quiz_id' => $alumniQuiz->id,
+                    'quiz_type' => $request->type,
+                    'average_rating' => $request->type === 'rating' ? round($averageRating, 2) : null,
+                    'total_questions' => count($answersData),
+                    'time_spent' => $request->timeSpent,
+                    'completed_at' => now()->toIso8601String(),
+                ]),
+                'read' => false,
+            ]);
 
             DB::commit();
 

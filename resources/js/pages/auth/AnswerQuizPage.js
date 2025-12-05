@@ -44,14 +44,16 @@ import {
 import "./AnswerQuizPage.css";
 import useTakeQuiz from "~/hooks/useTakeQuiz";
 import axiosConfig from "~/utils/axiosConfig";
+import logo from "~/assets/images/OCC_LOGO.png"
 
+// Company/University Information
 const companyInfo = {
-    name: "Opol Community College Alumni Association",
-    logo: "https://occph.com/build/assets/OCC_LOGO-BWCM4zrL.png",
-    slogan: "Building tomorrow's leaders, one student at a time.",
-    website: "occph.com",
-    address: "C. Salva St, Opol, 9016 Misamis Oriental",
-};
+  name: "Opol Community College Alumni Association",
+  logo: logo,
+  slogan: "Building tomorrow's leaders, one student at a time.",
+  website: "occ-alumni.online",
+  address: "ZONE C. Salva St, Opol, 9016 Misamis Oriental",
+}
 
 const { Title, Text } = Typography;
 const { Step } = Steps;

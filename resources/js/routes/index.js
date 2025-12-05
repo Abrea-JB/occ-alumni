@@ -8,7 +8,8 @@ import AlumniEvents from "../pages/admin/events/AlumniEvents";
 import AlumniQuestionsPage from "../pages/admin/questions/AlumniQuestionsPage";
 import ProfilePage from "../pages/admin/ProfilePage";
 
-
+// <CHANGE> Add import for DepartmentHeadsPage and DepartmentDashboardPage
+import { DepartmentHeadsPage, DepartmentDashboardPage } from "../pages/admin/department-heads";
 
 const authRoutes = [
     { path: "/login", component: LoginPage },
@@ -22,6 +23,9 @@ const adminRoutes = [
     { path: "/alumni", component: AlumniList },
     { path: "/events", component: AlumniEvents },
     { path: "/questions", component: AlumniQuestionsPage },
+    // <CHANGE> Add department heads routes
+    { path: "/department-heads", component: DepartmentHeadsPage },
+    { path: "/department-dashboard", component: DepartmentDashboardPage },
 ];
 
 const alumniRoutes = [

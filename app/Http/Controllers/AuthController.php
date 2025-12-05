@@ -7,13 +7,16 @@ use Illuminate\Http\Request;
 use App\Models\Faculties;
 use App\Models\Alumni;
 use App\Models\Coaches;
+use App\Models\Notification;
+use App\Models\User;
+use App\Models\Course;
 use Illuminate\Support\Facades\RateLimiter;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use Exception;
 
 class AuthController extends Controller
 {
-
 
     public function login(Request $request)
     {
@@ -37,10 +40,20 @@ class AuthController extends Controller
             'access_token' => $accessToken
         ];
 
+        if ($user->role === 'department_head') {
+            $responseData['course_id'] = $user->course_id;
+            
+            $this->notifyAdminsAboutDepartmentHeadLogin($user);
+            
+            return response($responseData, 200);
+        }
+
         if ($user->role === 'alumni') {
             $alumni = Alumni::where('user_id', $user->id)->firstOrFail();
 
             if ($alumni->status === 'pending') {
+                $this->notifyAdminsAboutPendingAlumniLogin($alumni);
+                
                 return response()->json([
                     'success' => false,
                     'message' => 'Your alumni account is pending approval. Please wait for administrator approval.'
@@ -55,9 +68,136 @@ class AuthController extends Controller
             }
 
             $responseData['alumni_id'] = $alumni->id;
+            
+            $this->notifyAdminsAboutAlumniLogin($alumni);
         }
 
         return response($responseData, 200);
+    }
+
+    private function notifyAdminsAboutDepartmentHeadLogin($user)
+    {
+        try {
+            // Get all admin users
+            $admins = User::where('role', 'admin')->get();
+
+            if ($admins->isEmpty()) {
+                Log::info('No admin users found to notify about department head login');
+                return;
+            }
+
+            $departmentHeadName = $user->name;
+            $course = Course::find($user->course_id);
+            $courseName = $course ? $course->course_name : 'Unknown Course';
+            $courseCode = $course ? $course->course_code : 'N/A';
+
+            // Create notification for each admin
+            foreach ($admins as $admin) {
+                Notification::create([
+                    'user_id' => $admin->id,
+                    'notifiable_type' => 'App\Models\User',
+                    'title' => 'Department Head Login',
+                    'message' => "{$departmentHeadName} ({$courseCode}) has logged into their department head account.",
+                    'data' => [
+                        'user_id' => $user->id,
+                        'department_head_name' => $departmentHeadName,
+                        'department_head_email' => $user->email,
+                        'course_id' => $user->course_id,
+                        'course_code' => $courseCode,
+                        'course_name' => $courseName,
+                        'type' => 'department_head_login'
+                    ],
+                    'read' => false,
+                    'read_at' => null,
+                ]);
+            }
+
+            Log::info("Department head login notifications sent to " . $admins->count() . " admins for: {$departmentHeadName} ({$courseCode})");
+
+        } catch (\Exception $e) {
+            Log::error('Failed to create admin notifications for department head login: ' . $e->getMessage());
+        }
+    }
+
+    private function notifyAdminsAboutPendingAlumniLogin($alumni)
+    {
+        try {
+            // Get all admin users
+            $admins = User::where('role', 'admin')->get();
+
+            if ($admins->isEmpty()) {
+                Log::info('No admin users found to notify about pending alumni login attempt');
+                return;
+            }
+
+            $alumniName = $alumni->first_name . ' ' . $alumni->last_name;
+            $profileImageUrl = $alumni->profile_image_url;
+
+            // Create notification for each admin
+            foreach ($admins as $admin) {
+                Notification::create([
+                    'user_id' => $admin->id,
+                    'notifiable_type' => 'App\Models\Alumni',
+                    'title' => 'Pending Alumni Login Attempt',
+                    'message' => "{$alumniName} is waiting for account approval. They attempted to login but their account is still pending.",
+                    'data' => [
+                        'alumni_id' => $alumni->id,
+                        'alumni_name' => $alumniName,
+                        'alumni_email' => $alumni->email,
+                        'alumni_profile_image' => $profileImageUrl,
+                        'type' => 'pending_alumni_login'
+                    ],
+                    'read' => false,
+                    'read_at' => null,
+                ]);
+            }
+
+            Log::info("Pending alumni login notifications sent to " . $admins->count() . " admins for alumni: {$alumniName}");
+
+        } catch (\Exception $e) {
+            Log::error('Failed to create admin notifications for pending alumni login: ' . $e->getMessage());
+        }
+    }
+
+    private function notifyAdminsAboutAlumniLogin($alumni)
+    {
+        try {
+            // Get all admin users
+            $admins = User::where('role', 'admin')->get();
+
+            if ($admins->isEmpty()) {
+                Log::info('No admin users found to notify about alumni login');
+                return;
+            }
+
+            $alumniName = $alumni->first_name . ' ' . $alumni->last_name;
+            $profileImageUrl = $alumni->profile_image_url;
+
+            // Create notification for each admin
+            foreach ($admins as $admin) {
+                Notification::create([
+                    'user_id' => $admin->id,
+                    'notifiable_type' => 'App\Models\Alumni',
+                    'title' => 'Alumni Login',
+                    'message' => "{$alumniName} has logged into their alumni account.",
+                    'data' => [
+                        'alumni_id' => $alumni->id,
+                        'alumni_name' => $alumniName,
+                        'alumni_email' => $alumni->email,
+                        'alumni_profile_image' => $profileImageUrl,
+                        'type' => 'alumni_login'
+                    ],
+                    'read' => false,
+                    'read_at' => null,
+                ]);
+            }
+
+            Log::info("Alumni login notifications sent to " . $admins->count() . " admins for alumni: {$alumniName}");
+
+        } catch (\Exception $e) {
+            Log::error('Failed to create admin notifications for alumni login: ' . $e->getMessage());
+            // Don't throw - we don't want notification failure to break the login
+        }
     }
 
     /**

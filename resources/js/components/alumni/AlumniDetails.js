@@ -379,7 +379,7 @@ const AlumniDetails = ({
                                                     {getData("salary_range") && (
                                                         <Col xs={24} sm={12}>
                                                             <div className="detail-item">
-                                                                <Text strong>Salary Range:</Text>
+                                                                <Text strong>Annual Salary Range:</Text>
                                                                 <Text>{getData("salary_range")}</Text>
                                                             </div>
                                                         </Col>

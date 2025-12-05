@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useMemo, useEffect } from "react"
+import { useState, useMemo, useEffect, useRef } from "react"
 import {
   Card,
   Row,
@@ -32,6 +32,9 @@ import {
   Carousel,
   Image,
   Alert,
+  Progress,
+  Table,
+  Spin,
 } from "antd"
 import {
   SearchOutlined,
@@ -53,7 +56,6 @@ import {
   TrophyOutlined,
   StarOutlined,
   CheckCircleOutlined,
-  DownloadOutlined,
   GlobalOutlined,
   PhoneOutlined,
   CopyOutlined,
@@ -79,10 +81,10 @@ import {
   SafetyCertificateOutlined,
   MessageOutlined,
   ExclamationCircleOutlined,
-  CloseCircleOutlined,
-  CloseOutlined,
   InfoCircleOutlined,
   TagOutlined,
+  PrinterOutlined,
+  UsergroupAddOutlined,
 } from "@ant-design/icons"
 import moment from "moment"
 import "./AlumniEvents.css"
@@ -327,25 +329,349 @@ const getCategoryLabel = (value) => {
   return category ? category.label : value
 }
 
-const EventDetailsModal = ({ event, visible, onClose, onEdit, onDelete }) => {
+const RegistrationsModal = ({ event, visible, onClose }) => {
+  const [registrations, setRegistrations] = useState([])
+  const [loading, setLoading] = useState(false)
+  const [eventData, setEventData] = useState(null)
+  const printRef = useRef(null)
+
+  useEffect(() => {
+    if (visible && event) {
+      fetchRegistrations()
+    }
+  }, [visible, event])
+
+  const fetchRegistrations = async () => {
+    setLoading(true)
+    try {
+      const response = await axiosConfig.get(`/events/${event.id}/registrations`)
+      if (response.data.success) {
+        setRegistrations(response.data.data)
+        setEventData(response.data.event)
+      }
+    } catch (error) {
+      message.error("Failed to fetch registrations")
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handlePrint = () => {
+    const printContent = printRef.current
+    const printWindow = window.open("", "_blank")
+
+    printWindow.document.write(`
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <title>Event Registrations - ${event?.title}</title>
+        <style>
+          body { font-family: Arial, sans-serif; padding: 20px; }
+          .header { text-align: center; margin-bottom: 30px; border-bottom: 2px solid #1890ff; padding-bottom: 20px; }
+          .header h1 { color: #1890ff; margin-bottom: 10px; }
+          .event-info { margin-bottom: 20px; padding: 15px; background: #f5f5f5; border-radius: 8px; }
+          .event-info p { margin: 5px 0; }
+          table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+          th, td { border: 1px solid #ddd; padding: 12px 8px; text-align: left; }
+          th { background-color: #1890ff; color: white; }
+          tr:nth-child(even) { background-color: #f9f9f9; }
+          .footer { margin-top: 30px; text-align: center; font-size: 12px; color: #666; border-top: 1px solid #ddd; padding-top: 15px; }
+          .summary { margin-top: 20px; padding: 10px; background: #e6f7ff; border-radius: 5px; }
+          @media print {
+            body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+          }
+        </style>
+      </head>
+      <body>
+        <div class="header">
+          <h1>Event Registration List</h1>
+          <h2>${event?.title}</h2>
+        </div>
+        
+      <div class="event-info">
+  <p><strong>Date:</strong> ${moment(event?.date).format("MMMM DD, YYYY")}</p>
+  <p><strong>Time:</strong> ${moment(event?.start_time, "HH:mm").format("hh:mm A")} - ${moment(event?.end_time, "HH:mm").format("hh:mm A")}</p>
+  <p><strong>Location:</strong> ${event?.location}</p>
+  <p><strong>Organizer:</strong> ${event?.organizer}</p>
+</div>
+
+
+        <div class="summary">
+          <strong>Total Registrations: ${registrations.length} / ${event?.capacity}</strong>
+        </div>
+
+        <table>
+        <thead>
+  <tr>
+    <th>#</th>
+    <th>Name</th>
+    <th>Email</th>
+    <th>Contact Number</th>
+    <th>Batch Year</th>
+    <!-- <th>Course</th> -->
+    <th>Registration Date</th>
+  </tr>
+</thead>
+<tbody>
+  ${registrations
+    .map(
+      (reg, index) => `
+    <tr>
+      <td>${index + 1}</td>
+      <td>${reg.alumni?.name || "N/A"}</td>
+      <td>${reg.alumni?.email || "N/A"}</td>
+      <td>${reg.alumni?.contact_number || "N/A"}</td>
+      <td>${reg.alumni?.batch_year || "N/A"}</td>
+      <!-- <td>${reg.alumni?.course || "N/A"}</td> -->
+      <td>${moment(reg.registration_date || reg.created_at).format("MMM DD, YYYY hh:mm A")}</td>
+    </tr>
+  `,
+    )
+    .join("")}
+</tbody>
+        </table>
+
+        <div class="footer">
+          <p>Generated on ${moment().format("MMMM DD, YYYY hh:mm A")}</p>
+          <p>Alumni Events Management System</p>
+        </div>
+      </body>
+      </html>
+    `)
+
+    printWindow.document.close()
+    printWindow.focus()
+    setTimeout(() => {
+      printWindow.print()
+      printWindow.close()
+    }, 250)
+  }
+
+  const columns = [
+    {
+      title: "#",
+      key: "index",
+      width: 50,
+      render: (_, __, index) => index + 1,
+    },
+    {
+      title: "Name",
+      key: "name",
+      render: (_, record) => <Text strong>{record.alumni?.name || "N/A"}</Text>,
+    },
+    {
+      title: "Email",
+      key: "email",
+      render: (_, record) => record.alumni?.email || "N/A",
+    },
+    {
+      title: "Contact",
+      key: "contact_number",
+      render: (_, record) => record.alumni?.contact_number || "N/A",
+    },
+    {
+      title: "Batch Year",
+      key: "batch_year",
+      render: (_, record) => record.alumni?.batch_year || "N/A",
+    },
+    // {
+    //   title: "Course",
+    //   key: "course",
+    //   render: (_, record) => record.alumni?.course || "N/A",
+    // },
+    {
+      title: "Registration Date",
+      key: "registration_date",
+      render: (_, record) => moment(record.registration_date || record.created_at).format("MMM DD, YYYY hh:mm A"),
+    },
+  ]
+
+  return (
+    <Modal
+      title={
+        <Space>
+          <UsergroupAddOutlined style={{ color: "#1890ff" }} />
+          <span>Event Registrations - {event?.title}</span>
+        </Space>
+      }
+      open={visible}
+      onCancel={onClose}
+      width={1000}
+      footer={[
+        <Button key="close" onClick={onClose}>
+          Close
+        </Button>,
+        <Button
+          key="print"
+          type="primary"
+          icon={<PrinterOutlined />}
+          onClick={handlePrint}
+          disabled={registrations.length === 0}
+        >
+          Print List
+        </Button>,
+      ]}
+    >
+      <div ref={printRef}>
+        {/* Event Summary */}
+        <Card size="small" style={{ marginBottom: 16 }}>
+          <Row gutter={16}>
+            <Col span={6}>
+              <Statistic
+                title="Total Registered"
+                value={registrations.length}
+                suffix={`/ ${event?.capacity}`}
+                valueStyle={{ color: "#1890ff" }}
+              />
+            </Col>
+            <Col span={6}>
+              <Statistic
+                title="Spots Remaining"
+                value={(event?.capacity || 0) - registrations.length}
+                valueStyle={{ color: registrations.length >= (event?.capacity || 0) ? "#ff4d4f" : "#52c41a" }}
+              />
+            </Col>
+            <Col span={12}>
+              <Text type="secondary">Registration Progress</Text>
+              <Progress
+                percent={Math.round((registrations.length / (event?.capacity || 1)) * 100)}
+                status={registrations.length >= (event?.capacity || 0) ? "exception" : "active"}
+                strokeColor={{
+                  "0%": "#108ee9",
+                  "100%": "#87d068",
+                }}
+              />
+            </Col>
+          </Row>
+        </Card>
+
+        {/* Registrations Table */}
+        <Spin spinning={loading}>
+          <Table
+            dataSource={registrations}
+            columns={columns}
+            rowKey="id"
+            pagination={{ pageSize: 10 }}
+            locale={{ emptyText: "No registrations yet" }}
+          />
+        </Spin>
+      </div>
+    </Modal>
+  )
+}
+
+const EventDetailsModal = ({ event, visible, onClose, onEdit, onDelete, onRefresh }) => {
   const [isLiked, setIsLiked] = useState(false)
   const [isRegistered, setIsRegistered] = useState(false)
+  const [isRegistering, setIsRegistering] = useState(false)
   const [phoneModalVisible, setPhoneModalVisible] = useState(false)
   const [emailModalVisible, setEmailModalVisible] = useState(false)
   const [messengerModalVisible, setMessengerModalVisible] = useState(false)
+  const [registrationsModalVisible, setRegistrationsModalVisible] = useState(false)
+  const [isLoadingRegistrationStatus, setIsLoadingRegistrationStatus] = useState(false)
+
+  const role = secureLocalStorage.getItem("userRole")
 
   const contactInfo = {
     phone: "09496600923",
     email: "occ.verula.annabelle@gmail.com",
-    messenger: "https://www.facebook.com/messages/t/your-page-id", // Update with actual Facebook messenger link
+    messenger: "https://www.facebook.com/messages/t/your-page-id",
     title: "Guidance Counselor",
   }
 
+  // Helper function to check if early bird pricing is available
+  const isEarlyBirdAvailable = (event) => {
+    if (!event.earlyBirdEndDate) return false
+    const now = dayjs()
+    return now.isBefore(dayjs(event.earlyBirdEndDate))
+  }
+
+  const eventId = event?.id
+  useEffect(() => {
+    const fetchFreshEventData = async () => {
+      if (visible && eventId && role === "alumni") {
+        setIsLoadingRegistrationStatus(true)
+        try {
+          const response = await axiosConfig.get(`/events/${eventId}`)
+          const freshEvent = response.data
+          const backendRegistered = freshEvent.is_user_registered || false
+          setIsRegistered(backendRegistered)
+
+          // Sync localStorage with fresh backend value
+          const storedRegistrations = JSON.parse(localStorage.getItem("eventRegistrations") || "{}")
+          if (backendRegistered) {
+            storedRegistrations[eventId] = true
+          } else {
+            delete storedRegistrations[eventId]
+          }
+          localStorage.setItem("eventRegistrations", JSON.stringify(storedRegistrations))
+        } catch (error) {
+          console.error("Failed to fetch fresh event data:", error)
+          // Fallback to event prop value if fetch fails
+          setIsRegistered(event?.is_user_registered || false)
+        } finally {
+          setIsLoadingRegistrationStatus(false)
+        }
+      } else if (event) {
+        // For non-alumni users, just use the prop value
+        setIsRegistered(event.is_user_registered || false)
+      }
+    }
+
+    fetchFreshEventData()
+  }, [visible, eventId, role, event])
+
   if (!event) return null
 
-  const handleRegister = () => {
-    setIsRegistered(true)
-    message.success("Successfully registered for this event!")
+  const handleRegister = async () => {
+    setIsRegistering(true)
+    try {
+      const response = await axiosConfig.post(`/events/${event.id}/register`)
+      if (response.data.success) {
+        setIsRegistered(true)
+
+        // Persist registration to localStorage
+        const storedRegistrations = JSON.parse(localStorage.getItem("eventRegistrations") || "{}")
+        storedRegistrations[event.id] = true
+        localStorage.setItem("eventRegistrations", JSON.stringify(storedRegistrations))
+
+        message.success(response.data.message || "Successfully registered for this event!")
+        if (onRefresh) onRefresh()
+      }
+    } catch (error) {
+      message.error(error.response?.data?.message || "Failed to register for the event")
+    } finally {
+      setIsRegistering(false)
+    }
+  }
+
+  const handleCancelRegistration = async () => {
+    Modal.confirm({
+      title: "Cancel Registration",
+      icon: <ExclamationCircleOutlined />,
+      content: "Are you sure you want to cancel your registration for this event?",
+      okText: "Yes, Cancel",
+      okType: "danger",
+      cancelText: "No",
+      async onOk() {
+        try {
+          const response = await axiosConfig.post(`/events/${event.id}/cancel-registration`)
+          if (response.data.success) {
+            setIsRegistered(false)
+
+            // Remove registration from localStorage
+            const storedRegistrations = JSON.parse(localStorage.getItem("eventRegistrations") || "{}")
+            delete storedRegistrations[event.id]
+            localStorage.setItem("eventRegistrations", JSON.stringify(storedRegistrations))
+
+            message.success(response.data.message || "Registration cancelled successfully")
+            if (onRefresh) onRefresh()
+          }
+        } catch (error) {
+          message.error(error.response?.data?.message || "Failed to cancel registration")
+        }
+      },
+    })
   }
 
   const handleLike = () => {
@@ -375,23 +701,29 @@ const EventDetailsModal = ({ event, visible, onClose, onEdit, onDelete }) => {
       onEdit(event)
     } else if (key === "share") {
       handleShare()
+    } else if (key === "registrations") {
+      setRegistrationsModalVisible(true)
     }
   }
 
   const menu = (
     <Menu onClick={handleMenuClick}>
-      <Menu.Item key="edit" icon={<EditOutlined />}>
+      <Menu.Item
+        key="edit"
+        icon={<EditOutlined />}
+        disabled={event.status === "ongoing" || event.status === "completed"}
+      >
         Edit Event
       </Menu.Item>
-      <Menu.Item key="duplicate" icon={<CopyOutlined />}>
+      {/* <Menu.Item key="duplicate" icon={<CopyOutlined />}>
         Duplicate Event
       </Menu.Item>
-      <Menu.Divider />
-      <Menu.Item key="share" icon={<ShareAltOutlined />}>
+      <Menu.Divider /> */}
+      {/* <Menu.Item key="share" icon={<ShareAltOutlined />}>
         Share Event
-      </Menu.Item>
-      <Menu.Item key="export" icon={<DownloadOutlined />}>
-        Export Registrations
+      </Menu.Item> */}
+      <Menu.Item key="registrations" icon={<UsergroupAddOutlined />}>
+        View Registrations
       </Menu.Item>
       <Menu.Divider />
       <Menu.Item key="delete" icon={<DeleteOutlined />} danger>
@@ -400,625 +732,565 @@ const EventDetailsModal = ({ event, visible, onClose, onEdit, onDelete }) => {
     </Menu>
   )
 
+  const registeredCount = event.registered_count || event.registered || 0
+  const capacity = event.capacity || 0
+  const spotsRemaining = capacity - registeredCount
+  const isFull = registeredCount >= capacity
+
   return (
-    <Modal
-      title={
-        <div
-          className="event-detail-header"
-          style={{
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-            paddingRight: "48px",
-          }}
-        >
-          <Title level={3} style={{ margin: 0 }}>
-            {event.title}
-          </Title>
-          <div className="event-header-actions">
-            {/* <Tooltip title={isLiked ? "Remove from favorites" : "Add to favorites"}>
-              <Button
-                type="text"
-                icon={isLiked ? <HeartFilled style={{ color: "#ff4d4f" }} /> : <HeartOutlined />}
-                onClick={handleLike}
-              />
-            </Tooltip> */}
-            {/* <Tooltip title="Share event">
-              <Button type="text" icon={<ShareIcon />} onClick={handleShare} />
-            </Tooltip> */}
-            {/* <Dropdown overlay={menu} trigger={["click"]}>
-              <Button type="text" icon={<MoreOutlined />} />
-            </Dropdown> */}
-          </div>
-        </div>
-      }
-      open={visible}
-      onCancel={onClose}
-      footer={null}
-      width={1200}
-      className="event-details-modal"
-    >
-      <div className="event-details-content">
-        {/* Image Gallery */}
-        <div className="event-gallery-section">
-          <Carousel arrows dots={{ className: "custom-dots" }} className="event-carousel">
-            {event.image_urls?.map((image, index) => (
-              <div key={index} className="carousel-slide">
-                <Image
-                  src={image || "/placeholder.svg"}
-                  alt={`${event.title} - Image ${index + 1}`}
-                  className="event-detail-image"
-                  placeholder={
-                    <div className="image-placeholder">
-                      <PictureOutlined />
-                      <div>Loading image...</div>
-                    </div>
-                  }
-                />
-              </div>
-            ))}
-          </Carousel>
-        </div>
-
-        <Row gutter={32} className="event-details-body">
-          {/* Left Column - Main Content */}
-          <Col span={16}>
-            {/* Event Status & Basic Info */}
-            <Card className="event-info-card">
-              <Space size="middle" style={{ marginBottom: 16 }}>
-                <Tag
-                  color={getEventTypeConfig(event.eventType || event.event_type).color}
-                  icon={getEventTypeConfig(event.eventType || event.event_type).icon}
-                >
-                  {getEventTypeConfig(event.eventType || event.event_type).label}
-                </Tag>
-                <Tag icon={<TagOutlined />} color="blue">
-                  {getCategoryLabel(event.category)}
-                </Tag>
-                {event.featured && (
-                  <Tag icon={<StarOutlined />} color="gold">
-                    Featured
-                  </Tag>
-                )}
-              </Space>
-
-              <Paragraph className="event-description-detailed">{event.description}</Paragraph>
-
-              <Divider />
-
-              {/* Event Details Grid */}
-              <Row gutter={[16, 16]} className="event-details-grid">
-                <Col span={12}>
-                  <div className="detail-item-large">
-                    <CalendarOutlined className="detail-icon" />
-                    <div className="detail-content">
-                      <Text strong>Date</Text>
-                      <Text>{moment(event.date).format("dddd, MMMM DD, YYYY")}</Text>
-                    </div>
-                  </div>
-                </Col>
-                <Col span={12}>
-                  <div className="detail-item-large">
-                    <ClockCircleOutlined className="detail-icon" />
-                    <div className="detail-content">
-                      <Text strong>Time</Text>
-                      <Text>
-                        {event.startTime || event.start_time} - {event.endTime || event.end_time}
-                      </Text>
-                    </div>
-                  </div>
-                </Col>
-                <Col span={12}>
-                  <div className="detail-item-large">
-                    <EnvironmentOutlined className="detail-icon" />
-                    <div className="detail-content">
-                      <Text strong>Location</Text>
-                      <Text>{event.location}</Text>
-                    </div>
-                  </div>
-                </Col>
-                <Col span={12}>
-                  <div className="detail-item-large">
-                    <TeamOutlined className="detail-icon" />
-                    <div className="detail-content">
-                      <Text strong>Capacity</Text>
-                      <Text>{event.capacity}</Text>
-                    </div>
-                  </div>
-                </Col>
-              </Row>
-
-              {/* Registration Progress */}
-              {/* <div className="registration-progress">
-                <Text strong>Registration Progress</Text>
-                <Progress
-                  percent={Math.round((event.registered / event.capacity) * 100)}
-                  status="active"
-                  strokeColor={{
-                    from: "#108ee9",
-                    to: "#87d068",
-                  }}
-                />
-                <Text type="secondary">{event.capacity - event.registered} spots remaining</Text>
-              </div> */}
-            </Card>
-
-            {/* Agenda Section */}
-            {event.agenda && (
-              <Card title="Event Agenda" className="agenda-card">
-                <List
-                  dataSource={typeof event.agenda === "string" ? event.agenda.split("\n") : event.agenda}
-                  renderItem={(item, index) => {
-                    // Handle both formats: "time - description" and plain text
-                    const hasTimeFormat = item.includes(" - ")
-                    const timePart = hasTimeFormat ? item.split(" - ")[0] : `Item ${index + 1}`
-                    const contentPart = hasTimeFormat ? item.split(" - ")[1] : item
-
-                    return (
-                      <List.Item className="agenda-item">
-                        <div className="agenda-time">
-                          <Text strong>{timePart}</Text>
-                        </div>
-                        <div className="agenda-content">
-                          <Text>{contentPart}</Text>
-                        </div>
-                      </List.Item>
-                    )
-                  }}
-                />
-              </Card>
-            )}
-
-            {/* Speakers Section */}
-            {event.speakers && (
-              <Card title="Featured Speakers" className="speakers-card">
-                <Row gutter={[16, 16]}>
-                  {event.speakers.map((speaker, index) => (
-                    <Col span={8} key={index}>
-                      <div className="speaker-card">
-                        <Avatar size={64} icon={<UserOutlined />} />
-                        <div className="speaker-info">
-                          <Text strong>{speaker.name}</Text>
-                          <Text type="secondary">{speaker.role}</Text>
-                        </div>
-                      </div>
-                    </Col>
-                  ))}
-                </Row>
-              </Card>
-            )}
-          </Col>
-
-          {/* Right Column - Sidebar */}
-          <Col span={8}>
-            {/* Pricing & Registration Card */}
-            <Card className="pricing-card">
-              <div className="pricing-header">
-                <Title level={3} style={{ margin: 0 }}>
-                  {event.price === 0 ? "FREE" : `₱${Number(event.price).toLocaleString()}`}
-                </Title>
-
-                {event.earlyBirdPrice && isEarlyBirdAvailable(event) && (
-                  <div className="early-bird-pricing">
-                    <Text delete type="secondary">
-                      ₱{Number(event.price).toLocaleString()}
-                    </Text>
-
-                    <Text
-                      strong
-                      style={{
-                        color: "#ff4d4f",
-                        fontSize: "20px",
-                      }}
-                    >
-                      ₱{Number(event.earlyBirdPrice).toLocaleString()}
-                    </Text>
-
-                    <Tag color="red">Early Bird</Tag>
-                  </div>
-                )}
-              </div>
-
-              {/* <Button
-                type="primary"
-                size="large"
-                block
-                onClick={handleRegister}
-                disabled={isRegistered || event.registered >= event.capacity}
-                className="register-btn"
-              >
-                {isRegistered
-                  ? <CheckCircleOutlined /> + " Registered"
-                  : event.registered >= event.capacity
-                    ? "Sold Out"
-                    : "Register Now"}
-              </Button> */}
-
-              {event.registered >= event.capacity && (
-                <Text
-                  type="danger"
-                  style={{
-                    textAlign: "center",
-                    display: "block",
-                    marginTop: 8,
-                  }}
-                >
-                  This event is fully booked
-                </Text>
-              )}
-
-              <Divider />
-
-              <div className="event-organizer-detailed">
-                <div className="organizer-header">
-                  <Avatar size="large" src={event.organizerAvatar} icon={<UserOutlined />} />
-                  <div className="organizer-info">
-                    <Text strong>Hosted by {event.organizer}</Text>
-                    <Text type="secondary">Event Organizer</Text>
-                  </div>
-                </div>
-                <div className="organizer-actions">
-                  <Tooltip title="Call">
-                    <Button
-                      type="text"
-                      icon={<PhoneFilled />}
-                      size="small"
-                      onClick={() => setPhoneModalVisible(true)}
-                    />
-                  </Tooltip>
-                  <Tooltip title="Email">
-                    <Button type="text" icon={<MailFilled />} size="small" onClick={() => setEmailModalVisible(true)} />
-                  </Tooltip>
-                  <Tooltip title="Message">
-                    <Button
-                      type="text"
-                      icon={<MessageOutlined />}
-                      size="small"
-                      onClick={() => setMessengerModalVisible(true)}
-                    />
-                  </Tooltip>
-                </div>
-              </div>
-            </Card>
-
-            {/* Event Tags */}
-            <Card title="Event Tags" className="tags-card">
-              <div className="event-tags-detailed">
-                {event.tags.map((tag) => (
-                  <Tag key={tag} className="event-tag-detailed">
-                    {tag}
-                  </Tag>
-                ))}
-              </div>
-            </Card>
-
-            <Card
-              title="Safety & Guidelines"
-              className="safety-card"
-              extra={
-                <Tooltip title="All safety measures are strictly enforced">
-                  <SafetyCertificateOutlined
-                    style={{
-                      color: "#52c41a",
-                      fontSize: "16px",
-                    }}
-                  />
-                </Tooltip>
-              }
-            >
-              <Space direction="vertical" size="middle" style={{ width: "100%" }}>
-                {/* Health & Hygiene */}
-                <div className="guideline-category">
-                  <div className="category-header">
-                    <HeartOutlined style={{ color: "#ff4d4f" }} />
-                    <Text strong>Health & Hygiene</Text>
-                  </div>
-                  {/* <div className="guideline-item">
-                    <CheckCircleOutlined style={{ color: "#52c41a" }} />
-                    <Text>COVID-19 safety protocols enforced</Text>
-                  </div> */}
-                  <div className="guideline-item">
-                    <CheckCircleOutlined style={{ color: "#52c41a" }} />
-                    <Text>Hand sanitizing stations throughout venue</Text>
-                  </div>
-                  <div className="guideline-item">
-                    <CheckCircleOutlined style={{ color: "#52c41a" }} />
-                    <Text>Enhanced cleaning between sessions</Text>
-                  </div>
-                  <div className="guideline-item">
-                    <CheckCircleOutlined style={{ color: "#52c41a" }} />
-                    <Text>Medical staff and first aid available</Text>
-                  </div>
-                </div>
-
-                {/* Security */}
-                <div className="guideline-category">
-                  <div className="category-header">
-                    <SafetyCertificateOutlined style={{ color: "#1890ff" }} />
-                    <Text strong>Security & Safety</Text>
-                  </div>
-                  <div className="guideline-item">
-                    <CheckCircleOutlined style={{ color: "#52c41a" }} />
-                    <Text>Professional security personnel on duty</Text>
-                  </div>
-                  <div className="guideline-item">
-                    <CheckCircleOutlined style={{ color: "#52c41a" }} />
-                    <Text>Bag checks and metal detection at entrance</Text>
-                  </div>
-                  <div className="guideline-item">
-                    <CheckCircleOutlined style={{ color: "#52c41a" }} />
-                    <Text>Emergency evacuation procedures in place</Text>
-                  </div>
-                  <div className="guideline-item">
-                    <CheckCircleOutlined style={{ color: "#52c41a" }} />
-                    <Text>CCTV surveillance throughout the venue</Text>
-                  </div>
-                  <div className="guideline-item">
-                    <CheckCircleOutlined style={{ color: "#52c41a" }} />
-                    <Text>Lost and found service available</Text>
-                  </div>
-                </div>
-
-                {/* Accessibility */}
-                <div className="guideline-category">
-                  <div className="category-header">
-                    <TeamOutlined style={{ color: "#722ed1" }} />
-                    <Text strong>Accessibility</Text>
-                  </div>
-                  <div className="guideline-item">
-                    <CheckCircleOutlined style={{ color: "#52c41a" }} />
-                    <Text>Wheelchair accessible venue and facilities</Text>
-                  </div>
-                  <div className="guideline-item">
-                    <CheckCircleOutlined style={{ color: "#52c41a" }} />
-                    <Text>Reserved seating for special needs</Text>
-                  </div>
-                  <div className="guideline-item">
-                    <CheckCircleOutlined style={{ color: "#52c41a" }} />
-                    <Text>Sign language interpreters available upon request</Text>
-                  </div>
-                  <div className="guideline-item">
-                    <CheckCircleOutlined style={{ color: "#52c41a" }} />
-                    <Text>Quiet rooms available for sensory breaks</Text>
-                  </div>
-                </div>
-
-                {/* Event Conduct */}
-                <div className="guideline-category">
-                  <div className="category-header">
-                    <UserOutlined style={{ color: "#fa8c16" }} />
-                    <Text strong>Event Conduct</Text>
-                  </div>
-                  <div className="guideline-item">
-                    <InfoCircleOutlined style={{ color: "#1890ff" }} />
-                    <Text>Respectful behavior towards all attendees required</Text>
-                  </div>
-                  <div className="guideline-item">
-                    <InfoCircleOutlined style={{ color: "#1890ff" }} />
-                    <Text>No smoking except in designated areas</Text>
-                  </div>
-                  <div className="guideline-item">
-                    <InfoCircleOutlined style={{ color: "#1890ff" }} />
-                    <Text>Professional photography and recording only</Text>
-                  </div>
-                  <div className="guideline-item">
-                    <InfoCircleOutlined style={{ color: "#1890ff" }} />
-                    <Text>Age restrictions may apply for certain areas</Text>
-                  </div>
-                </div>
-
-                {/* Emergency Information */}
-                <div className="guideline-category">
-                  <div className="category-header">
-                    <ExclamationCircleOutlined style={{ color: "#fa541c" }} />
-                    <Text strong>Emergency Information</Text>
-                  </div>
-                  <div className="guideline-item">
-                    <PhoneOutlined style={{ color: "#1890ff" }} />
-                    <Text>Emergency contact: (555) 123-HELP</Text>
-                  </div>
-                  <div className="guideline-item">
-                    <EnvironmentOutlined style={{ color: "#1890ff" }} />
-                    <Text>First aid stations located at main entrances</Text>
-                  </div>
-                  <div className="guideline-item">
-                    <TeamOutlined style={{ color: "#1890ff" }} />
-                    <Text>Event staff identifiable by blue badges</Text>
-                  </div>
-                  <div className="guideline-item">
-                    <InfoCircleOutlined style={{ color: "#1890ff" }} />
-                    <Text>Emergency exits clearly marked throughout venue</Text>
-                  </div>
-                </div>
-
-                {/* Prohibited Items */}
-                <div className="guideline-category">
-                  <div className="category-header">
-                    <CloseCircleOutlined style={{ color: "#f5222d" }} />
-                    <Text strong>Prohibited Items</Text>
-                  </div>
-                  <div className="guideline-item">
-                    <CloseOutlined style={{ color: "#f5222d" }} />
-                    <Text>Weapons of any kind</Text>
-                  </div>
-                  <div className="guideline-item">
-                    <CloseOutlined style={{ color: "#f5222d" }} />
-                    <Text>Outside food and beverages</Text>
-                  </div>
-                  <div className="guideline-item">
-                    <CloseOutlined style={{ color: "#f5222d" }} />
-                    <Text>Large bags or backpacks (over 12x12x6)</Text>
-                  </div>
-                  <div className="guideline-item">
-                    <CloseOutlined style={{ color: "#f5222d" }} />
-                    <Text>Professional camera equipment without permit</Text>
-                  </div>
-                </div>
-
-                {/* Additional Notes */}
-                <Alert
-                  message="Important Notice"
-                  description="By attending this event, you agree to comply with all safety guidelines and acknowledge that failure to do so may result in removal from the venue without refund."
-                  type="warning"
-                  showIcon
-                  closable
-                />
-              </Space>
-            </Card>
-          </Col>
-        </Row>
-      </div>
-
+    <>
       <Modal
         title={
-          <Space>
-            <PhoneFilled style={{ color: "#1890ff", fontSize: "20px" }} />
-            <span>Contact via Phone</span>
-          </Space>
-        }
-        open={phoneModalVisible}
-        onCancel={() => setPhoneModalVisible(false)}
-        footer={[
-          <Button key="close" onClick={() => setPhoneModalVisible(false)}>
-            Close
-          </Button>,
-          <Button key="call" type="primary" icon={<PhoneOutlined />} href={`tel:${contactInfo.phone}`}>
-            Call Now
-          </Button>,
-        ]}
-      >
-        <div style={{ padding: "20px 0" }}>
-          <Space direction="vertical" size="large" style={{ width: "100%" }}>
-            <div>
-              <Text type="secondary">Contact Person</Text>
-              <Title level={4} style={{ margin: "8px 0" }}>
-                {contactInfo.title}
-              </Title>
-            </div>
-            <div>
-              <Text type="secondary">Phone Number</Text>
-              <Title level={3} style={{ margin: "8px 0", color: "#1890ff" }}>
-                {contactInfo.phone}
-              </Title>
-            </div>
-            <Alert
-              message="Available Hours"
-              description="Monday - Friday: 8:00 AM - 5:00 PM"
-              type="info"
-              showIcon
-              icon={<ClockCircleOutlined />}
-            />
-          </Space>
-        </div>
-      </Modal>
-
-      <Modal
-        title={
-          <Space>
-            <MailFilled style={{ color: "#52c41a", fontSize: "20px" }} />
-            <span>Contact via Email</span>
-          </Space>
-        }
-        open={emailModalVisible}
-        onCancel={() => setEmailModalVisible(false)}
-        footer={[
-          <Button
-            key="copy"
-            icon={<CopyOutlined />}
-            onClick={() => {
-              navigator.clipboard.writeText(contactInfo.email)
-              message.success("Email copied to clipboard!")
+          <div
+            className="event-detail-header"
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              paddingRight: "48px",
             }}
           >
-            Copy Email
-          </Button>,
-          <Button key="close" onClick={() => setEmailModalVisible(false)}>
-            Close
-          </Button>,
-          <Button key="email" type="primary" icon={<MailFilled />} href={`mailto:${contactInfo.email}`}>
-            Send Email
-          </Button>,
-        ]}
+            <Title level={3} style={{ margin: 0 }}>
+              {event.title}
+            </Title>
+            <div className="event-header-actions">
+              {role === "admin" && (
+                <Dropdown overlay={menu} trigger={["click"]}>
+                  <Button type="text" icon={<MoreOutlined />} />
+                </Dropdown>
+              )}
+            </div>
+          </div>
+        }
+        open={visible}
+        onCancel={onClose}
+        footer={null}
+        width={1200}
+        className="event-details-modal"
       >
-        <div style={{ padding: "20px 0" }}>
-          <Space direction="vertical" size="large" style={{ width: "100%" }}>
-            <div>
-              <Text type="secondary">Contact Person</Text>
-              <Title level={4} style={{ margin: "8px 0" }}>
-                {contactInfo.title}
-              </Title>
-            </div>
-            <div>
-              <Text type="secondary">Email Address</Text>
-              <Title level={4} style={{ margin: "8px 0", color: "#52c41a" }}>
-                {contactInfo.email}
-              </Title>
-            </div>
-            <Alert
-              message="Response Time"
-              description="We typically respond within 24-48 hours during business days."
-              type="success"
-              showIcon
-              icon={<InfoCircleOutlined />}
-            />
-          </Space>
+        <div className="event-details-content">
+          {/* Image Gallery */}
+          <div className="event-gallery-section">
+            <Carousel arrows dots={{ className: "custom-dots" }} className="event-carousel">
+              {event.image_urls?.map((image, index) => (
+                <div key={index} className="carousel-slide">
+                  <Image
+                    src={image || "/placeholder.svg"}
+                    alt={`${event.title} - Image ${index + 1}`}
+                    className="event-detail-image"
+                    placeholder={
+                      <div className="image-placeholder">
+                        <PictureOutlined />
+                        <div>Loading image...</div>
+                      </div>
+                    }
+                  />
+                </div>
+              ))}
+            </Carousel>
+          </div>
+
+          <Row gutter={32} className="event-details-body">
+            {/* Left Column - Main Content */}
+            <Col span={16}>
+              {/* Event Status & Basic Info */}
+              <Card className="event-info-card">
+                <Space size="middle" style={{ marginBottom: 16 }}>
+                  <Tag
+                    color={getEventTypeConfig(event.eventType || event.event_type).color}
+                    icon={getEventTypeConfig(event.eventType || event.event_type).icon}
+                  >
+                    {getEventTypeConfig(event.eventType || event.event_type).label}
+                  </Tag>
+                  <Tag icon={<TagOutlined />} color="blue">
+                    {getCategoryLabel(event.category)}
+                  </Tag>
+                  {event.featured && (
+                    <Tag icon={<StarOutlined />} color="gold">
+                      Featured
+                    </Tag>
+                  )}
+                </Space>
+
+                <Paragraph className="event-description-detailed">{event.description}</Paragraph>
+
+                <Divider />
+
+                {/* Event Details Grid */}
+                <Row gutter={[16, 16]} className="event-details-grid">
+                  <Col span={12}>
+                    <div className="detail-item-large">
+                      <CalendarOutlined className="detail-icon" />
+                      <div className="detail-content">
+                        <Text strong>Date</Text>
+                        <Text>{moment(event.date).format("dddd, MMMM DD, YYYY")}</Text>
+                      </div>
+                    </div>
+                  </Col>
+                  <Col span={12}>
+                    <div className="detail-item-large">
+                      <ClockCircleOutlined className="detail-icon" />
+                      <div className="detail-content">
+                        <Text strong>Time</Text>
+                        <Text>
+                          {event.startTime || event.start_time} - {event.endTime || event.end_time}
+                        </Text>
+                      </div>
+                    </div>
+                  </Col>
+                  <Col span={12}>
+                    <div className="detail-item-large">
+                      <EnvironmentOutlined className="detail-icon" />
+                      <div className="detail-content">
+                        <Text strong>Location</Text>
+                        <Text>{event.location}</Text>
+                      </div>
+                    </div>
+                  </Col>
+                  <Col span={12}>
+                    <div className="detail-item-large">
+                      <TeamOutlined className="detail-icon" />
+                      <div className="detail-content">
+                        <Text strong>Capacity</Text>
+                        <Text>
+                          {registeredCount} / {capacity} registered
+                        </Text>
+                      </div>
+                    </div>
+                  </Col>
+                </Row>
+
+                <div className="registration-progress" style={{ marginTop: 20 }}>
+                  <div
+                    style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}
+                  >
+                    <Text strong>Registration Progress</Text>
+                    <Text type="secondary">{spotsRemaining} spots remaining</Text>
+                  </div>
+                  <Progress
+                    percent={Math.round((registeredCount / capacity) * 100)}
+                    status={isFull ? "exception" : "active"}
+                    strokeColor={{
+                      from: "#108ee9",
+                      to: isFull ? "#ff4d4f" : "#87d068",
+                    }}
+                  />
+                  {role === "admin" && (
+                    <Button
+                      type="link"
+                      icon={<UsergroupAddOutlined />}
+                      onClick={() => setRegistrationsModalVisible(true)}
+                      style={{ padding: 0, marginTop: 8 }}
+                    >
+                      View All Registrations ({registeredCount})
+                    </Button>
+                  )}
+                </div>
+              </Card>
+
+              {/* Agenda Section */}
+              {event.agenda && (
+                <Card title="Event Agenda" className="agenda-card">
+                  <List
+                    dataSource={typeof event.agenda === "string" ? event.agenda.split("\n") : event.agenda}
+                    renderItem={(item, index) => {
+                      const hasTimeFormat = item.includes(" - ")
+                      const timePart = hasTimeFormat ? item.split(" - ")[0] : `Item ${index + 1}`
+                      const contentPart = hasTimeFormat ? item.split(" - ")[1] : item
+
+                      return (
+                        <List.Item className="agenda-item">
+                          <div className="agenda-time">
+                            <Text strong>{timePart}</Text>
+                          </div>
+                          <div className="agenda-content">
+                            <Text>{contentPart}</Text>
+                          </div>
+                        </List.Item>
+                      )
+                    }}
+                  />
+                </Card>
+              )}
+
+              {/* Speakers Section */}
+              {event.speakers && (
+                <Card title="Featured Speakers" className="speakers-card">
+                  <Row gutter={[16, 16]}>
+                    {event.speakers.map((speaker, index) => (
+                      <Col span={8} key={index}>
+                        <div className="speaker-card">
+                          <Avatar size={64} icon={<UserOutlined />} />
+                          <div className="speaker-info">
+                            <Text strong>{speaker.name}</Text>
+                            <Text type="secondary">{speaker.role}</Text>
+                          </div>
+                        </div>
+                      </Col>
+                    ))}
+                  </Row>
+                </Card>
+              )}
+            </Col>
+
+            {/* Right Column - Sidebar */}
+            <Col span={8}>
+              {/* Pricing & Registration Card */}
+              <Card className="pricing-card">
+                <div className="pricing-header">
+                  <Title level={3} style={{ margin: 0 }}>
+                    {event.price === 0 ? "FREE" : `₱${Number(event.price).toLocaleString()}`}
+                  </Title>
+
+                  {event.earlyBirdPrice && isEarlyBirdAvailable(event) && (
+                    <div className="early-bird-pricing">
+                      <Text delete type="secondary">
+                        ₱{Number(event.price).toLocaleString()}
+                      </Text>
+
+                      <Text
+                        strong
+                        style={{
+                          color: "#ff4d4f",
+                          fontSize: "20px",
+                        }}
+                      >
+                        ₱{Number(event.earlyBirdPrice).toLocaleString()}
+                      </Text>
+
+                      <Tag color="red">Early Bird</Tag>
+                    </div>
+                  )}
+                </div>
+
+                {role === "alumni" && event.status === "upcoming" && (
+                  <>
+                    {isRegistered ? (
+                      <Space direction="vertical" style={{ width: "100%", marginTop: 16 }}>
+                        <Button
+                          type="primary"
+                          size="large"
+                          block
+                          icon={<CheckCircleOutlined />}
+                          style={{ background: "#52c41a", borderColor: "#52c41a" }}
+                          disabled
+                        >
+                          Registered
+                        </Button>
+                        <Button type="default" size="large" block danger onClick={handleCancelRegistration}>
+                          Cancel Registration
+                        </Button>
+                      </Space>
+                    ) : (
+                      <Button
+                        type="primary"
+                        size="large"
+                        block
+                        onClick={handleRegister}
+                        disabled={isFull || isLoadingRegistrationStatus}
+                        loading={isRegistering}
+                        className="register-btn"
+                        style={{ marginTop: 16 }}
+                      >
+                        {isFull ? "Fully Booked" : "Register Now"}
+                      </Button>
+                    )}
+                  </>
+                )}
+
+                {isFull && !isRegistered && (
+                  <Text
+                    type="danger"
+                    style={{
+                      textAlign: "center",
+                      display: "block",
+                      marginTop: 8,
+                    }}
+                  >
+                    This event is fully booked
+                  </Text>
+                )}
+
+                <Divider />
+
+                <div className="event-organizer-detailed">
+                  <div className="organizer-header">
+                    <Avatar size="large" src={event.organizerAvatar} icon={<UserOutlined />} />
+                    <div className="organizer-info">
+                      <Text strong>Hosted by {event.organizer}</Text>
+                      <Text type="secondary">Event Organizer</Text>
+                    </div>
+                  </div>
+                  <div className="organizer-actions">
+                    <Tooltip title="Call">
+                      <Button
+                        type="text"
+                        icon={<PhoneFilled />}
+                        size="small"
+                        onClick={() => setPhoneModalVisible(true)}
+                      />
+                    </Tooltip>
+                    <Tooltip title="Email">
+                      <Button
+                        type="text"
+                        icon={<MailFilled />}
+                        size="small"
+                        onClick={() => setEmailModalVisible(true)}
+                      />
+                    </Tooltip>
+                    <Tooltip title="Message">
+                      <Button
+                        type="text"
+                        icon={<MessageOutlined />}
+                        size="small"
+                        onClick={() => setMessengerModalVisible(true)}
+                      />
+                    </Tooltip>
+                  </div>
+                </div>
+              </Card>
+
+              {/* Event Tags */}
+              <Card title="Event Tags" className="tags-card">
+                <div className="event-tags-detailed">
+                  {event.tags.map((tag) => (
+                    <Tag key={tag} className="event-tag-detailed">
+                      {tag}
+                    </Tag>
+                  ))}
+                </div>
+              </Card>
+
+              <Card
+                title="Safety & Guidelines"
+                className="safety-card"
+                extra={
+                  <Tooltip title="All safety measures are strictly enforced">
+                    <SafetyCertificateOutlined
+                      style={{
+                        color: "#52c41a",
+                        fontSize: "16px",
+                      }}
+                    />
+                  </Tooltip>
+                }
+              >
+                <Space direction="vertical" size="middle" style={{ width: "100%" }}>
+                  {/* Health & Hygiene */}
+                  <div className="guideline-category">
+                    <div className="category-header">
+                      <HeartOutlined style={{ color: "#ff4d4f" }} />
+                      <Text strong>Health & Hygiene</Text>
+                    </div>
+                    <div className="guideline-item">
+                      <CheckCircleOutlined style={{ color: "#52c41a" }} />
+                      <Text>Hand sanitizing stations throughout venue</Text>
+                    </div>
+                    <div className="guideline-item">
+                      <CheckCircleOutlined style={{ color: "#52c41a" }} />
+                      <Text>Enhanced cleaning between sessions</Text>
+                    </div>
+                    <div className="guideline-item">
+                      <CheckCircleOutlined style={{ color: "#52c41a" }} />
+                      <Text>Medical staff and first aid available</Text>
+                    </div>
+                  </div>
+
+                  {/* Security */}
+                  <div className="guideline-category">
+                    <div className="category-header">
+                      <SafetyCertificateOutlined style={{ color: "#1890ff" }} />
+                      <Text strong>Security & Safety</Text>
+                    </div>
+                    <div className="guideline-item">
+                      <CheckCircleOutlined style={{ color: "#52c41a" }} />
+                      <Text>Professional security personnel on duty</Text>
+                    </div>
+                    <div className="guideline-item">
+                      <CheckCircleOutlined style={{ color: "#52c41a" }} />
+                      <Text>Bag checks and metal detection at entrance</Text>
+                    </div>
+                    <div className="guideline-item">
+                      <CheckCircleOutlined style={{ color: "#52c41a" }} />
+                      <Text>Emergency evacuation procedures in place</Text>
+                    </div>
+                  </div>
+
+                  {/* Additional Notes */}
+                  <Alert
+                    message="Important Notice"
+                    description="By attending this event, you agree to comply with all safety guidelines."
+                    type="warning"
+                    showIcon
+                    closable
+                  />
+                </Space>
+              </Card>
+            </Col>
+          </Row>
         </div>
+
+        {/* Contact Modals */}
+        <Modal
+          title={
+            <Space>
+              <PhoneFilled style={{ color: "#1890ff", fontSize: "20px" }} />
+              <span>Contact via Phone</span>
+            </Space>
+          }
+          open={phoneModalVisible}
+          onCancel={() => setPhoneModalVisible(false)}
+          footer={[
+            <Button key="close" onClick={() => setPhoneModalVisible(false)}>
+              Close
+            </Button>,
+            <Button key="call" type="primary" icon={<PhoneOutlined />} href={`tel:${contactInfo.phone}`}>
+              Call Now
+            </Button>,
+          ]}
+        >
+          <div style={{ padding: "20px 0" }}>
+            <Space direction="vertical" size="large" style={{ width: "100%" }}>
+              <div>
+                <Text type="secondary">Contact Person</Text>
+                <Title level={4} style={{ margin: "8px 0" }}>
+                  {contactInfo.title}
+                </Title>
+              </div>
+              <div>
+                <Text type="secondary">Phone Number</Text>
+                <Title level={3} style={{ margin: "8px 0", color: "#1890ff" }}>
+                  {contactInfo.phone}
+                </Title>
+              </div>
+              <Alert
+                message="Available Hours"
+                description="Monday - Friday: 8:00 AM - 5:00 PM"
+                type="info"
+                showIcon
+                icon={<ClockCircleOutlined />}
+              />
+            </Space>
+          </div>
+        </Modal>
+
+        <Modal
+          title={
+            <Space>
+              <MailFilled style={{ color: "#52c41a", fontSize: "20px" }} />
+              <span>Contact via Email</span>
+            </Space>
+          }
+          open={emailModalVisible}
+          onCancel={() => setEmailModalVisible(false)}
+          footer={[
+            <Button
+              key="copy"
+              icon={<CopyOutlined />}
+              onClick={() => {
+                navigator.clipboard.writeText(contactInfo.email)
+                message.success("Email copied to clipboard!")
+              }}
+            >
+              Copy Email
+            </Button>,
+            <Button key="close" onClick={() => setEmailModalVisible(false)}>
+              Close
+            </Button>,
+            <Button key="email" type="primary" icon={<MailFilled />} href={`mailto:${contactInfo.email}`}>
+              Send Email
+            </Button>,
+          ]}
+        >
+          <div style={{ padding: "20px 0" }}>
+            <Space direction="vertical" size="large" style={{ width: "100%" }}>
+              <div>
+                <Text type="secondary">Contact Person</Text>
+                <Title level={4} style={{ margin: "8px 0" }}>
+                  {contactInfo.title}
+                </Title>
+              </div>
+              <div>
+                <Text type="secondary">Email Address</Text>
+                <Title level={4} style={{ margin: "8px 0", color: "#52c41a" }}>
+                  {contactInfo.email}
+                </Title>
+              </div>
+              <Alert
+                message="Response Time"
+                description="We typically respond within 24-48 hours during business days."
+                type="success"
+                showIcon
+                icon={<InfoCircleOutlined />}
+              />
+            </Space>
+          </div>
+        </Modal>
+
+        <Modal
+          title={
+            <Space>
+              <MessageOutlined style={{ color: "#0084ff", fontSize: "20px" }} />
+              <span>Contact via Messenger</span>
+            </Space>
+          }
+          open={messengerModalVisible}
+          onCancel={() => setMessengerModalVisible(false)}
+          footer={[
+            <Button key="close" onClick={() => setMessengerModalVisible(false)}>
+              Close
+            </Button>,
+            <Button
+              key="messenger"
+              type="primary"
+              icon={<MessageOutlined />}
+              href={contactInfo.messenger}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              Open Messenger
+            </Button>,
+          ]}
+        >
+          <div style={{ padding: "20px 0" }}>
+            <Space direction="vertical" size="large" style={{ width: "100%" }}>
+              <div>
+                <Text type="secondary">Contact Person</Text>
+                <Title level={4} style={{ margin: "8px 0" }}>
+                  {contactInfo.title}
+                </Title>
+              </div>
+              <div>
+                <Text type="secondary">Facebook Messenger</Text>
+                <Paragraph style={{ margin: "8px 0" }}>
+                  Click the button below to start a conversation on Facebook Messenger.
+                </Paragraph>
+              </div>
+              <Alert
+                message="Instant Messaging"
+                description="Get quick responses to your inquiries through Facebook Messenger during office hours."
+                type="info"
+                showIcon
+                icon={<MessageOutlined />}
+              />
+            </Space>
+          </div>
+        </Modal>
       </Modal>
 
-      <Modal
-        title={
-          <Space>
-            <MessageOutlined style={{ color: "#0084ff", fontSize: "20px" }} />
-            <span>Contact via Messenger</span>
-          </Space>
-        }
-        open={messengerModalVisible}
-        onCancel={() => setMessengerModalVisible(false)}
-        footer={[
-          <Button key="close" onClick={() => setMessengerModalVisible(false)}>
-            Close
-          </Button>,
-          <Button
-            key="messenger"
-            type="primary"
-            icon={<MessageOutlined />}
-            href={contactInfo.messenger}
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Open Messenger
-          </Button>,
-        ]}
-      >
-        <div style={{ padding: "20px 0" }}>
-          <Space direction="vertical" size="large" style={{ width: "100%" }}>
-            <div>
-              <Text type="secondary">Contact Person</Text>
-              <Title level={4} style={{ margin: "8px 0" }}>
-                {contactInfo.title}
-              </Title>
-            </div>
-            <div>
-              <Text type="secondary">Facebook Messenger</Text>
-              <Paragraph style={{ margin: "8px 0" }}>
-                Click the button below to start a conversation on Facebook Messenger.
-              </Paragraph>
-            </div>
-            <Alert
-              message="Instant Messaging"
-              description="Get quick responses to your inquiries through Facebook Messenger during office hours."
-              type="info"
-              showIcon
-              icon={<MessageOutlined />}
-            />
-          </Space>
-        </div>
-      </Modal>
-    </Modal>
+      <RegistrationsModal
+        event={event}
+        visible={registrationsModalVisible}
+        onClose={() => setRegistrationsModalVisible(false)}
+      />
+    </>
   )
 }
 
 const EventCard = ({ event, showEventDetails, onEdit, onDelete }) => {
+  const role = secureLocalStorage.getItem("userRole")
+  const [registrationsModalVisible, setRegistrationsModalVisible] = useState(false)
+
   const handleMenuClick = ({ key }) => {
     if (key === "delete") {
       Modal.confirm({
@@ -1033,158 +1305,162 @@ const EventCard = ({ event, showEventDetails, onEdit, onDelete }) => {
         },
       })
     } else if (key === "edit") {
+      if (event.status === "ongoing" || event.status === "completed") {
+        message.warning("Cannot edit ongoing or completed events")
+        return
+      }
       onEdit(event)
+    } else if (key === "registrations") {
+      setRegistrationsModalVisible(true)
     }
   }
 
   const menu = (
     <Menu onClick={handleMenuClick}>
-      <Menu.Item key="edit" icon={<EditOutlined />}>
+      <Menu.Item
+        key="edit"
+        icon={<EditOutlined />}
+        disabled={event.status === "ongoing" || event.status === "completed"}
+      >
         Edit Event
       </Menu.Item>
-      {/* <Menu.Item key="duplicate" icon={<CopyOutlined />}>
-        Duplicate Event
+      <Menu.Item key="registrations" icon={<UsergroupAddOutlined />}>
+        View Registrations
       </Menu.Item>
-      <Menu.Divider /> */}
-      {/* <Menu.Item key="share" icon={<ShareAltOutlined />}>
-        Share Event
-      </Menu.Item> */}
-      {/* <Menu.Item key="export" icon={<DownloadOutlined />}>
-        Export Registrations
-      </Menu.Item>
-      <Menu.Divider /> */}
       <Menu.Item key="delete" icon={<DeleteOutlined />} danger>
         Delete Event
       </Menu.Item>
     </Menu>
   )
 
+  const registeredCount = event.registered_count || event.registered || 0
+  const capacity = event.capacity || 0
+
   return (
-    <Badge.Ribbon text="Featured" color="red" style={{ display: event.featured ? "block" : "none" }}>
-      <Card
-        className="event-card"
-        cover={
-          <div className="event-cover">
-            {event.image_urls?.map((img, i) => (
-              <img key={i} alt={event.title} src={img || "/placeholder.svg"} />
-            ))}
-            <div className="event-cover-overlay">
-              <div className="event-type-tag">
+    <>
+      <Badge.Ribbon text="Featured" color="red" style={{ display: event.featured ? "block" : "none" }}>
+        <Card
+          className={`event-card ${event.featured ? "has-featured" : ""}`}
+          cover={
+            <div className="event-cover">
+              {event.image_urls?.map((img, i) => (
+                <img key={i} alt={event.title} src={img || "/placeholder.svg"} />
+              ))}
+              <div className="event-cover-overlay">
+                <div className="event-type-tag">
+                  <Tag color={getEventTypeConfig(event.eventType || event.event_type).color} style={{ fontSize: 10 }}>
+                    {getEventTypeConfig(event.eventType || event.event_type).label}
+                  </Tag>
+                </div>
+              </div>
+              <div className="event-status-badge">{getStatusTag(event.status)}</div>
+            </div>
+          }
+          actions={[
+            <Tooltip title="View Details" key="view">
+              <EyeOutlined onClick={() => showEventDetails(event)} />
+            </Tooltip>,
+            ...(role === "admin"
+              ? [
+                  <Tooltip title={`${registeredCount} Registered`} key="registrations">
+                    <Badge count={registeredCount} size="small" offset={[5, 0]}>
+                      <UsergroupAddOutlined onClick={() => setRegistrationsModalVisible(true)} />
+                    </Badge>
+                  </Tooltip>,
+                  <Dropdown overlay={menu} trigger={["click"]} key="more">
+                    <MoreOutlined />
+                  </Dropdown>,
+                ]
+              : []),
+          ]}
+        >
+          <div className="event-card-content">
+            <div className="event-header">
+              <Title level={4} className="event-title">
+                {event.title}
+              </Title>
+            </div>
+
+            <Paragraph ellipsis={{ rows: 2 }} className="event-description">
+              {event.description}
+            </Paragraph>
+
+            <div className="event-organizer">
+              <Avatar size="small" icon={<UserOutlined />} />
+              <Text type="secondary">Hosted by {event.organizer}</Text>
+            </div>
+
+            <Divider />
+
+            <div style={{ marginBottom: 12 }}>
+              <Space size={4} wrap>
                 <Tag color={getEventTypeConfig(event.eventType || event.event_type).color} style={{ fontSize: 10 }}>
                   {getEventTypeConfig(event.eventType || event.event_type).label}
                 </Tag>
+
+                <Tag color="blue" style={{ fontSize: 10 }}>
+                  {getCategoryLabel(event.category)}
+                </Tag>
+              </Space>
+            </div>
+
+            <div className="event-details">
+              <div className="detail-item">
+                <CalendarOutlined />
+                <Text>{moment(event.date).format("MMM DD, YYYY")}</Text>
               </div>
-              {/* <div className="event-actions">
-                                <Tooltip title="Add to Favorites">
-                                    <Button
-                                        type="text"
-                                        icon={<HeartOutlined />}
-                                        className="action-btn"
-                                    />
-                                </Tooltip>
-                                <Tooltip title="Share Event">
-                                    <Button
-                                        type="text"
-                                        icon={<ShareAltOutlined />}
-                                        className="action-btn"
-                                    />
-                                </Tooltip>
-                            </div> */}
+              <div className="detail-item">
+                <ClockCircleOutlined />
+                <Text>
+                  {moment(event.start_time, "HH:mm").format("hh:mm A")} -
+                  {moment(event.end_time, "HH:mm").format("hh:mm A")}
+                </Text>
+              </div>
+              <div className="detail-item">
+                <EnvironmentOutlined />
+                <Text ellipsis={{ tooltip: event.location }}>{event.location}</Text>
+              </div>
+              <div className="detail-item">
+                <TeamOutlined />
+                <Text>
+                  {registeredCount} / {capacity} registered
+                </Text>
+              </div>
             </div>
-            <div className="event-status-badge">{getStatusTag(event.status)}</div>
-          </div>
-        }
-        actions={[
-          // Everyone can see
-          <Tooltip title="View Details" key="view">
-            <EyeOutlined onClick={() => showEventDetails(event)} />
-          </Tooltip>,
 
-          // Admin only
-          ...(secureLocalStorage.getItem("userRole") === "admin"
-            ? [
-                // <Tooltip title="Register" key="register">
-                //   <UserOutlined />
-                // </Tooltip>,
-                // <Tooltip title="Share" key="share">
-                //   <ShareAltOutlined />
-                // </Tooltip>,
-                <Dropdown overlay={menu} trigger={["click"]} key="more">
-                  <MoreOutlined />
-                </Dropdown>,
-              ]
-            : []),
-        ]}
-      >
-        <div className="event-card-content">
-          <div className="event-header">
-            <Title level={4} className="event-title">
-              {event.title}
-            </Title>
-          </div>
-
-          <Paragraph ellipsis={{ rows: 2 }} className="event-description">
-            {event.description}
-          </Paragraph>
-
-          <div className="event-organizer">
-            <Avatar size="small" icon={<UserOutlined />} />
-            <Text type="secondary">Hosted by {event.organizer}</Text>
-          </div>
-
-          <Divider />
-
-          <div style={{ marginBottom: 12 }}>
-            <Space size={4} wrap>
-              <Tag color={getEventTypeConfig(event.eventType || event.event_type).color} style={{ fontSize: 10 }}>
-                {getEventTypeConfig(event.eventType || event.event_type).label}
-              </Tag>
-
-              <Tag color="blue" style={{ fontSize: 10 }}>
-                {getCategoryLabel(event.category)}
-              </Tag>
-            </Space>
-          </div>
-
-          <div className="event-details">
-            <div className="detail-item">
-              <CalendarOutlined />
-              <Text>{moment(event.date).format("MMM DD, YYYY")}</Text>
+            <div style={{ marginTop: 12, marginBottom: 12 }}>
+              <Progress
+                percent={Math.round((registeredCount / capacity) * 100)}
+                size="small"
+                status={registeredCount >= capacity ? "exception" : "active"}
+                showInfo={false}
+              />
             </div>
-            <div className="detail-item">
-              <ClockCircleOutlined />
-              <Text>
-                {moment(event.start_time, "HH:mm").format("hh:mm A")} -
-                {moment(event.end_time, "HH:mm").format("hh:mm A")}
+
+            <div className="event-pricing">
+              <Text strong className="regular-price">
+                {Number.parseFloat(event.price) === 0 ? "FREE" : `₱${Number(event.price).toLocaleString()}`}
               </Text>
             </div>
-            <div className="detail-item">
-              <EnvironmentOutlined />
-              <Text ellipsis={{ tooltip: event.location }}>{event.location}</Text>
+
+            <div className="event-tags">
+              {event.tags.map((tag) => (
+                <Tag key={tag} className="event-tag">
+                  {tag}
+                </Tag>
+              ))}
             </div>
           </div>
+        </Card>
+      </Badge.Ribbon>
 
-          <div className="event-pricing">
-            <Text strong className="regular-price">
-              {Number.parseFloat(event.price) === 0 ? "FREE" : `₱${Number(event.price).toLocaleString()}`}
-            </Text>
-          </div>
-
-          <div className="event-tags">
-            {event.tags.map((tag) => (
-              <Tag key={tag} className="event-tag">
-                {tag}
-              </Tag>
-            ))}
-          </div>
-        </div>
-      </Card>
-    </Badge.Ribbon>
+      <RegistrationsModal
+        event={event}
+        visible={registrationsModalVisible}
+        onClose={() => setRegistrationsModalVisible(false)}
+      />
+    </>
   )
-}
-
-const isEarlyBirdAvailable = (event) => {
-  return event.earlyBirdPrice && moment().isBefore(moment(event.earlyBirdEnd))
 }
 
 const getStatusTag = (status) => {
@@ -1309,7 +1585,6 @@ const AlumniEvents = () => {
   const role = secureLocalStorage.getItem("userRole")
   const [fileList, setFileList] = useState([])
 
-  
   const selectedDate = Form.useWatch("date", form)
 
   // Trigger re-render every minute for real-time disabling
@@ -1416,6 +1691,8 @@ const AlumniEvents = () => {
       tags: event.tags,
       agenda: typeof event.agenda === "string" ? event.agenda : event.agenda?.join("\n"),
       featured: event.featured || false,
+      earlyBirdPrice: event.earlyBirdPrice,
+      earlyBirdEndDate: event.earlyBirdEndDate ? moment(event.earlyBirdEndDate) : null,
     })
   }
 
@@ -1582,6 +1859,10 @@ const AlumniEvents = () => {
       formData.append("capacity", values.capacity)
       formData.append("organizer", values.organizer)
       formData.append("agenda", values.agenda || "")
+      formData.append("earlyBirdPrice", values.earlyBirdPrice || 0)
+      if (values.earlyBirdEndDate) {
+        formData.append("earlyBirdEndDate", values.earlyBirdEndDate.format("YYYY-MM-DD"))
+      }
 
       // ⭐ THE IMPORTANT PART ⭐
       formData.append("featured", values.featured ? 1 : 0)
@@ -2119,6 +2400,41 @@ const AlumniEvents = () => {
                   </div>
                 </div>
 
+                {/* Early Bird Pricing Section */}
+                <div className="form-section">
+                  <div className="section-header">
+                    <h3>Early Bird Pricing (Optional)</h3>
+                    <div className="section-divider"></div>
+                  </div>
+                  <div className="section-content">
+                    <Row gutter={16}>
+                      <Col span={12}>
+                        <Form.Item name="earlyBirdPrice" label="Early Bird Price (₱)">
+                          <InputNumber
+                            style={{ width: "100%" }}
+                            size="large"
+                            min={0}
+                            placeholder="0"
+                            className="form-input-number"
+                            formatter={(value) => `₱ ${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ",")}
+                            parser={(value) => value.replace(/₱\s?|(,*)/g, "")}
+                          />
+                        </Form.Item>
+                      </Col>
+                      <Col span={12}>
+                        <Form.Item name="earlyBirdEndDate" label="Early Bird End Date">
+                          <DatePicker
+                            style={{ width: "100%" }}
+                            size="large"
+                            format="YYYY-MM-DD"
+                            disabledDate={(current) => current && current < dayjs().endOf("day")}
+                          />
+                        </Form.Item>
+                      </Col>
+                    </Row>
+                  </div>
+                </div>
+
                 {/* Media Section */}
                 <div className="form-section">
                   <div className="section-header">
@@ -2190,6 +2506,7 @@ const AlumniEvents = () => {
         onClose={handleCloseDetails}
         onEdit={handleEditEvent}
         onDelete={handleDeleteEvent}
+        onRefresh={fetchEvents}
       />
     </Layout>
   )

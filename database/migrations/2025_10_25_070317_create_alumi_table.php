@@ -24,7 +24,8 @@ return new class extends Migration
             $table->string('email',100)->unique();
             $table->string('phone');
             $table->text('address');
-            $table->date('birth_date');
+            $table->date('birth_date')->nullable();
+
             $table->enum('gender', ['male', 'female', 'other', 'prefer_not_to_say']);
             $table->text('bio')->nullable();
             $table->string('profile_image')->nullable();

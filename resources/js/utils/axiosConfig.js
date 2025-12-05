@@ -16,11 +16,13 @@ let currentModal = null;
 instance.interceptors.request.use(
     (config) => {
         const loadingStore = useLoadingStore.getState();
+        // Prevent crash if function doesn't exist
+        loadingStore?.showLoading?.();
         return config;
     },
     (error) => {
         const loadingStore = useLoadingStore.getState();
-        loadingStore.hideLoading();
+        loadingStore?.hideLoading?.();
         return Promise.reject(error);
     }
 );
@@ -29,21 +31,22 @@ instance.interceptors.request.use(
 instance.interceptors.response.use(
     (response) => {
         const loadingStore = useLoadingStore.getState();
-        loadingStore.hideLoading();
+        loadingStore?.hideLoading?.();
         return response;
     },
     (error) => {
         const loadingStore = useLoadingStore.getState();
-        loadingStore.hideLoading();
+        loadingStore?.hideLoading?.();
 
         const statusCode = error.response ? error.response.status : null;
 
+        // SESSION EXPIRED HANDLING
         if (statusCode === 401) {
             window.location.href = `/login?type=session-expired&link=${window.location.href}`;
             return Promise.reject(error);
         }
 
-        // <-- ADDITION START: handle backend validation errors -->
+        // HANDLE BACKEND VALIDATION ERRORS
         let errorMessage = "No error message to show.";
 
         if (error.response?.data?.errors) {
@@ -54,8 +57,8 @@ instance.interceptors.response.use(
         } else if (error.response?.data?.message) {
             errorMessage = error.response.data.message;
         }
-        // <-- ADDITION END -->
 
+        // SINGLE ERROR MODAL INSTANCE
         if (isModalOpen && currentModal) {
             currentModal.update({
                 title: `Error: ${statusCode}`,
@@ -81,11 +84,13 @@ instance.interceptors.response.use(
     }
 );
 
-
 // Set auth token
 const updateAuthToken = () => {
     const access_token = secureLocalStorage.getItem("access_token");
-    instance.defaults.headers.common["Authorization"] = `Bearer ${access_token}`;
+
+    if (access_token) {
+        instance.defaults.headers.common["Authorization"] = `Bearer ${access_token}`;
+    }
 };
 
 // Initialize auth token

@@ -6,6 +6,8 @@ import shallow from "zustand/shallow";
 import { Button } from "./index";
 import logo from "~/assets/images/site-logo.png";
 import loginImage from "~/assets/images/login-image.jpg"; // Add your image path here
+import bgImage from "~/assets/images/OCC_IMAGE.jpg"
+
 
 const Formlogin = () => {
     const [error, isSubmit, submitForm] = useLoginStore(
@@ -25,7 +27,7 @@ const Formlogin = () => {
             style={{
                 minHeight: "100vh",
                 margin: 0,
-                backgroundImage: `url(https://scontent.fcgy1-1.fna.fbcdn.net/v/t39.30808-6/514405810_1301740068624399_2900765982442406081_n.jpg?_nc_cat=106&ccb=1-7&_nc_sid=cc71e4&_nc_eui2=AeECd4jmg4VEWKOYyRQJsvZOozlUkC8wBrqjOVSQLzAGuieVIsoZ1frihg6VnWooC8i7Yg5ffweUo07fZ5tfXIdl&_nc_ohc=XrpIydxcTrkQ7kNvwFcIIUo&_nc_oc=Adkk41Wo2JsSaAd06SW3Dr2uxyB_NhieYAfQQmGzTqIbIdYwhXGmCRmhTfBf5rt_jzA&_nc_zt=23&_nc_ht=scontent.fcgy1-1.fna&_nc_gid=GZIwDMh6UpQO5WaQ9TgKXA&oh=00_AfjMi1wa2rrn3_QD2Z9PWBfj7yzYpLZkEc4x5N9y4USaCQ&oe=6932EC3B)`,
+                backgroundImage: `url(${bgImage})`,
                 backgroundSize: "cover",
                 backgroundPosition: "left",
                 backgroundRepeat: "no-repeat",
@@ -71,7 +73,7 @@ const Formlogin = () => {
                                 marginBottom: 8,
                             }}
                         >
-                            Welcome to OCC Alumini
+                            Welcome to OCC Alumni
                         </h5>
                         <p style={{ color: "#666", margin: 0 }}>
                             Login to continue

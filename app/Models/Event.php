@@ -1,11 +1,9 @@
 <?php
 
-
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Casts\Attribute;
 
 class Event extends Model
 {
@@ -45,6 +43,12 @@ class Event extends Model
         return $this->belongsTo(User::class);
     }
 
+    // ✅ ADD THIS (Fixes underline error)
+    public function registrations()
+    {
+        return $this->hasMany(EventRegistration::class);
+    }
+
     // Accessor for full event datetime
     public function getEventDateTimeAttribute()
     {
@@ -62,15 +66,12 @@ class Event extends Model
         }, $this->images);
     }
 
-
-
-    // Scope for featured events
+    // Scopes
     public function scopeFeatured($query)
     {
         return $query->where('featured', true);
     }
 
-    // Scope for upcoming events
     public function scopeUpcoming($query)
     {
         return $query->where('date', '>=', now()->toDateString());
