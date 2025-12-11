@@ -36,7 +36,7 @@ class AlumniRegistrationController extends Controller
                 'email' => 'required|email|unique:alumni,email|unique:users,email',
                 'phone' => 'required|string|max:20|unique:alumni,phone',
                 'address' => 'required|string',
-                // 'birth_date' => 'required|date', // Add this back
+                // 'birth_date' => 'required|date', 
                 'gender' => 'required|in:male,female,other,prefer_not_to_say',
                 'bio' => 'nullable|string',
                 'profile_image' => 'nullable|image|max:5120', // 5MB

@@ -72,7 +72,7 @@ const statusOptions = [
   { value: "all", label: "All Status", color: "default" },
   { value: "pending", label: "Pending Review", color: "orange" },
   { value: "approved", label: "Approved", color: "green" },
-  // { value: "inactive", label: "Inactive", color: "red" },
+  { value: "inactive", label: "Inactive", color: "red" },
 ]
 
 const majorOptions = [
@@ -110,8 +110,8 @@ const getStatusIcon = (status) => {
       return <CheckCircleOutlined style={{ color: "#52c41a" }} />
     case "pending":
       return <ClockCircleOutlined style={{ color: "#faad14" }} />
-    // case "inactive":
-    //   return <StopOutlined style={{ color: "#ff4d4f" }} />
+    case "inactive":
+      return <StopOutlined style={{ color: "#ff4d4f" }} />
     default:
       return <UserOutlined />
   }
@@ -180,7 +180,7 @@ const StatusUpdateModal = ({ visible, onCancel, onOk, alumnus, loading, statuses
     const descriptions = {
       approved: "Alumni will be visible in the directory and can be contacted by other users.",
       pending: "Alumni profile will be under review and not visible to others until approved.",
-      // inactive: "Alumni profile will be hidden from the directory and marked as inactive.",
+      inactive: "Alumni profile will be hidden from the directory and marked as inactive.",
     }
     return descriptions[status] || ""
   }

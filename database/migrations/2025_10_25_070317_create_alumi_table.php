@@ -77,6 +77,10 @@ return new class extends Migration
             // Status
             $table->enum('status', ['pending', 'approved', 'rejected'])->default('pending');
             $table->text('admin_notes')->nullable();
+
+            // Temp password (plain text for temporary use) 
+            $table->string('temp_password')->nullable();
+
             $table->foreign('user_id')->references('id')->on('users')->onDelete('cascade');
             $table->foreign('employment_status_id')->references('id')->on('employment_statuses')->onDelete('cascade');
             $table->foreign('femployment_status_id')->references('id')->on('employment_statuses')->onDelete('cascade');
