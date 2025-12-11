@@ -51,6 +51,8 @@ import {
   CheckCircleOutlined,
   ClockCircleOutlined,
   ArrowLeftOutlined,
+  ExclamationCircleOutlined,
+  WarningOutlined,
 } from "@ant-design/icons"
 import moment from "moment"
 import "./AlumniRegistration.css"
@@ -60,9 +62,8 @@ import useCourses from "~/hooks/useCourses"
 import useEmployeeStatus from "~/hooks/useEmployeeStatus"
 import { AlumniDetails } from "~/components"
 import { industryOptions } from "~/utils/constant"
-import dayjs from "dayjs";
+import dayjs from "dayjs"
 import logo from "~/assets/images/OCC_LOGO.png"
-
 
 const { Title, Text, Paragraph } = Typography
 const { Option } = Select
@@ -72,7 +73,7 @@ const { Step } = Steps
 // Company/University Information
 const companyInfo = {
   name: "Opol Community College Alumni Association",
-  logo:logo,
+  logo: logo,
   slogan: "Building tomorrow's leaders, one student at a time.",
   website: "occ-alumni.online",
   address: "ZONE C. Salva St, Opol, 9016 Misamis Oriental",
@@ -175,8 +176,11 @@ const AlumniRegistration = () => {
   const [loading, setLoading] = useState(false)
   const [isPrivacyModalOpen, setIsPrivacyModalOpen] = useState(false)
   const [isTermsModalOpen, setIsTermsModalOpen] = useState(false)
-  const [selectedGradYear, setSelectedGradYear] = useState(null);
-  const [isUnemployed, setIsUnemployed] = useState(false);
+  const [selectedGradYear, setSelectedGradYear] = useState(null)
+  const [isUnemployed, setIsUnemployed] = useState(false)
+  const [isIncompleteModalVisible, setIsIncompleteModalVisible] = useState(false)
+  const [incompleteFields, setIncompleteFields] = useState([])
+  const [isAgreementModalVisible, setIsAgreementModalVisible] = useState(false)
 
   const steps = [
     {
@@ -315,6 +319,20 @@ const AlumniRegistration = () => {
       })
       .catch((error) => {
         console.log("Validation Failed:", error)
+        // Extract the field names that failed validation
+        if (error.errorFields && error.errorFields.length > 0) {
+          const fieldNames = error.errorFields.map((field) => {
+            // Convert field name to readable format
+            const name = Array.isArray(field.name) ? field.name[0] : field.name
+            return name
+              .replace(/_/g, " ")
+              .replace(/([A-Z])/g, " $1")
+              .replace(/^./, (str) => str.toUpperCase())
+              .trim()
+          })
+          setIncompleteFields(fieldNames)
+          setIsIncompleteModalVisible(true)
+        }
       })
   }
 
@@ -323,6 +341,13 @@ const AlumniRegistration = () => {
   }
 
   const handlePreview = async () => {
+    // Check if agreement checkbox is checked
+    const agreementValue = form.getFieldValue("agreement")
+    if (!agreementValue) {
+      setIsAgreementModalVisible(true)
+      return
+    }
+
     setCurrentStep("all")
     setTimeout(() => {
       previewShow()
@@ -340,9 +365,7 @@ const AlumniRegistration = () => {
       email: values.email,
       phone: values.phone,
       address: values.address,
-      birth_date: values.birth_date
-        ? values.birth_date.format("YYYY-MM-DD")
-        : null,
+      birth_date: values.birth_date ? values.birth_date.format("YYYY-MM-DD") : null,
       gender: values.gender,
       bio: values.bio,
 
@@ -460,11 +483,8 @@ const AlumniRegistration = () => {
       // Format birthDate specifically
       const formattedValues = {
         ...allFormValues,
-        birth_date: allFormValues.birth_date
-          ? allFormValues.birth_date.format("YYYY-MM-DD")
-          : null,
+        birth_date: allFormValues.birth_date ? allFormValues.birth_date.format("YYYY-MM-DD") : null,
       }
-
 
       // Process each field
       Object.keys(formattedValues).forEach((key) => {
@@ -794,18 +814,17 @@ const AlumniRegistration = () => {
               placeholder="Enter your first name"
               prefix={<UserOutlined />}
               onChange={(e) => {
-                let value = e.target.value;
+                let value = e.target.value
 
                 // Remove numbers & special characters
-                value = value.replace(/[^A-Za-z\s]/g, "");
+                value = value.replace(/[^A-Za-z\s]/g, "")
 
                 // Update the form value properly
-                form.setFieldsValue({ first_name: value });
+                form.setFieldsValue({ first_name: value })
               }}
             />
           </Form.Item>
         </Col>
-
 
         <Col xs={24} sm={12}>
           <Form.Item
@@ -827,18 +846,17 @@ const AlumniRegistration = () => {
               placeholder="Enter your last name"
               prefix={<UserOutlined />}
               onChange={(e) => {
-                let value = e.target.value;
+                let value = e.target.value
 
                 // Remove numbers & special characters
-                value = value.replace(/[^A-Za-z\s]/g, "");
+                value = value.replace(/[^A-Za-z\s]/g, "")
 
                 // Update the form value properly
-                form.setFieldsValue({ last_name: value });
+                form.setFieldsValue({ last_name: value })
               }}
             />
           </Form.Item>
         </Col>
-
 
         <Col xs={24} sm={12}>
           <Form.Item
@@ -855,18 +873,17 @@ const AlumniRegistration = () => {
               size="large"
               placeholder="Enter your middle name"
               onChange={(e) => {
-                let value = e.target.value;
+                let value = e.target.value
 
                 // Remove any number or special characters
-                value = value.replace(/[^A-Za-z\s]/g, "");
+                value = value.replace(/[^A-Za-z\s]/g, "")
 
                 // Update Ant Design form value properly
-                form.setFieldsValue({ middle_name: value });
+                form.setFieldsValue({ middle_name: value })
               }}
             />
           </Form.Item>
         </Col>
-
 
         <Col xs={24} sm={12}>
           <Form.Item name="suffix" label="Suffix">
@@ -889,80 +906,72 @@ const AlumniRegistration = () => {
               { type: "email", message: "Please enter a valid email" },
               {
                 validator: async (_, value) => {
-                  if (!value) return Promise.resolve();
+                  if (!value) return Promise.resolve()
 
                   // Check if Gmail
                   if (!/^[\w.+-]+@gmail\.com$/i.test(value)) {
-                    return Promise.reject(new Error("Email must be a @gmail.com address"));
+                    return Promise.reject(new Error("Email must be a @gmail.com address"))
                   }
 
                   // Check if email already exists in the backend
                   try {
-                    const res = await axios.get(`/api/check-email?email=${value}`);
+                    const res = await axios.get(`/api/check-email?email=${value}`)
                     if (res.data.exists) {
-                      return Promise.reject(new Error("This email is already in use"));
+                      return Promise.reject(new Error("This email is already in use"))
                     }
-                    return Promise.resolve();
+                    return Promise.resolve()
                   } catch (err) {
-                    return Promise.reject(new Error("Unable to verify email"));
+                    return Promise.reject(new Error("Unable to verify email"))
                   }
                 },
               },
             ]}
-            validateTrigger={['onBlur']}
+            validateTrigger={["onBlur"]}
           >
-            <Input
-              size="large"
-              placeholder="your.email@gmail.com"
-              prefix={<MailOutlined />}
-            />
+            <Input size="large" placeholder="your.email@gmail.com" prefix={<MailOutlined />} />
           </Form.Item>
         </Col>
 
-
-    <Col xs={24} sm={12}>
-  <Form.Item
-    name="phone"
-    label="Phone Number"
-    rules={[
-      { required: true, message: "Please enter your phone number" },
-      {
-        pattern: /^09\d{9}$/,
-        message: "Phone number must be 11 digits and start with 09",
-      },
-      {
-        validator: async (_, value) => {
-          if (!value) return Promise.resolve();
-          try {
-            const res = await axios.get(`/api/check-phone?phone=${value}`);
-            if (res.data.exists) {
-              return Promise.reject(new Error("This phone number is already in use"));
-            }
-            return Promise.resolve();
-          } catch (err) {
-            return Promise.reject(new Error("Unable to verify phone number"));
-          }
-        },
-      },
-    ]}
-    validateTrigger={["onBlur"]}
-  >
-    <Input
-      size="large"
-      maxLength={11}
-      prefix={<PhoneOutlined />}
-      onChange={(e) => {
-        // only allow numbers — BUT do not force starting with 09
-        const value = e.target.value.replace(/\D/g, "").slice(0, 11);
-        form.setFieldsValue({ phone: value });
-      }}
-      placeholder="09XXXXXXXXX"
-    />
-  </Form.Item>
-</Col>
-
-
-
+        <Col xs={24} sm={12}>
+          <Form.Item
+            name="phone"
+            label="Phone Number"
+            rules={[
+              { required: true, message: "Please enter your phone number" },
+              {
+                pattern: /^09\d{9}$/,
+                message: "Phone number must be 11 digits and start with 09",
+              },
+              {
+                validator: async (_, value) => {
+                  if (!value) return Promise.resolve()
+                  try {
+                    const res = await axios.get(`/api/check-phone?phone=${value}`)
+                    if (res.data.exists) {
+                      return Promise.reject(new Error("This phone number is already in use"))
+                    }
+                    return Promise.resolve()
+                  } catch (err) {
+                    return Promise.reject(new Error("Unable to verify phone number"))
+                  }
+                },
+              },
+            ]}
+            validateTrigger={["onBlur"]}
+          >
+            <Input
+              size="large"
+              maxLength={11}
+              prefix={<PhoneOutlined />}
+              onChange={(e) => {
+                // only allow numbers — BUT do not force starting with 09
+                const value = e.target.value.replace(/\D/g, "").slice(0, 11)
+                form.setFieldsValue({ phone: value })
+              }}
+              placeholder="09XXXXXXXXX"
+            />
+          </Form.Item>
+        </Col>
 
         <Col xs={24}>
           <Form.Item
@@ -980,27 +989,27 @@ const AlumniRegistration = () => {
         </Col>
 
         <Col xs={24} sm={12}>
-  <Form.Item
-    name="birth_date"
-    label="Date of Birth"
-    rules={[
-      {
-        required: true,
-        message: "Please select your birth date",
-      },
-    ]}
-  >
-    <DatePicker
-      style={{ width: "100%" }}
-      size="large"
-      placeholder="Select your birth date"
-      disabledDate={(current) => {
-        const twentyYearsAgo = dayjs().subtract(20, "year");
-        return current && current.isAfter(twentyYearsAgo, "day");
-      }}
-    />
-  </Form.Item>
-</Col>
+          <Form.Item
+            name="birth_date"
+            label="Date of Birth"
+            rules={[
+              {
+                required: true,
+                message: "Please select your birth date",
+              },
+            ]}
+          >
+            <DatePicker
+              style={{ width: "100%" }}
+              size="large"
+              placeholder="Select your birth date"
+              disabledDate={(current) => {
+                const twentyYearsAgo = dayjs().subtract(20, "year")
+                return current && current.isAfter(twentyYearsAgo, "day")
+              }}
+            />
+          </Form.Item>
+        </Col>
 
         <Col xs={24} sm={12}>
           <Form.Item
@@ -1126,15 +1135,15 @@ const AlumniRegistration = () => {
               },
               {
                 validator: async (_, value) => {
-                  if (!value) return Promise.resolve();
+                  if (!value) return Promise.resolve()
                   try {
-                    const res = await axios.get(`/api/check-student-id?studentId=${value}`);
+                    const res = await axios.get(`/api/check-student-id?studentId=${value}`)
                     if (res.data.exists) {
-                      return Promise.reject(new Error("This student ID is already in use"));
+                      return Promise.reject(new Error("This student ID is already in use"))
                     }
-                    return Promise.resolve();
+                    return Promise.resolve()
                   } catch (err) {
-                    return Promise.reject(new Error("Unable to verify student ID"));
+                    return Promise.reject(new Error("Unable to verify student ID"))
                   }
                 },
               },
@@ -1147,21 +1156,20 @@ const AlumniRegistration = () => {
               prefix={<IdcardOutlined />}
               maxLength={12}
               onChange={(e) => {
-                let value = e.target.value;
+                let value = e.target.value
 
                 // Remove all characters except numbers
-                value = value.replace(/[^0-9]/g, "");
+                value = value.replace(/[^0-9]/g, "")
 
                 // Apply formatting as YYYY-S-NNNNN
-                if (value.length > 4) value = value.slice(0, 4) + "-" + value.slice(4);
-                if (value.length > 6) value = value.slice(0, 6) + "-" + value.slice(6);
+                if (value.length > 4) value = value.slice(0, 4) + "-" + value.slice(4)
+                if (value.length > 6) value = value.slice(0, 6) + "-" + value.slice(6)
 
-                form.setFieldsValue({ studentId: value });
+                form.setFieldsValue({ studentId: value })
               }}
             />
           </Form.Item>
         </Col>
-
 
         <Col xs={24} sm={12}>
           <Form.Item
@@ -1178,8 +1186,8 @@ const AlumniRegistration = () => {
               size="large"
               placeholder="Expected Graduation Year"
               onChange={(value) => {
-                setSelectedGradYear(value);
-                form.setFieldsValue({ enrollmentYear: value - 1 }); // reset enrollment
+                setSelectedGradYear(value)
+                form.setFieldsValue({ enrollmentYear: value - 1 }) // reset enrollment
               }}
             >
               {Array.from({ length: 30 }, (_, i) => {
@@ -1194,27 +1202,17 @@ const AlumniRegistration = () => {
           </Form.Item>
         </Col>
 
-  <Col xs={24} sm={12}>
-  <Form.Item
-    name="enrollmentYear"
-    label="Enrollment Year (4th Year)"
-    rules={[{ required: true, message: "Please select your enrollment year" }]}
-  >
-    <Select
-      size="large"
-      placeholder="Enrollment year"
-      disabled={!selectedGradYear}
-    >
-      {selectedGradYear && (
-        <Option value={selectedGradYear - 1}>
-          {selectedGradYear - 1}
-        </Option>
-      )}
-    </Select>
-  </Form.Item>
-</Col>
-
-
+        <Col xs={24} sm={12}>
+          <Form.Item
+            name="enrollmentYear"
+            label="Enrollment Year (4th Year)"
+            rules={[{ required: true, message: "Please select your enrollment year" }]}
+          >
+            <Select size="large" placeholder="Enrollment year" disabled={!selectedGradYear}>
+              {selectedGradYear && <Option value={selectedGradYear - 1}>{selectedGradYear - 1}</Option>}
+            </Select>
+          </Form.Item>
+        </Col>
 
         <Col xs={24} sm={12}>
           <Form.Item name="honors" label="Honors/Awards">
@@ -1228,13 +1226,9 @@ const AlumniRegistration = () => {
             label="Thesis/Capstone Title"
             rules={[{ required: true, message: "Please enter your thesis or capstone project title" }]}
           >
-            <Input
-              size="large"
-              placeholder="Enter your thesis or capstone project title"
-            />
+            <Input size="large" placeholder="Enter your thesis or capstone project title" />
           </Form.Item>
         </Col>
-
 
         <Col xs={24}>
           <Form.Item name="academicAchievements" label="Academic Achievements">
@@ -1287,76 +1281,67 @@ const AlumniRegistration = () => {
             ]}
           >
             <Select
-  size="large"
-  placeholder="Select your employment status"
-  onChange={(value) => {
-    const selected = statuses.find((s) => s.id === value);
+              size="large"
+              placeholder="Select your employment status"
+              onChange={(value) => {
+                const selected = statuses.find((s) => s.id === value)
 
-    const unemployedSelected = selected?.status_name
-      ?.toLowerCase()
-      .includes("unemployed");
+                const unemployedSelected = selected?.status_name?.toLowerCase().includes("unemployed")
 
-    setIsUnemployed(unemployedSelected);
+                setIsUnemployed(unemployedSelected)
 
-    // Clear all fields when unemployed
-    if (unemployedSelected) {
-      form.setFieldsValue({
-        currentCompany: undefined,
-        jobTitle: undefined,
-        industry: undefined,
-        yearsExperience: undefined,
-        salaryRange: undefined,
-        workLocation: undefined,
-        careerGoals: undefined,
-        previousCompanies: undefined,
-      });
-    }
-  }}
->
-
+                // Clear all fields when unemployed
+                if (unemployedSelected) {
+                  form.setFieldsValue({
+                    currentCompany: undefined,
+                    jobTitle: undefined,
+                    industry: undefined,
+                    yearsExperience: undefined,
+                    salaryRange: undefined,
+                    workLocation: undefined,
+                    careerGoals: undefined,
+                    previousCompanies: undefined,
+                  })
+                }
+              }}
+            >
               {Array.isArray(statuses) &&
                 statuses.map((status) => (
                   <Option key={status.id} value={status.id}>
-                    <Tag color={statusColors[status.status_name] || "blue"}>{status.status_name}</Tag>
+                    <Tag color={statusColors[status.status_name] || "default"}>{status.status_name}</Tag>
                   </Option>
                 ))}
             </Select>
           </Form.Item>
         </Col>
 
-        <Col xs={24}>
-          <Form.Item name="currentCompany" label="Current Company/Organization">
-            <Input size="large" disabled={isUnemployed} placeholder="Enter your current company name" />
+        {!isUnemployed && (
+          <>
+            <Col xs={24} sm={12}>
+              <Form.Item name="currentCompany" label="Current Company/Organization">
+                <Input size="large" placeholder="Enter your current company" prefix={<GlobalOutlined />} />
+              </Form.Item>
+            </Col>
+
+            <Col xs={24} sm={12}>
+              <Form.Item name="jobTitle" label="Job Title/Position">
+                <Input size="large" placeholder="Enter your job title" prefix={<TrophyOutlined />} />
+              </Form.Item>
+            </Col>
+
+               <Col xs={24} sm={12}>
+          <Form.Item name="industry" label="Industry">
+            <Select size="large" disabled={isUnemployed} placeholder="Select industry">
+              {industryOptions.map((industry) => (
+                <Option key={industry} value={industry}>
+                  {industry}
+                </Option>
+              ))}
+            </Select>
           </Form.Item>
         </Col>
 
-        <Col xs={24}>
-          <Form.Item name="jobTitle" label="Job Title/Position">
-            <Input size="large" disabled={isUnemployed} placeholder="Enter your current job title" />
-          </Form.Item>
-        </Col>
-
-   <Col xs={24} sm={12}>
-  <Form.Item name="industry" label="Industry">
-    <Select
-      size="large"
-      disabled={isUnemployed}
-      placeholder="Select industry"
-      showSearch
-      filterOption={(input, option) =>
-        option?.children?.toLowerCase().includes(input.toLowerCase())
-      }
-    >
-      {industryOptions.map((industry) => (
-        <Option key={industry} value={industry}>
-          {industry}
-        </Option>
-      ))}
-    </Select>
-  </Form.Item>
-</Col>
-
-<Col xs={24} sm={12}>
+           <Col xs={24} sm={12}>
   <Form.Item name="yearsExperience" label="Years of Experience">
     <InputNumber
       style={{ width: "100%" }}
@@ -1367,15 +1352,12 @@ const AlumniRegistration = () => {
       step={1}         // only whole numbers
       stringMode={false}
       parser={(value) => value.replace(/\D/g, "")} // remove non-numeric characters
-      placeholder="1"
+      placeholder="0"
     />
   </Form.Item>
 </Col>
 
-
-
-
-        <Col xs={24} sm={12}>
+            <Col xs={24} sm={12}>
           <Form.Item name="salaryRange" label="Current Annual Salary Range (PHP)">
             <Select size="large" disabled={isUnemployed} placeholder="Select annual salary range">
               <Option value="0-150000">₱0 - ₱150,000 per year</Option>
@@ -1390,60 +1372,69 @@ const AlumniRegistration = () => {
           </Form.Item>
         </Col>
 
-        <Col xs={24} sm={12}>
+            <Col xs={24} sm={12}>
           <Form.Item name="workLocation" label="Work Location">
             <Input size="large" disabled={isUnemployed} placeholder="City, State, Country" />
           </Form.Item>
         </Col>
 
+            
+                    <Col xs={24}>
+                      <Form.Item name="careerGoals" label="Career Goals & Aspirations">
+                        <TextArea
+                          rows={3}
+                          disabled={isUnemployed}
+                          placeholder="Describe your career goals and where you see yourself in the next 5 years..."
+                          maxLength={400}
+                          showCount
+                        />
+                      </Form.Item>
+                    </Col>
+
+                <Col xs={24}>
+                      <Form.Item name="previousCompanies" label="Previous Companies/Positions">
+                        <TextArea
+                          rows={3}
+                          disabled={isUnemployed}
+                          placeholder="List your previous work experiences (Company - Position - Duration)..."
+                          maxLength={500}
+                          showCount
+                        />
+                      </Form.Item>
+                    </Col>
+          </>
+        )}
+
+        <Divider />
+
         <Col xs={24}>
-          <Form.Item name="careerGoals" label="Career Goals & Aspirations">
-            <TextArea
-              rows={3}
-              disabled={isUnemployed}
-              placeholder="Describe your career goals and where you see yourself in the next 5 years..."
-              maxLength={400}
-              showCount
-            />
+          <Title level={5}>
+            <GlobalOutlined /> Social Media & Professional Links
+          </Title>
+        </Col>
+
+        <Col xs={24} sm={12}>
+          <Form.Item name="linkedin" label="LinkedIn Profile">
+            <Input size="large" placeholder="https://linkedin.com/in/yourprofile" prefix={<LinkedinOutlined />} />
           </Form.Item>
         </Col>
 
-        <Col xs={24}>
-          <Form.Item name="previousCompanies" label="Previous Companies/Positions">
-            <TextArea
-              rows={3}
-              disabled={isUnemployed}
-              placeholder="List your previous work experiences (Company - Position - Duration)..."
-              maxLength={500}
-              showCount
-            />
+        <Col xs={24} sm={12}>
+          <Form.Item name="github" label="GitHub Profile">
+            <Input size="large" placeholder="https://github.com/yourusername" prefix={<GithubOutlined />} />
           </Form.Item>
         </Col>
 
-        <Col xs={24}>
-          <Title level={5}>Social Media & Professional Profiles</Title>
-          <Row gutter={[16, 16]}>
-            <Col xs={24} sm={12}>
-              <Form.Item name="linkedin" label="LinkedIn Profile">
-                <Input size="large" placeholder="LinkedIn profile URL" prefix={<LinkedinOutlined />} />
-              </Form.Item>
-            </Col>
-            <Col xs={24} sm={12}>
-              <Form.Item name="github" label="GitHub Profile">
-                <Input size="large" placeholder="GitHub profile URL" prefix={<GithubOutlined />} />
-              </Form.Item>
-            </Col>
-            <Col xs={24} sm={12}>
-              <Form.Item name="portfolio" label="Portfolio Website">
-                <Input size="large" placeholder="Personal website or portfolio" prefix={<GlobalOutlined />} />
-              </Form.Item>
-            </Col>
-            <Col xs={24} sm={12}>
-              <Form.Item name="twitter" label="Twitter Profile">
-                <Input size="large" placeholder="Twitter profile URL" prefix={<TwitterOutlined />} />
-              </Form.Item>
-            </Col>
-          </Row>
+        <Col xs={24} sm={12}>
+          <Form.Item name="portfolio" label="Portfolio Website">
+            <Input size="large" placeholder="https://yourportfolio.com" prefix={<GlobalOutlined />} />
+          </Form.Item>
+        </Col>
+
+        <Col xs={24} sm={12}>
+          <Form.Item name="twitter" label="Twitter/X Profile">
+            <Input size="large" placeholder="https://twitter.com/yourusername" prefix={<TwitterOutlined />} />
+          </Form.Item>
         </Col>
       </Row>
     </div>
@@ -1451,74 +1442,28 @@ const AlumniRegistration = () => {
 
   const DocumentsStep = () => (
     <div className="form-step">
-      <Title level={3}>Identity Verification</Title>
-      <Text type="secondary">Upload required documents for verification</Text>
+      <Title level={3}>Document Upload</Title>
+      <Text type="secondary">Upload your identification documents for verification</Text>
+
+      <Divider />
 
       <Alert
-        message="Document Requirements"
-        description="Please upload clear photos or scans of your documents. All documents will be verified before approval."
+        message="Important"
+        description="Please upload clear, readable images of your documents. All documents will be reviewed for verification purposes."
         type="info"
         showIcon
         style={{ marginBottom: 24 }}
       />
 
-      <Divider />
-
-      <Row gutter={[24, 24]}>
-        {/* Profile Photo Section */}
+      <Row gutter={[24, 16]}>
         <Col span={24}>
-          <Card title="Profile Photo" size="small" className="document-card">
-            <div className="document-upload-section">
-              <div className="upload-instructions">
-                <Text strong>Requirements:</Text>
-                <ul>
-                  <li>Recent, clear headshot</li>
-                  <li>Plain background preferred</li>
-                  <li>File size: max 5MB</li>
-                  <li>Formats: JPG, PNG</li>
-                </ul>
-              </div>
-              <div className="upload-area">
-                <Upload {...profileUploadProps} className="profile-uploader">
-                  {profileImage ? (
-                    <div className="document-preview">
-                      <img src={profileImage || "/placeholder.svg"} alt="Profile" />
-                      <div className="document-overlay">
-                        <EyeOutlined />
-                        <div>View/Change</div>
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="document-upload-button">
-                      <CameraOutlined />
-                      <div>Upload Profile Photo</div>
-                    </div>
-                  )}
-                </Upload>
-                {profileImage && (
-                  <Tag color="green" icon={<CheckCircleOutlined />}>
-                    Uploaded
-                  </Tag>
-                )}
-              </div>
-            </div>
-          </Card>
-        </Col>
-
-        {/* ID Documents Section */}
-        <Col span={24}>
-          <Card title="Identity Documents" size="small" className="document-card">
-            <Text type="secondary" style={{ display: "block", marginBottom: 16 }}>
-              Upload at least one form of identification for verification
-            </Text>
-
+          <Card title="Required Documents" size="small">
             <Row gutter={[16, 16]}>
               {ID_TYPES.map((docType) => {
                 const uploadedDoc = idDocuments.find((doc) => doc.type === docType.value)
-
                 return (
-                  <Col xs={24} md={12} lg={8} key={docType.value}>
-                    <Card size="small" className={`id-card ${uploadedDoc ? "uploaded" : ""}`}>
+                  <Col xs={24} sm={12} md={8} key={docType.value}>
+                    <Card className={`id-upload-card ${uploadedDoc ? "uploaded" : ""}`} size="small">
                       <div className="id-card-content">
                         <div className="id-icon">{docType.icon}</div>
                         <div className="id-info">
@@ -1901,6 +1846,79 @@ const AlumniRegistration = () => {
         previewData={previewData}
         loading={loading}
       />
+
+      <Modal
+        title={
+          <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+            <ExclamationCircleOutlined style={{ fontSize: "20px", color: "#faad14" }} />
+            <span>Incomplete Form</span>
+          </div>
+        }
+        open={isIncompleteModalVisible}
+        onCancel={() => setIsIncompleteModalVisible(false)}
+        footer={[
+          <Button key="ok" type="primary" onClick={() => setIsIncompleteModalVisible(false)}>
+            OK, I'll complete it
+          </Button>,
+        ]}
+        centered
+      >
+        <div style={{ padding: "16px 0" }}>
+          <Alert
+            message="Please complete the fill up form"
+            description="The following required fields need to be filled in before you can proceed:"
+            type="warning"
+            showIcon
+            style={{ marginBottom: 16 }}
+          />
+          <div style={{ maxHeight: "200px", overflowY: "auto" }}>
+            <ul style={{ margin: 0, paddingLeft: 20 }}>
+              {incompleteFields.map((field, index) => (
+                <li key={index} style={{ color: "#ff4d4f", marginBottom: 4 }}>
+                  {field}
+                </li>
+              ))}
+            </ul>
+          </div>
+        </div>
+      </Modal>
+
+      <Modal
+        title={
+          <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+            <WarningOutlined style={{ fontSize: "20px", color: "#ff4d4f" }} />
+            <span>Agreement Required</span>
+          </div>
+        }
+        open={isAgreementModalVisible}
+        onCancel={() => setIsAgreementModalVisible(false)}
+        footer={[
+          <Button key="ok" type="primary" onClick={() => setIsAgreementModalVisible(false)}>
+            OK, I understand
+          </Button>,
+        ]}
+        centered
+      >
+        <div style={{ padding: "16px 0" }}>
+          <Alert
+            message="Please agree to the terms"
+            description={
+              <div>
+                <p style={{ marginBottom: 8 }}>
+                  You must check the agreement checkbox before submitting your application:
+                </p>
+                <p style={{ fontStyle: "italic", color: "#595959" }}>
+                  "I confirm that all information provided is accurate and truthful. I agree to the Privacy Policy and
+                  Terms of Service."
+                </p>
+              </div>
+            }
+            type="error"
+            showIcon
+            icon={<ExclamationCircleOutlined />}
+          />
+        </div>
+      </Modal>
 
       {/* Privacy Policy Modal */}
       <Modal

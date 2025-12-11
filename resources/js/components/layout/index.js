@@ -26,7 +26,7 @@ import {
   FormOutlined,
   WarningOutlined,
   AppstoreOutlined,
-  UserAddOutlined, // Added icon for Create D.H.A
+  UserAddOutlined,
   IdcardOutlined,
 } from "@ant-design/icons"
 import {
@@ -198,6 +198,7 @@ const MainLayout = ({ children, breadcrumb }) => {
   const [isLoading, setIsLoading] = useState(false)
   const [animateBell, setAnimateBell] = useState(false)
   const [notifications, setNotifications] = useState([])
+  const [allNotifications, setAllNotifications] = useState([])
   const [filterUnread, setFilterUnread] = useState(false)
   const [activeCategory, setActiveCategory] = useState("all")
   const [settingsModalVisible, setSettingsModalVisible] = useState(false)
@@ -205,6 +206,7 @@ const MainLayout = ({ children, breadcrumb }) => {
   const [currentPage, setCurrentPage] = useState(1)
   const [totalNotifications, setTotalNotifications] = useState(0)
   const [perPage] = useState(10)
+  const [modalPerPage] = useState(50) // For modal - show more per page
   const [loadingMore, setLoadingMore] = useState(false)
   const [alumniDetailsVisible, setAlumniDetailsVisible] = useState(false)
   const [alumniPreviewData, setAlumniPreviewData] = useState(null)
@@ -220,7 +222,7 @@ const MainLayout = ({ children, breadcrumb }) => {
   const logout = () => {
     localStorage.removeItem("access_token")
     secureLocalStorage.removeItem("userRole")
-    secureLocalStorage.removeItem("courseId") // Clear course_id on logout
+    secureLocalStorage.removeItem("courseId")
     setCookie(["userLogin", ""])
     window.location = "/login"
   }
@@ -448,10 +450,10 @@ const MainLayout = ({ children, breadcrumb }) => {
     return counts
   }
 
-  const fetchNotifications = async (page = 1) => {
+  const fetchNotifications = async () => {
     try {
       setIsLoading(true)
-      const response = await axiosConfig.get(`/notifications?page=${page}&per_page=${perPage}`)
+      const response = await axiosConfig.get(`/notifications?page=1&per_page=${perPage}`)
 
       if (response.data) {
         const notificationsData = response.data.data || []
@@ -470,11 +472,12 @@ const MainLayout = ({ children, breadcrumb }) => {
   const fetchAllNotifications = async (page = 1) => {
     try {
       setLoadingMore(true)
-      const response = await axiosConfig.get(`/notifications?page=${page}&per_page=${perPage}`)
+      // Use larger per_page to get more notifications
+      const response = await axiosConfig.get(`/notifications?page=${page}&per_page=${modalPerPage}`)
 
       if (response.data) {
         const notificationsData = response.data.data || []
-        setNotifications(notificationsData)
+        setAllNotifications(notificationsData)
         if (response.data.pagination) {
           setTotalNotifications(response.data.pagination.total)
           setCurrentPage(response.data.pagination.current_page)
@@ -491,9 +494,13 @@ const MainLayout = ({ children, breadcrumb }) => {
   const handleDeleteNotification = async (notificationId) => {
     try {
       await axiosConfig.delete(`/notifications/${notificationId}`)
+      // Remove from dropdown notifications
       setNotifications((prev) => prev.filter((n) => n.id !== notificationId))
+      // Remove from all notifications (modal)
+      setAllNotifications((prev) => prev.filter((n) => n.id !== notificationId))
+      // Update total count
+      setTotalNotifications((prev) => Math.max(0, prev - 1))
       message.success("Notification deleted")
-      fetchNotifications()
     } catch (error) {
       console.error("Failed to delete notification:", error)
       message.error("Failed to delete notification")
@@ -503,9 +510,10 @@ const MainLayout = ({ children, breadcrumb }) => {
   const handleMarkAsRead = async (notificationId) => {
     try {
       await axiosConfig.post(`/notifications/${notificationId}/mark-read`)
-      setNotifications((prev) =>
-        prev.map((n) => (n.id === notificationId ? { ...n, read: true, read_at: new Date().toISOString() } : n)),
-      )
+      const updateRead = (prev) =>
+        prev.map((n) => (n.id === notificationId ? { ...n, read: true, read_at: new Date().toISOString() } : n))
+      setNotifications(updateRead)
+      setAllNotifications(updateRead)
     } catch (error) {
       console.error("Failed to mark notification as read:", error)
     }
@@ -516,7 +524,9 @@ const MainLayout = ({ children, breadcrumb }) => {
       const response = await axiosConfig.post("/notifications/mark-all-read")
 
       if (response.data?.success) {
-        setNotifications((prev) => prev.map((n) => ({ ...n, read: true, read_at: new Date().toISOString() })))
+        const markAllRead = (prev) => prev.map((n) => ({ ...n, read: true, read_at: new Date().toISOString() }))
+        setNotifications(markAllRead)
+        setAllNotifications(markAllRead)
         message.success("All notifications marked as read")
       }
     } catch (error) {
@@ -724,7 +734,6 @@ const MainLayout = ({ children, breadcrumb }) => {
     }
 
     const getAlumniAvatar = () => {
-      // Check for department head login notifications - return course-based avatar
       if (
         notificationData?.type === "department_head_login" ||
         (notification.title && notification.title.toLowerCase().includes("department head")) ||
@@ -1053,8 +1062,8 @@ const MainLayout = ({ children, breadcrumb }) => {
   }
 
   const renderAllNotificationsModal = () => {
-    const filteredNotifications = filterNotificationsByCategory(notifications)
-    const categoryCounts = getCategoryCounts(notifications)
+    const filteredNotifications = filterNotificationsByCategory(allNotifications)
+    const categoryCounts = getCategoryCounts(allNotifications)
 
     return (
       <Modal
@@ -1063,7 +1072,7 @@ const MainLayout = ({ children, breadcrumb }) => {
             <Space>
               <BellOutlined />
               <span>All Notifications</span>
-              <Badge count={unreadCount} style={{ marginLeft: 8 }} />
+              <Badge count={totalNotifications} style={{ marginLeft: 8 }} overflowCount={9999} />
             </Space>
           </div>
         }
@@ -1102,6 +1111,7 @@ const MainLayout = ({ children, breadcrumb }) => {
                     <Badge
                       count={categoryCounts[key]}
                       size="small"
+                      overflowCount={9999}
                       style={{
                         marginLeft: 6,
                         backgroundColor: activeCategory === key ? "#fff" : category.color,
@@ -1350,7 +1360,7 @@ const MainLayout = ({ children, breadcrumb }) => {
           )}
         </div>
 
-        {totalNotifications > perPage && (
+        {totalNotifications > modalPerPage && (
           <div
             style={{
               padding: "12px 16px",
@@ -1362,7 +1372,7 @@ const MainLayout = ({ children, breadcrumb }) => {
             <Pagination
               current={currentPage}
               total={totalNotifications}
-              pageSize={perPage}
+              pageSize={modalPerPage}
               onChange={(page) => {
                 setCurrentPage(page)
                 fetchAllNotifications(page)
@@ -1795,7 +1805,7 @@ const MainLayout = ({ children, breadcrumb }) => {
               }}
               style={{ borderRadius: 6 }}
             >
-              View All Notifications
+              View All Notifications ({totalNotifications})
             </Button>
           </div>
         )}

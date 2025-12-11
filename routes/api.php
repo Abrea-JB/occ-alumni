@@ -10,7 +10,8 @@ use App\Http\Controllers\QuestionController;
 use App\Http\Controllers\QuizController;
 use App\Http\Controllers\AdminDashboardController;
 use App\Http\Controllers\NotificationController;
-use App\Http\Controllers\DepartmentHeadController; // Added DepartmentHeadController
+use App\Http\Controllers\DepartmentHeadController;
+use App\Http\Controllers\PasswordResetController;
 
 
 
@@ -36,6 +37,12 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
 Route::post('/mobile/login', 'App\Http\Controllers\AuthController@login');
 Route::post('/login', 'App\Http\Controllers\AuthController@login');
 
+Route::prefix('password')->group(function () {
+    Route::post('/find-account', [PasswordResetController::class, 'findAccount']);
+    Route::post('/send-reset-link', [PasswordResetController::class, 'sendResetLink']);
+    Route::post('/reset', [PasswordResetController::class, 'resetPassword']);
+    Route::post('/verify-token', [PasswordResetController::class, 'verifyToken']);
+});
 
 //public route
 Route::get('/check-email', [AlumniRegistrationController::class, 'checkEmail']);

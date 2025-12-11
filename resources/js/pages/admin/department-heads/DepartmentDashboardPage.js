@@ -50,6 +50,7 @@ import {
 import { Layout, AlumniDetails } from "~/components"
 import { useDepartmentHeadDashboard, useDepartmentHeadAlumni } from "~/hooks/useDepartmentHeads"
 import moment from "moment"
+import logo from "~/assets/images/OCC_LOGO.png"
 
 const { Title, Text } = Typography
 const { Option } = Select
@@ -275,10 +276,14 @@ const CourseFolderModal = ({ visible, onCancel, course, alumni }) => {
             margin: "0 auto",
           }}
         >
-          {/* Print Header */}
           <div
             style={{ textAlign: "center", marginBottom: "30px", borderBottom: "2px solid #000", paddingBottom: "20px" }}
           >
+            <img
+              src={logo || "/placeholder.svg"}
+              alt="OCC Logo"
+              style={{ width: "80px", height: "80px", marginBottom: "10px", objectFit: "contain" }}
+            />
             <Title level={2} style={{ margin: 0 }}>
               Alumni Directory Report
             </Title>
@@ -379,20 +384,193 @@ const CourseFolderModal = ({ visible, onCancel, course, alumni }) => {
         </div>
       </Modal>
 
-      <style jsx global>{`
+            <style jsx global>{`
         @media print {
+          /* Hide everything except printable area */
           body * {
-            visibility: hidden;
+            visibility: hidden !important;
           }
+          
+          /* Make printable area and its contents visible */
           #printable-area,
           #printable-area * {
-            visibility: visible;
+            visibility: visible !important;
           }
+          
+          /* Position and size the printable area correctly */
           #printable-area {
-            position: absolute;
-            left: 0;
-            top: 0;
-            width: 100%;
+            position: absolute !important;
+            left: 0 !important;
+            top: 0 !important;
+            width: 210mm !important;
+            min-height: 297mm !important;
+            padding: 15mm !important;
+            margin: 0 !important;
+            background: #fff !important;
+            box-sizing: border-box !important;
+            z-index: 999999 !important;
+          }
+          
+          /* Hide all modal elements */
+          .ant-modal-mask,
+          .ant-modal-wrap {
+            position: static !important;
+            background: none !important;
+          }
+          
+          .ant-modal,
+          .ant-modal-content {
+            position: static !important;
+            box-shadow: none !important;
+            border: none !important;
+            background: transparent !important;
+          }
+          
+          .ant-modal-header,
+          .ant-modal-footer,
+          .ant-modal-close {
+            display: none !important;
+          }
+          
+          .ant-modal-body {
+            padding: 0 !important;
+          }
+          
+          /* Ensure colors print correctly */
+          * {
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+            color-adjust: exact !important;
+          }
+          
+          /* Print header styling */
+          #printable-area > div:first-child {
+            text-align: center !important;
+            margin-bottom: 20px !important;
+            border-bottom: 2px solid #000 !important;
+            padding-bottom: 15px !important;
+          }
+          
+          #printable-area img {
+            width: 80px !important;
+            height: 80px !important;
+            display: block !important;
+            margin: 0 auto 10px auto !important;
+          }
+          
+          /* Statistics card styling */
+          #printable-area .ant-card {
+            border: 1px solid #d9d9d9 !important;
+            box-shadow: none !important;
+            background: #fff !important;
+            margin-bottom: 15px !important;
+            page-break-inside: avoid !important;
+          }
+          
+          #printable-area .ant-card-body {
+            padding: 16px !important;
+          }
+          
+          /* Row and column layout for statistics */
+          #printable-area .ant-row {
+            display: flex !important;
+            flex-wrap: wrap !important;
+            width: 100% !important;
+          }
+          
+          #printable-area .ant-col {
+            display: block !important;
+            float: left !important;
+          }
+          
+          #printable-area .ant-col-6 {
+            width: 25% !important;
+            flex: 0 0 25% !important;
+            max-width: 25% !important;
+          }
+          
+          /* Typography colors */
+          #printable-area h1,
+          #printable-area h2,
+          #printable-area h3,
+          #printable-area h4,
+          #printable-area .ant-typography {
+            color: #000 !important;
+            margin: 0 !important;
+          }
+          
+          /* Preserve colored statistics text */
+          #printable-area h3[style*="color: rgb(82, 196, 26)"],
+          #printable-area h3[style*="color: #52c41a"] {
+            color: #52c41a !important;
+          }
+          
+          #printable-area h3[style*="color: rgb(245, 34, 45)"],
+          #printable-area h3[style*="color: #f5222d"] {
+            color: #f5222d !important;
+          }
+          
+          #printable-area h3[style*="color: rgb(250, 173, 20)"],
+          #printable-area h3[style*="color: #faad14"] {
+            color: #faad14 !important;
+          }
+          
+          /* Table styling */
+          #printable-area table {
+            width: 100% !important;
+            border-collapse: collapse !important;
+            table-layout: fixed !important;
+          }
+          
+          #printable-area .ant-table {
+            font-size: 10px !important;
+          }
+          
+          #printable-area .ant-table-container {
+            border: 1px solid #d9d9d9 !important;
+          }
+          
+          #printable-area .ant-table-thead > tr > th {
+            background: #fafafa !important;
+            border-bottom: 1px solid #d9d9d9 !important;
+            padding: 8px 6px !important;
+            font-weight: 600 !important;
+            font-size: 10px !important;
+            color: #000 !important;
+          }
+          
+          #printable-area .ant-table-tbody > tr > td {
+            border-bottom: 1px solid #d9d9d9 !important;
+            padding: 6px !important;
+            font-size: 9px !important;
+            color: #000 !important;
+            background: #fff !important;
+          }
+          
+          #printable-area .ant-table-tbody > tr {
+            page-break-inside: avoid !important;
+          }
+          
+          /* Tags styling */
+          #printable-area .ant-tag {
+            font-size: 8px !important;
+            padding: 0 4px !important;
+            line-height: 16px !important;
+            border: 1px solid !important;
+          }
+          
+          /* Page setup */
+          @page {
+            size: A4 portrait;
+            margin: 10mm;
+          }
+          
+          html, body {
+            width: 210mm !important;
+            height: 297mm !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            background: #fff !important;
           }
         }
       `}</style>

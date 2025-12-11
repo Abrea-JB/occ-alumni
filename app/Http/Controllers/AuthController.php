@@ -54,9 +54,10 @@ class AuthController extends Controller
             if ($alumni->status === 'pending') {
                 $this->notifyAdminsAboutPendingAlumniLogin($alumni);
                 
+                
                 return response()->json([
                     'success' => false,
-                    'message' => 'Your alumni account is pending approval. Please wait for administrator approval.'
+                    'message' => 'Your alumni account is pending approval. Please wait for administrator approval. You will be notified via email once your account has been approved!'
                 ], 403);
             }
 

@@ -362,10 +362,14 @@ const AlumniDetails = ({
                                                         <Col xs={24} sm={12}>
                                                             <div className="detail-item">
                                                                 <Text strong>Experience:</Text>
-                                                                <Text>{getData("years_experience")} years</Text>
+                                                                <Text>
+                                                                    {getData("years_experience")}{" "}
+                                                                    {getData("years_experience") === 1 ? "year" : "years"}
+                                                                </Text>
                                                             </div>
                                                         </Col>
                                                     )}
+
 
                                                     {getData("work_location") && (
                                                         <Col xs={24} sm={12}>

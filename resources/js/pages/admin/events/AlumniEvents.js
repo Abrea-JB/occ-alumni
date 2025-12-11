@@ -85,6 +85,7 @@ import {
   TagOutlined,
   PrinterOutlined,
   UsergroupAddOutlined,
+  WarningOutlined, // Added WarningOutlined icon for validation modal
 } from "@ant-design/icons"
 import moment from "moment"
 import "./AlumniEvents.css"
@@ -95,6 +96,7 @@ import secureLocalStorage from "react-secure-storage"
 import dayjs from "dayjs"
 import isBetween from "dayjs/plugin/isBetween"
 import customParseFormat from "dayjs/plugin/customParseFormat"
+import logo from "~/assets/images/OCC_LOGO.png"
 
 dayjs.extend(isBetween)
 dayjs.extend(customParseFormat)
@@ -334,6 +336,7 @@ const RegistrationsModal = ({ event, visible, onClose }) => {
   const [loading, setLoading] = useState(false)
   const [eventData, setEventData] = useState(null)
   const printRef = useRef(null)
+  const [printPreviewVisible, setPrintPreviewVisible] = useState(false)
 
   useEffect(() => {
     if (visible && event) {
@@ -357,94 +360,13 @@ const RegistrationsModal = ({ event, visible, onClose }) => {
   }
 
   const handlePrint = () => {
-    const printContent = printRef.current
-    const printWindow = window.open("", "_blank")
+    setPrintPreviewVisible(true)
+  }
 
-    printWindow.document.write(`
-      <!DOCTYPE html>
-      <html>
-      <head>
-        <title>Event Registrations - ${event?.title}</title>
-        <style>
-          body { font-family: Arial, sans-serif; padding: 20px; }
-          .header { text-align: center; margin-bottom: 30px; border-bottom: 2px solid #1890ff; padding-bottom: 20px; }
-          .header h1 { color: #1890ff; margin-bottom: 10px; }
-          .event-info { margin-bottom: 20px; padding: 15px; background: #f5f5f5; border-radius: 8px; }
-          .event-info p { margin: 5px 0; }
-          table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-          th, td { border: 1px solid #ddd; padding: 12px 8px; text-align: left; }
-          th { background-color: #1890ff; color: white; }
-          tr:nth-child(even) { background-color: #f9f9f9; }
-          .footer { margin-top: 30px; text-align: center; font-size: 12px; color: #666; border-top: 1px solid #ddd; padding-top: 15px; }
-          .summary { margin-top: 20px; padding: 10px; background: #e6f7ff; border-radius: 5px; }
-          @media print {
-            body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-          }
-        </style>
-      </head>
-      <body>
-        <div class="header">
-          <h1>Event Registration List</h1>
-          <h2>${event?.title}</h2>
-        </div>
-        
-      <div class="event-info">
-  <p><strong>Date:</strong> ${moment(event?.date).format("MMMM DD, YYYY")}</p>
-  <p><strong>Time:</strong> ${moment(event?.start_time, "HH:mm").format("hh:mm A")} - ${moment(event?.end_time, "HH:mm").format("hh:mm A")}</p>
-  <p><strong>Location:</strong> ${event?.location}</p>
-  <p><strong>Organizer:</strong> ${event?.organizer}</p>
-</div>
-
-
-        <div class="summary">
-          <strong>Total Registrations: ${registrations.length} / ${event?.capacity}</strong>
-        </div>
-
-        <table>
-        <thead>
-  <tr>
-    <th>#</th>
-    <th>Name</th>
-    <th>Email</th>
-    <th>Contact Number</th>
-    <th>Batch Year</th>
-    <!-- <th>Course</th> -->
-    <th>Registration Date</th>
-  </tr>
-</thead>
-<tbody>
-  ${registrations
-    .map(
-      (reg, index) => `
-    <tr>
-      <td>${index + 1}</td>
-      <td>${reg.alumni?.name || "N/A"}</td>
-      <td>${reg.alumni?.email || "N/A"}</td>
-      <td>${reg.alumni?.contact_number || "N/A"}</td>
-      <td>${reg.alumni?.batch_year || "N/A"}</td>
-      <!-- <td>${reg.alumni?.course || "N/A"}</td> -->
-      <td>${moment(reg.registration_date || reg.created_at).format("MMM DD, YYYY hh:mm A")}</td>
-    </tr>
-  `,
-    )
-    .join("")}
-</tbody>
-        </table>
-
-        <div class="footer">
-          <p>Generated on ${moment().format("MMMM DD, YYYY hh:mm A")}</p>
-          <p>Alumni Events Management System</p>
-        </div>
-      </body>
-      </html>
-    `)
-
-    printWindow.document.close()
-    printWindow.focus()
+  const handleActualPrint = () => {
     setTimeout(() => {
-      printWindow.print()
-      printWindow.close()
-    }, 250)
+      window.print()
+    }, 100)
   }
 
   const columns = [
@@ -487,76 +409,285 @@ const RegistrationsModal = ({ event, visible, onClose }) => {
   ]
 
   return (
-    <Modal
-      title={
-        <Space>
-          <UsergroupAddOutlined style={{ color: "#1890ff" }} />
-          <span>Event Registrations - {event?.title}</span>
-        </Space>
-      }
-      open={visible}
-      onCancel={onClose}
-      width={1000}
-      footer={[
-        <Button key="close" onClick={onClose}>
-          Close
-        </Button>,
-        <Button
-          key="print"
-          type="primary"
-          icon={<PrinterOutlined />}
-          onClick={handlePrint}
-          disabled={registrations.length === 0}
-        >
-          Print List
-        </Button>,
-      ]}
-    >
-      <div ref={printRef}>
-        {/* Event Summary */}
-        <Card size="small" style={{ marginBottom: 16 }}>
-          <Row gutter={16}>
-            <Col span={6}>
-              <Statistic
-                title="Total Registered"
-                value={registrations.length}
-                suffix={`/ ${event?.capacity}`}
-                valueStyle={{ color: "#1890ff" }}
-              />
-            </Col>
-            <Col span={6}>
-              <Statistic
-                title="Spots Remaining"
-                value={(event?.capacity || 0) - registrations.length}
-                valueStyle={{ color: registrations.length >= (event?.capacity || 0) ? "#ff4d4f" : "#52c41a" }}
-              />
-            </Col>
-            <Col span={12}>
-              <Text type="secondary">Registration Progress</Text>
-              <Progress
-                percent={Math.round((registrations.length / (event?.capacity || 1)) * 100)}
-                status={registrations.length >= (event?.capacity || 0) ? "exception" : "active"}
-                strokeColor={{
-                  "0%": "#108ee9",
-                  "100%": "#87d068",
-                }}
-              />
-            </Col>
-          </Row>
-        </Card>
+    <>
+      <Modal
+        title={
+          <Space>
+            <UsergroupAddOutlined style={{ color: "#1890ff" }} />
+            <span>Event Registrations - {event?.title}</span>
+          </Space>
+        }
+        open={visible}
+        onCancel={onClose}
+        width={1000}
+        footer={[
+          <Button key="close" onClick={onClose}>
+            Close
+          </Button>,
+          <Button
+            key="print"
+            type="primary"
+            icon={<PrinterOutlined />}
+            onClick={handlePrint}
+            disabled={registrations.length === 0}
+          >
+            Print Preview
+          </Button>,
+        ]}
+      >
+        <div ref={printRef}>
+          {/* Event Summary */}
+          <Card size="small" style={{ marginBottom: 16 }}>
+            <Row gutter={16}>
+              <Col span={6}>
+                <Statistic
+                  title="Total Registered"
+                  value={registrations.length}
+                  suffix={`/ ${event?.capacity}`}
+                  valueStyle={{ color: "#1890ff" }}
+                />
+              </Col>
+              <Col span={6}>
+                <Statistic
+                  title="Spots Remaining"
+                  value={(event?.capacity || 0) - registrations.length}
+                  valueStyle={{ color: registrations.length >= (event?.capacity || 0) ? "#ff4d4f" : "#52c41a" }}
+                />
+              </Col>
+              <Col span={12}>
+                <Text type="secondary">Registration Progress</Text>
+                <Progress
+                  percent={Math.round((registrations.length / (event?.capacity || 1)) * 100)}
+                  status={registrations.length >= (event?.capacity || 0) ? "exception" : "active"}
+                  strokeColor={{
+                    "0%": "#108ee9",
+                    "100%": "#87d068",
+                  }}
+                />
+              </Col>
+            </Row>
+          </Card>
 
-        {/* Registrations Table */}
-        <Spin spinning={loading}>
+          {/* Registrations Table */}
+          <Spin spinning={loading}>
+            <Table
+              dataSource={registrations}
+              columns={columns}
+              rowKey="id"
+              pagination={{ pageSize: 10 }}
+              locale={{ emptyText: "No registrations yet" }}
+            />
+          </Spin>
+        </div>
+      </Modal>
+
+      <Modal
+        title="Print Preview - A4 Layout"
+        open={printPreviewVisible}
+        onCancel={() => setPrintPreviewVisible(false)}
+        width={900}
+        footer={[
+          <Button key="cancel" onClick={() => setPrintPreviewVisible(false)}>
+            Cancel
+          </Button>,
+          <Button key="print" type="primary" icon={<PrinterOutlined />} onClick={handleActualPrint}>
+            Print List
+          </Button>,
+        ]}
+      >
+        <div
+          id="printable-area"
+          style={{
+            padding: "40px",
+            backgroundColor: "#fff",
+            minHeight: "297mm",
+            width: "210mm",
+            margin: "0 auto",
+            boxSizing: "border-box",
+          }}
+        >
+          {/* Header with Logo */}
+          <div
+            style={{ textAlign: "center", marginBottom: "30px", borderBottom: "2px solid #000", paddingBottom: "20px" }}
+          >
+            <img
+              src={logo || "/placeholder.svg"}
+              alt="OCC Logo"
+              style={{ width: "80px", height: "80px", marginBottom: "10px", objectFit: "contain" }}
+            />
+            <Title level={2} style={{ margin: 0, color: "#000" }}>
+              Event Registration List
+            </Title>
+            <Title level={4} style={{ margin: "10px 0", color: "#1890ff" }}>
+              {event?.title}
+            </Title>
+            <Text type="secondary" style={{ color: "#666" }}>
+              Generated on: {moment().format("MMMM DD, YYYY")}
+            </Text>
+          </div>
+
+          {/* Event Info */}
+          <Card style={{ marginBottom: "20px", border: "1px solid #d9d9d9" }}>
+            <Row gutter={16}>
+              <Col span={12}>
+                <p style={{ margin: "5px 0" }}>
+                  <strong>Date:</strong> {moment(event?.date).format("MMMM DD, YYYY")}
+                </p>
+                <p style={{ margin: "5px 0" }}>
+                  <strong>Time:</strong> {moment(event?.start_time, "HH:mm").format("hh:mm A")} -{" "}
+                  {moment(event?.end_time, "HH:mm").format("hh:mm A")}
+                </p>
+              </Col>
+              <Col span={12}>
+                <p style={{ margin: "5px 0" }}>
+                  <strong>Location:</strong> {event?.location}
+                </p>
+                <p style={{ margin: "5px 0" }}>
+                  <strong>Organizer:</strong> {event?.organizer}
+                </p>
+              </Col>
+            </Row>
+          </Card>
+
+          {/* Print Statistics */}
+          <Card style={{ marginBottom: "20px", border: "1px solid #d9d9d9" }}>
+            <Row gutter={16}>
+              <Col span={12}>
+                <div style={{ textAlign: "center" }}>
+                  <Title level={3} style={{ color: "#1890ff" }}>
+                    {registrations.length}
+                  </Title>
+                  <Text style={{ color: "#000" }}>Total Registered</Text>
+                </div>
+              </Col>
+              <Col span={12}>
+                <div style={{ textAlign: "center" }}>
+                  <Title
+                    level={3}
+                    style={{ color: registrations.length >= (event?.capacity || 0) ? "#ff4d4f" : "#52c41a" }}
+                  >
+                    {(event?.capacity || 0) - registrations.length}
+                  </Title>
+                  <Text style={{ color: "#000" }}>Spots Remaining (Capacity: {event?.capacity})</Text>
+                </div>
+              </Col>
+            </Row>
+          </Card>
+
+          {/* Print Table */}
           <Table
             dataSource={registrations}
-            columns={columns}
+            pagination={false}
+            size="small"
             rowKey="id"
-            pagination={{ pageSize: 10 }}
-            locale={{ emptyText: "No registrations yet" }}
+            style={{ width: "100%" }}
+            columns={[
+              {
+                title: "No.",
+                key: "index",
+                width: 50,
+                render: (_, __, index) => index + 1,
+              },
+              {
+                title: "Name",
+                key: "name",
+                render: (_, record) => record.alumni?.name || "N/A",
+              },
+              {
+                title: "Email",
+                key: "email",
+                render: (_, record) => record.alumni?.email || "N/A",
+              },
+              {
+                title: "Contact Number",
+                key: "contact_number",
+                render: (_, record) => record.alumni?.contact_number || "N/A",
+              },
+              {
+                title: "Batch Year",
+                key: "batch_year",
+                render: (_, record) => record.alumni?.batch_year || "N/A",
+              },
+              {
+                title: "Registration Date",
+                key: "registration_date",
+                render: (_, record) =>
+                  moment(record.registration_date || record.created_at).format("MMM DD, YYYY hh:mm A"),
+              },
+            ]}
           />
-        </Spin>
-      </div>
-    </Modal>
+
+          {/* Print Footer */}
+          <div style={{ marginTop: "40px", paddingTop: "20px", borderTop: "1px solid #d9d9d9", textAlign: "center" }}>
+            <Text type="secondary" style={{ color: "#666" }}>
+              Alumni Events Management System
+            </Text>
+          </div>
+        </div>
+      </Modal>
+
+      <style jsx global>{`
+        @media print {
+          body * {
+            visibility: hidden !important;
+          }
+          
+          #printable-area,
+          #printable-area * {
+            visibility: visible !important;
+          }
+          
+          #printable-area {
+            position: absolute !important;
+            left: 0 !important;
+            top: 0 !important;
+            width: 210mm !important;
+            min-height: 297mm !important;
+            padding: 15mm !important;
+            margin: 0 !important;
+            background: #fff !important;
+            box-sizing: border-box !important;
+            z-index: 999999 !important;
+          }
+          
+          .ant-modal-mask,
+          .ant-modal-wrap {
+            position: static !important;
+            background: none !important;
+          }
+          
+          .ant-modal,
+          .ant-modal-content {
+            position: static !important;
+            box-shadow: none !important;
+            border: none !important;
+            background: transparent !important;
+          }
+          
+          .ant-modal-header,
+          .ant-modal-footer,
+          .ant-modal-close {
+            display: none !important;
+          }
+          
+          .ant-table {
+            border: 1px solid #000 !important;
+          }
+          
+          .ant-table-thead > tr > th {
+            background: #f0f0f0 !important;
+            color: #000 !important;
+            border: 1px solid #000 !important;
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+          }
+          
+          .ant-table-tbody > tr > td {
+            border: 1px solid #000 !important;
+          }
+        }
+      `}</style>
+    </>
   )
 }
 
@@ -1584,6 +1715,8 @@ const AlumniEvents = () => {
   const [currentStep, setCurrentStep] = useState(0)
   const role = secureLocalStorage.getItem("userRole")
   const [fileList, setFileList] = useState([])
+  const [isValidationModalVisible, setIsValidationModalVisible] = useState(false)
+  const [validationErrors, setValidationErrors] = useState([])
 
   const selectedDate = Form.useWatch("date", form)
 
@@ -1834,6 +1967,8 @@ const AlumniEvents = () => {
     setSelectedEvent(null)
     form.resetFields()
     setFileList([])
+    setValidationErrors([]) // Clear previous validation errors
+    setIsValidationModalVisible(false) // Close validation modal if open
   }
 
   const handleCancel = () => {
@@ -1841,6 +1976,21 @@ const AlumniEvents = () => {
     form.resetFields()
     setSelectedEvent(null)
     setFileList([])
+    setValidationErrors([]) // Clear validation errors on cancel
+    setIsValidationModalVisible(false) // Close validation modal if open
+  }
+
+  const handleFormSubmit = async () => {
+    try {
+      const values = await form.validateFields()
+      // If validation passes, call the original create event handler
+      handleCreateEvent(values)
+    } catch (errorInfo) {
+      // Extract error messages from validation
+      const errors = errorInfo.errorFields?.map((field) => field.errors[0]) || []
+      setValidationErrors(errors)
+      setIsValidationModalVisible(true)
+    }
   }
 
   const handleCreateEvent = async (values) => {
@@ -2325,8 +2475,8 @@ const AlumniEvents = () => {
                             },
                             {
                               type: "number",
-                              max: 50,
-                              message: "Capacity cannot exceed 50",
+                              max: 500,
+                              message: "Capacity cannot exceed 500",
                             },
                             {
                               type: "number",
@@ -2339,8 +2489,8 @@ const AlumniEvents = () => {
                             style={{ width: "100%" }}
                             size="large"
                             min={1}
-                            max={50}
-                            placeholder="50"
+                            max={500}
+                            placeholder="500"
                             className="form-input-number"
                           />
                         </Form.Item>
@@ -2401,7 +2551,7 @@ const AlumniEvents = () => {
                 </div>
 
                 {/* Early Bird Pricing Section */}
-                <div className="form-section">
+                {/* <div className="form-section">
                   <div className="section-header">
                     <h3>Early Bird Pricing (Optional)</h3>
                     <div className="section-divider"></div>
@@ -2433,7 +2583,7 @@ const AlumniEvents = () => {
                       </Col>
                     </Row>
                   </div>
-                </div>
+                </div> */}
 
                 {/* Media Section */}
                 <div className="form-section">
@@ -2488,7 +2638,7 @@ const AlumniEvents = () => {
                 </Button>
                 <Button
                   type="primary"
-                  htmlType="submit"
+                  onClick={handleFormSubmit}
                   icon={selectedEvent ? <EditOutlined /> : <PlusOutlined />}
                   className="submit-btn"
                   size="large"
@@ -2497,6 +2647,43 @@ const AlumniEvents = () => {
                 </Button>
               </div>
             </Form>
+          </div>
+        </Modal>
+
+        <Modal
+          title={
+            <Space>
+              <WarningOutlined style={{ color: "#faad14", fontSize: "22px" }} />
+              <span>Required Fields Missing</span>
+            </Space>
+          }
+          open={isValidationModalVisible}
+          onCancel={() => setIsValidationModalVisible(false)}
+          footer={[
+            <Button key="ok" type="primary" onClick={() => setIsValidationModalVisible(false)}>
+              OK, I'll Fill Them
+            </Button>,
+          ]}
+          centered
+        >
+          <div style={{ padding: "16px 0" }}>
+            <Alert
+              message="Please complete all required fields before submitting."
+              description={
+                <div style={{ marginTop: "12px" }}>
+                  <Text strong>The following fields need to be filled:</Text>
+                  <ul style={{ marginTop: "8px", paddingLeft: "20px" }}>
+                    {validationErrors.map((error, index) => (
+                      <li key={index} style={{ color: "#ff4d4f", marginBottom: "4px" }}>
+                        {error}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              }
+              type="warning"
+              showIcon
+            />
           </div>
         </Modal>
       </div>

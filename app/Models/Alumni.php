@@ -26,6 +26,7 @@ class Alumni extends Model
         'gender',
         'bio',
         'profile_image',
+        'temp_password',
         'course_id',
         'student_id',
         'graduation_year',

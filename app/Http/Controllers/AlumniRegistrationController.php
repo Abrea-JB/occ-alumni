@@ -14,6 +14,9 @@ use Illuminate\Support\Facades\Log;
 use App\Models\User;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\ValidationException;
+use Illuminate\Support\Facades\Mail;
+use App\Mail\AlumniRegistrationConfirmation;
+use App\Mail\AlumniAccountApproved;
 
 class AlumniRegistrationController extends Controller
 {
@@ -122,11 +125,12 @@ class AlumniRegistrationController extends Controller
                 }
             }
 
+            $plainPassword = $validated['password'];
             
             $user = User::create([
                 'name' => $validated['first_name'] . ' ' . $validated['last_name'],
                 'email' => $validated['email'],
-                'password' => Hash::make($validated['password']), // Default password
+                'password' => Hash::make($validated['password']),
                 'email_verified_at' => now(), 
             ]);
 
@@ -146,6 +150,7 @@ class AlumniRegistrationController extends Controller
                 'gender' => $validated['gender'],
                 'bio' => $validated['bio'] ?? null,
                 'profile_image' => $profileImagePath,
+                'temp_password' => $plainPassword,
 
                 // Academic Information
                 'course_id' => $request->course_id,
@@ -208,6 +213,29 @@ class AlumniRegistrationController extends Controller
             }
 
             DB::commit();
+
+                // Send confirmation email after successful registration
+            try {
+                $alumniData = [
+                    'first_name' => $validated['first_name'],
+                    'last_name' => $validated['last_name'],
+                    'middle_name' => $validated['middle_name'] ?? '',
+                    'suffix' => $validated['suffix'] ?? '',
+                    'email' => $validated['email'],
+                    'phone' => $validated['phone'] ?? null,
+                    'address' => $validated['address'] ?? null,
+                    'student_id' => $validated['student_id'] ?? null,
+                    'graduation_year' => $validated['graduation_year'] ?? null,
+                    'current_company' => $validated['current_company'] ?? null,
+                    'job_title' => $validated['job_title'] ?? null,
+                ];
+
+                Mail::to($validated['email'])->send(new AlumniRegistrationConfirmation($alumniData, $applicationId));
+                Log::info('Alumni registration confirmation email sent to: ' . $validated['email']);
+            } catch (\Exception $emailException) {
+                // Log the email error but don't fail the registration
+                Log::error('Failed to send alumni registration confirmation email: ' . $emailException->getMessage());
+            }
 
             return response()->json([
                 'success' => true,
@@ -468,7 +496,7 @@ class AlumniRegistrationController extends Controller
                         'alumni_id' => $alumni->id,
                         'alumni_name' => $alumniName,
                         'alumni_email' => $alumni->email,
-                        'alumni_profile_image' => $profileImageUrl, // Added alumni profile image URL for notification avatar sync
+                        'alumni_profile_image' => $profileImageUrl,
                         'changed_fields' => $changedFields,
                         'type' => 'profile_update'
                     ],
@@ -533,6 +561,27 @@ class AlumniRegistrationController extends Controller
             ]);
 
             Log::info("Account approval notification sent to alumni: {$alumniName}");
+
+             try {
+                $alumniData = [
+                    'first_name' => $alumni->first_name,
+                    'last_name' => $alumni->last_name,
+                    'middle_name' => $alumni->middle_name ?? '',
+                    'suffix' => $alumni->suffix ?? '',
+                    'email' => $alumni->email,
+                    'application_id' => $alumni->application_id ?? null,
+                    'password' => $alumni->temp_password ?? null, // Include stored temp password
+                ];
+
+                Mail::to($alumni->email)->send(new AlumniAccountApproved($alumniData));
+                Log::info('Alumni account approval email sent to: ' . $alumni->email);
+                
+                if ($alumni->temp_password) {
+                    $alumni->update(['temp_password' => null]);
+                }
+            } catch (\Exception $emailException) {
+                Log::error('Failed to send alumni account approval email: ' . $emailException->getMessage());
+            }
 
         } catch (\Exception $e) {
             Log::error('Failed to create alumni approval notification: ' . $e->getMessage());
