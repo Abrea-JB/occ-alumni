@@ -918,3 +918,88 @@
     padding: 4px;
   }
 }
+
+/* ===== FIX NOTIFICATION BELL CIRCULAR SHAPE ===== */
+/* Ensure notification bell is perfectly circular */
+.btn-notification {
+  width: 40px !important;
+  height: 40px !important;
+  min-width: 40px !important;
+  min-height: 40px !important;
+  border-radius: 50% !important;
+  padding: 0 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+.btn-notification .anticon {
+  font-size: 18px !important;
+}
+
+/* ===== FIX HEADER TITLE MOBILE RESPONSIVE ===== */
+/* Better header layout for mobile */
+@media (max-width: 768px) {
+  .first .ant-typography {
+    font-size: 14px !important;
+    max-width: calc(100vw - 150px) !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+  }
+
+  .second {
+    flex: 0 0 auto !important;
+    width: auto !important;
+  }
+
+  /* Smaller notification button on mobile */
+  .btn-notification {
+    width: 36px !important;
+    height: 36px !important;
+    min-width: 36px !important;
+    min-height: 36px !important;
+  }
+
+  .btn-notification .anticon {
+    font-size: 16px !important;
+  }
+}
+
+/* ===== FIX NOTIFICATION DROPDOWN OVERLAP ===== */
+/* Proper notification dropdown positioning and sizing */
+.notification-dropdown,
+.ant-dropdown {
+  z-index: 1050 !important;
+}
+
+@media (max-width: 768px) {
+  .notification-dropdown {
+    width: calc(100vw - 32px) !important;
+    max-width: 340px !important;
+    right: 16px !important;
+    left: auto !important;
+  }
+
+  /* Ensure dropdown doesn't overlap header */
+  .ant-dropdown-placement-bottomRight {
+    margin-top: 4px !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .first .ant-typography {
+    font-size: 12px !important;
+    max-width: calc(100vw - 130px) !important;
+  }
+
+  .btn-notification {
+    width: 32px !important;
+    height: 32px !important;
+    min-width: 32px !important;
+    min-height: 32px !important;
+  }
+
+  .btn-notification .anticon {
+    font-size: 14px !important;
+  }
+}

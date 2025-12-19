@@ -1240,9 +1240,9 @@ const MainLayout = ({ children, breadcrumb }) => {
                       }
                     }}
                   >
-                    <List.Item.Meta
-                      avatar={
-                        notification.notifiable_type === "new_event" && eventImage ? (
+                    <div style={{ display: "flex", alignItems: "flex-start", width: "100%" }}>
+                      {notification.notifiable_type === "new_event" && eventImage ? (
+                        <div style={{ marginRight: 12, flexShrink: 0 }}>
                           <Image
                             src={eventImage || "/placeholder.svg"}
                             alt="Event"
@@ -1252,107 +1252,92 @@ const MainLayout = ({ children, breadcrumb }) => {
                             preview={false}
                             fallback="/community-event.png"
                           />
-                        ) : (
-                          <Avatar
-                            size={40}
-                            src={role === "alumni" ? avatarGuidance : alumniAvatar}
-                            icon={!alumniAvatar && role !== "alumni" && <UserOutlined />}
-                            style={{
-                              background: alumniAvatar ? "transparent" : notification.read ? "#d9d9d9" : "#1890ff",
-                              border: alumniAvatar ? "1px solid #e8e8e8" : "none",
-                            }}
-                          />
-                        )
-                      }
-                      title={
+                        </div>
+                      ) : (
+                        <Avatar
+                          size={40}
+                          src={alumniAvatar}
+                          icon={!alumniAvatar && <UserOutlined />}
+                          style={{
+                            marginRight: 12,
+                            background: alumniAvatar ? "transparent" : notification.read ? "#d9d9d9" : "#1890ff",
+                            border: alumniAvatar ? "1px solid #e8e8e8" : "none",
+                          }}
+                        />
+                      )}
+                      <div style={{ flex: 1, minWidth: 0 }}>
                         <div
                           style={{
                             display: "flex",
                             justifyContent: "space-between",
-                            alignItems: "center",
+                            alignItems: "flex-start",
+                            marginBottom: 4,
                             flexWrap: "wrap",
                             gap: 4,
                           }}
                         >
-                          <Space>
-                            <Text strong={!notification.read}>{notificationTitle}</Text>
-                            <Tag
-                              color={categoryInfo.color}
-                              style={{
-                                fontSize: "10px",
-                                padding: "0 6px",
-                                borderRadius: 10,
-                                lineHeight: "18px",
-                              }}
-                            >
-                              {categoryInfo.icon} {categoryInfo.label}
-                            </Tag>
-                          </Space>
-                          {!notification.read && <Badge dot color="#1890ff" />}
-                        </div>
-                      }
-                      description={
-                        <div>
-                          <Text type="secondary" style={{ fontSize: 12 }}>
-                            {notificationMessage}
+                          <Text strong style={{ fontSize: "13px" }}>
+                            {notificationTitle}
                           </Text>
-                          {notification.notifiable_type === "new_event" && notificationData?.event_title && (
-                            <div style={{ marginTop: 4 }}>
-                              <Text strong style={{ fontSize: 12, color: "#1890ff" }}>
-                                {notificationData.event_title}
-                              </Text>
-                            </div>
-                          )}
-                          {notification.notifiable_type === "new_event" && notificationData?.event_id && (
-                            <div style={{ marginTop: 4 }}>
-                              <Button
-                                type="link"
-                                size="small"
-                                icon={<EyeOutlined />}
-                                style={{ padding: 0, fontSize: "11px", height: "auto" }}
-                                onClick={(e) => {
-                                  e.stopPropagation()
-                                  if (!notification.read) {
-                                    handleMarkAsRead(notification.id)
-                                  }
-                                  setAllNotificationsModalVisible(false)
-                                  handleViewEventDetails(notificationData.event_id)
-                                }}
-                              >
-                                View Details
-                              </Button>
-                            </div>
-                          )}
-                          {notification.notifiable_type === "event_registration" && notificationData?.event_id && (
-                            <div style={{ marginTop: 4 }}>
-                              <Button
-                                type="link"
-                                size="small"
-                                icon={<TeamOutlined />}
-                                style={{ padding: 0, fontSize: "11px", height: "auto" }}
-                                onClick={(e) => {
-                                  e.stopPropagation()
-                                  if (!notification.read) {
-                                    handleMarkAsRead(notification.id)
-                                  }
-                                  setAllNotificationsModalVisible(false)
-                                  handleViewEventRegistrations(notificationData.event_id, notificationData.alumni_id)
-                                }}
-                              >
-                                View Registrations
-                              </Button>
-                            </div>
-                          )}
-                          <div style={{ marginTop: 4 }}>
-                            <Text type="secondary" style={{ fontSize: 11 }}>
-                              {notification.created_at
-                                ? new Date(notification.created_at).toLocaleString()
-                                : "Just now"}
-                            </Text>
-                          </div>
+                          <Tag
+                            color={categoryInfo.color}
+                            style={{
+                              fontSize: "10px",
+                              padding: "0 6px",
+                              borderRadius: 10,
+                              lineHeight: "18px",
+                              margin: 0,
+                            }}
+                          >
+                            {categoryInfo.icon} {categoryInfo.label}
+                          </Tag>
                         </div>
-                      }
-                    />
+                        <Text style={{ fontSize: "12px", color: "#666", display: "block", marginBottom: 4 }}>
+                          {notificationMessage}
+                        </Text>
+                        {notification.notifiable_type === "new_event" && notificationData?.event_title && (
+                          <Text
+                            strong
+                            style={{
+                              fontSize: "12px",
+                              color: "#1890ff",
+                              display: "block",
+                              marginBottom: 4,
+                            }}
+                          >
+                            {notificationData.event_title}
+                          </Text>
+                        )}
+                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                          <Space size="small">
+                            <Text type="secondary" style={{ fontSize: "11px" }}>
+                              {notification.sender?.name ||
+                                notificationData?.created_by ||
+                                notificationData?.alumni_name ||
+                                ""}
+                            </Text>
+                            {!notification.read && <Badge dot color="#1890ff" size="small" />}
+                          </Space>
+                          <Text type="secondary" style={{ fontSize: "10px" }}>
+                            {notification.created_at
+                              ? (() => {
+                                  const date = new Date(notification.created_at)
+                                  const now = new Date()
+                                  const diffMs = now - date
+                                  const diffMins = Math.floor(diffMs / 60000)
+                                  const diffHours = Math.floor(diffMs / 3600000)
+                                  const diffDays = Math.floor(diffMs / 86400000)
+                                  if (diffMins < 1) return "Just now"
+                                  if (diffMins < 60) return `${diffMins}m ago`
+                                  if (diffHours < 24) return `${diffHours}h ago`
+                                  if (diffDays < 7) return `${diffDays}d ago`
+                                  return date.toLocaleDateString()
+                                })()
+                              : "Just now"}
+                          </Text>
+                        </div>
+                      </div>
+                    </div>
                   </List.Item>
                 )
               }}
@@ -1363,10 +1348,10 @@ const MainLayout = ({ children, breadcrumb }) => {
         {totalNotifications > modalPerPage && (
           <div
             style={{
-              padding: "12px 16px",
               borderTop: "1px solid #f0f0f0",
-              textAlign: "center",
-              background: "#fafafa",
+              padding: "16px",
+              display: "flex",
+              justifyContent: "center",
             }}
           >
             <Pagination
@@ -1374,7 +1359,6 @@ const MainLayout = ({ children, breadcrumb }) => {
               total={totalNotifications}
               pageSize={modalPerPage}
               onChange={(page) => {
-                setCurrentPage(page)
                 fetchAllNotifications(page)
               }}
               showSizeChanger={false}
@@ -1392,7 +1376,7 @@ const MainLayout = ({ children, breadcrumb }) => {
         title={
           <Space>
             <TeamOutlined style={{ color: "#1890ff" }} />
-            <span>Event Registrations - {selectedEventForRegistrations?.title}</span>
+            <span>Event Registrations: {selectedEventForRegistrations?.title}</span>
           </Space>
         }
         open={eventRegistrationsModalVisible}
@@ -1626,15 +1610,16 @@ const MainLayout = ({ children, breadcrumb }) => {
           background: "#fff",
           borderRadius: 12,
           boxShadow: "0 8px 24px rgba(0,0,0,0.15)",
-          width: 450,
-          maxHeight: 550,
+          width: isMobile ? "calc(100vw - 32px)" : 450,
+          maxWidth: isMobile ? 340 : 450,
+          maxHeight: isMobile ? "70vh" : 550,
           overflow: "hidden",
           border: "1px solid #f0f0f0",
         }}
       >
         <div
           style={{
-            padding: "16px",
+            padding: isMobile ? "12px" : "16px",
             borderBottom: "1px solid #f0f0f0",
             background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
             color: "white",
@@ -1645,16 +1630,18 @@ const MainLayout = ({ children, breadcrumb }) => {
               display: "flex",
               justifyContent: "space-between",
               alignItems: "center",
+              flexWrap: isMobile ? "wrap" : "nowrap",
+              gap: isMobile ? 8 : 0,
             }}
           >
             <div>
-              <Title level={5} style={{ color: "white", margin: 0 }}>
+              <Title level={5} style={{ color: "white", margin: 0, fontSize: isMobile ? 14 : 16 }}>
                 Notifications
               </Title>
               <Text
                 style={{
                   color: "rgba(255,255,255,0.8)",
-                  fontSize: "12px",
+                  fontSize: isMobile ? "11px" : "12px",
                 }}
               >
                 {unreadCount} unread {unreadCount === 1 ? "message" : "messages"}
@@ -1669,6 +1656,7 @@ const MainLayout = ({ children, breadcrumb }) => {
                   background: filterUnread ? "rgba(255,255,255,0.2)" : "transparent",
                   border: "1px solid rgba(255,255,255,0.3)",
                   color: "white",
+                  fontSize: isMobile ? 11 : 14,
                 }}
               >
                 {filterUnread ? "Show All" : "Show Unread"}
@@ -1679,7 +1667,7 @@ const MainLayout = ({ children, breadcrumb }) => {
 
         <div
           style={{
-            padding: "8px 12px",
+            padding: isMobile ? "6px 8px" : "8px 12px",
             borderBottom: "1px solid #f0f0f0",
             background: "#f8f9fa",
             overflowX: "auto",
@@ -1698,12 +1686,13 @@ const MainLayout = ({ children, breadcrumb }) => {
                     borderColor: activeCategory === key ? category.color : "transparent",
                     background: activeCategory === key ? category.color : "transparent",
                     color: activeCategory === key ? "#fff" : category.color,
-                    minWidth: 32,
-                    padding: "0 8px",
+                    minWidth: isMobile ? 28 : 32,
+                    padding: isMobile ? "0 4px" : "0 8px",
+                    fontSize: isMobile ? 10 : 14,
                   }}
                 >
                   {categoryCounts[key] > 0 && (
-                    <span style={{ marginLeft: 4, fontSize: 10 }}>{categoryCounts[key]}</span>
+                    <span style={{ marginLeft: 4, fontSize: isMobile ? 9 : 10 }}>{categoryCounts[key]}</span>
                   )}
                 </Button>
               </Tooltip>
@@ -1713,7 +1702,7 @@ const MainLayout = ({ children, breadcrumb }) => {
 
         <div
           style={{
-            padding: "8px 16px",
+            padding: isMobile ? "6px 12px" : "8px 16px",
             borderBottom: "1px solid #f0f0f0",
             background: "#fafafa",
           }}
@@ -1726,7 +1715,7 @@ const MainLayout = ({ children, breadcrumb }) => {
                 onClick={handleMarkAllAsRead}
                 loading={false}
                 icon={<EyeInvisibleOutlined />}
-                style={{ padding: 0, fontSize: "12px" }}
+                style={{ padding: 0, fontSize: isMobile ? "11px" : "12px" }}
               >
                 Mark all as read
               </Button>
@@ -1735,7 +1724,7 @@ const MainLayout = ({ children, breadcrumb }) => {
               size="small"
               type="link"
               icon={<SettingOutlined />}
-              style={{ padding: 0, fontSize: "12px" }}
+              style={{ padding: 0, fontSize: isMobile ? "11px" : "12px" }}
               onClick={() => {
                 setDropdownVisible(false)
                 setSettingsModalVisible(true)
@@ -1746,7 +1735,7 @@ const MainLayout = ({ children, breadcrumb }) => {
           </Space>
         </div>
 
-        <div style={{ maxHeight: 250, overflowY: "auto" }}>
+        <div style={{ maxHeight: isMobile ? 180 : 250, overflowY: "auto" }}>
           {isLoading ? (
             <div style={{ padding: 40, textAlign: "center" }}>
               <Spin />
@@ -1755,26 +1744,26 @@ const MainLayout = ({ children, breadcrumb }) => {
           ) : filteredNotifications.length === 0 ? (
             <div
               style={{
-                padding: 40,
+                padding: isMobile ? 20 : 40,
                 textAlign: "center",
                 color: "#999",
               }}
             >
               <BellOutlined
                 style={{
-                  fontSize: 32,
+                  fontSize: isMobile ? 28 : 32,
                   marginBottom: 16,
                   color: "#d9d9d9",
                 }}
               />
-              <div style={{ fontSize: "14px" }}>
+              <div style={{ fontSize: isMobile ? "13px" : "14px" }}>
                 {activeCategory !== "all"
                   ? `No ${NOTIFICATION_CATEGORIES[activeCategory].label.toLowerCase()}`
                   : filterUnread
                     ? "No unread notifications"
                     : "No notifications yet"}
               </div>
-              <Text type="secondary" style={{ fontSize: "12px" }}>
+              <Text type="secondary" style={{ fontSize: isMobile ? "10px" : "12px" }}>
                 We'll notify you when something arrives
               </Text>
             </div>
@@ -1960,33 +1949,54 @@ const MainLayout = ({ children, breadcrumb }) => {
       <Layout className="site-layout">
         <Header id="header">
           <Row style={{ flex: 1 }} className="row-header" justify="space-between" align="middle">
-            <Col className="first" style={{ display: "flex", alignItems: "center", gap: 12 }}>
+            <Col
+              className="first"
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 12,
+                flex: isMobile ? 1 : "auto",
+                justifyContent: isMobile ? "center" : "flex-start",
+                position: "relative",
+              }}
+            >
               {isMobile && (
                 <Button
                   type="text"
                   icon={drawerVisible ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />}
                   onClick={toggleDrawer}
                   className="burger-menu"
+                  style={{ position: "absolute", left: 0, zIndex: 1 }}
                 />
               )}
 
               <Text
                 strong
                 style={{
-                  fontSize: 28,
+                  fontSize: isMobile ? 14 : 28,
                   fontWeight: 800,
                   background: "linear-gradient(90deg, #667eea, #764ba2)",
                   WebkitBackgroundClip: "text",
                   color: "transparent",
                   letterSpacing: "0.5px",
                   whiteSpace: "nowrap",
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                  maxWidth: isMobile ? "calc(100vw - 180px)" : "auto",
+                  textAlign: isMobile ? "center" : "left",
+                  paddingLeft: isMobile ? 40 : 0,
+                  paddingRight: isMobile ? 40 : 0,
                 }}
               >
                 Alumni Tracing Management System
               </Text>
             </Col>
-            <Col flex="280px" className="second">
-              <Space size={16}>
+            <Col
+              flex={isMobile ? "auto" : "280px"}
+              className="second"
+              style={{ position: isMobile ? "absolute" : "relative", right: isMobile ? 8 : 0 }}
+            >
+              <Space size={isMobile ? 8 : 16}>
                 {role !== "department_head" && (
                   <Dropdown
                     placement="bottomRight"
@@ -2013,10 +2023,14 @@ const MainLayout = ({ children, breadcrumb }) => {
                         style={{
                           width: 40,
                           height: 40,
+                          minWidth: 40,
+                          minHeight: 40,
+                          borderRadius: "50%",
                           display: "flex",
                           alignItems: "center",
                           justifyContent: "center",
                           border: "1px solid #f0f0f0",
+                          padding: 0,
                         }}
                       />
                     </Badge>
@@ -2031,16 +2045,18 @@ const MainLayout = ({ children, breadcrumb }) => {
                       alignItems: "center",
                       gap: 8,
                       height: 40,
-                      padding: "0 12px",
+                      padding: isMobile ? "0 8px" : "0 12px",
                       border: "1px solid rgb(102 126 234)",
                       borderRadius: 20,
                       background: "#667eea40",
                     }}
                   >
-                    <Avatar size={24} src={userData.avatar} style={{ marginRight: 8 }} />
-                    <Text strong style={{ fontSize: "14px" }}>
-                      {userData.name.split(" ")[0]}
-                    </Text>
+                    <Avatar size={24} src={userData.avatar} style={{ marginRight: isMobile ? 0 : 8 }} />
+                    {!isMobile && (
+                      <Text strong style={{ fontSize: "14px" }}>
+                        {userData.name.split(" ")[0]}
+                      </Text>
+                    )}
                   </Button>
                 </Dropdown>
               </Space>

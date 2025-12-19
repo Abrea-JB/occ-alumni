@@ -12,6 +12,7 @@ use App\Models\User;
 use App\Models\Course;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 use Exception;
 
@@ -21,9 +22,25 @@ class AuthController extends Controller
     public function login(Request $request)
     {
         $this->checkTooManyFailedAttempts();
+        
+        $email = $request->email;
+        $password = $request->password;
+
+        $user = User::where('email', $email)->first();
+
+        if (!$user) {
+            RateLimiter::hit($this->throttleKey(), $seconds = 3600);
+            return response(['message' => 'This account has not been registered'], 403);
+        }
+
+        if (!Hash::check($password, $user->password)) {
+            RateLimiter::hit($this->throttleKey(), $seconds = 3600);
+            return response(['message' => 'Wrong password'], 403);
+        }
+
         $loginData = array(
-            'email' => $request->email,
-            'password' => $request->password
+            'email' => $email,
+            'password' => $password
         );
 
         if (!auth()->attempt($loginData)) {
@@ -218,7 +235,7 @@ class AuthController extends Controller
      */
     public function checkTooManyFailedAttempts()
     {
-        if (! RateLimiter::tooManyAttempts($this->throttleKey(), 3)) {
+        if (! RateLimiter::tooManyAttempts($this->throttleKey(), 5)) {
             return;
         }
 

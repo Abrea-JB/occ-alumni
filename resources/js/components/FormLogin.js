@@ -1,6 +1,7 @@
+
 "use client"
 
-import React, { useState } from "react"
+import React, { useState, useEffect } from "react"
 import { Form, Input, Alert, Row, Col, Modal } from "antd"
 import {
   EyeInvisibleOutlined,
@@ -10,6 +11,7 @@ import {
   LockOutlined,
   CheckCircleFilled,
   CloseCircleFilled,
+  MobileOutlined,
 } from "@ant-design/icons"
 import { useLoginStore } from "~/states/loginState"
 import shallow from "zustand/shallow"
@@ -43,6 +45,46 @@ const Formlogin = () => {
   const [showNewPassword, setShowNewPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const [resetSuccess, setResetSuccess] = useState(false)
+  const [isRedirecting, setIsRedirecting] = useState(false)
+
+  const [isMobilePhone, setIsMobilePhone] = useState(false)
+  const [showMobileNotice, setShowMobileNotice] = useState(true)
+
+  useEffect(() => {
+    const detectMobilePhone = () => {
+      const userAgent = navigator.userAgent || navigator.vendor || window.opera
+
+      // Check if it's a mobile phone (not tablet)
+      const isMobile = /Android|webOS|iPhone|iPod|BlackBerry|IEMobile|Opera Mini/i.test(userAgent)
+
+      // Exclude tablets (iPad, Android tablets with large screens)
+      const isTablet =
+        /iPad|Android(?!.*Mobile)/i.test(userAgent) || (navigator.maxTouchPoints > 0 && window.innerWidth >= 768)
+
+      // Check screen width to further distinguish phones from tablets/desktops
+      const isSmallScreen = window.innerWidth < 768
+
+      // It's a mobile phone if it matches mobile patterns, is not a tablet, and has small screen
+      const isMobilePhoneDevice = isMobile && !isTablet && isSmallScreen
+
+      setIsMobilePhone(isMobilePhoneDevice)
+    }
+
+    detectMobilePhone()
+    window.addEventListener("resize", detectMobilePhone)
+
+    return () => window.removeEventListener("resize", detectMobilePhone)
+  }, [])
+
+  const getDeviceType = () => {
+    const userAgent = navigator.userAgent || navigator.vendor || window.opera
+    if (/iPhone|iPod/i.test(userAgent)) {
+      return "iphone"
+    } else if (/Android/i.test(userAgent)) {
+      return "android"
+    }
+    return "other"
+  }
 
   const handleRegisterRedirect = () => {
     window.location.href = "/register"
@@ -243,8 +285,13 @@ const Formlogin = () => {
 
   // Success Modal Close Handler
   const handleSuccessModalClose = () => {
-    setResetSuccess(false)
-    handleBackToLogin()
+    setIsRedirecting(true)
+    // Simulate loading with OCC logo spinner before redirecting to login
+    setTimeout(() => {
+      setIsRedirecting(false)
+      setResetSuccess(false)
+      handleBackToLogin()
+    }, 1500)
   }
 
   const formContainerStyle = {
@@ -656,7 +703,7 @@ const Formlogin = () => {
                     width: `${passwordStrength.percent}%`,
                     backgroundColor: passwordStrength.color,
                     borderRadius: 3,
-                    transition: "all 0.3s ease",
+                    transition: "all 0.3s",
                   }}
                 />
               </div>
@@ -929,6 +976,131 @@ const Formlogin = () => {
     </div>
   )
 
+  const renderMobilePhoneNotice = () => {
+    if (!isMobilePhone || !showMobileNotice) return null
+
+    const deviceType = getDeviceType()
+
+    return (
+      <div
+        style={{
+          position: "fixed",
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: "rgba(0, 0, 0, 0.7)",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          zIndex: 9999,
+          padding: 20,
+        }}
+      >
+        <div
+          style={{
+            backgroundColor: "#fff",
+            borderRadius: 12,
+            padding: 24,
+            maxWidth: 340,
+            width: "100%",
+            boxShadow: "0 10px 40px rgba(0,0,0,0.3)",
+            textAlign: "center",
+          }}
+        >
+          <div
+            style={{
+              width: 60,
+              height: 60,
+              borderRadius: "50%",
+              backgroundColor: "#fef3c7",
+              display: "inline-flex",
+              alignItems: "center",
+              justifyContent: "center",
+              marginBottom: 16,
+            }}
+          >
+            <MobileOutlined style={{ fontSize: 28, color: "#f59e0b" }} />
+          </div>
+
+          <h3
+            style={{
+              fontSize: 18,
+              fontWeight: 700,
+              color: "#1a1a2e",
+              marginBottom: 12,
+              margin: "0 0 12px 0",
+            }}
+          >
+            📱 Mobile Device Detected
+          </h3>
+
+          <div
+            style={{
+              backgroundColor: "#fffbeb",
+              border: "1px solid #fcd34d",
+              borderRadius: 8,
+              padding: 14,
+              marginBottom: 16,
+              textAlign: "left",
+            }}
+          >
+            {deviceType === "iphone" ? (
+              <div>
+                <p style={{ margin: "0 0 8px 0", fontWeight: 600, color: "#92400e", fontSize: 14 }}>🍎 iPhone User</p>
+                <p style={{ margin: 0, color: "#78350f", fontSize: 13, lineHeight: 1.5 }}>
+                  For the best experience and to see all features, please{" "}
+                  <strong>rotate your phone to landscape mode</strong> (horizontal orientation).
+                </p>
+              </div>
+            ) : deviceType === "android" ? (
+              <div>
+                <p style={{ margin: "0 0 8px 0", fontWeight: 600, color: "#92400e", fontSize: 14 }}>🤖 Android User</p>
+                <p style={{ margin: 0, color: "#78350f", fontSize: 13, lineHeight: 1.5 }}>
+                  For the best experience and to see all features, please <strong>request desktop site</strong> from
+                  your browser menu (tap the three dots → "Desktop site").
+                </p>
+              </div>
+            ) : (
+              <div>
+                <p style={{ margin: "0 0 8px 0", fontWeight: 600, color: "#92400e", fontSize: 14 }}>📱 Mobile User</p>
+                <p style={{ margin: 0, color: "#78350f", fontSize: 13, lineHeight: 1.5 }}>
+                  For the best experience, please use <strong>landscape mode</strong> or{" "}
+                  <strong>request desktop site</strong> from your browser to see all features.
+                </p>
+              </div>
+            )}
+          </div>
+
+          <button
+            onClick={() => setShowMobileNotice(false)}
+            style={{
+              width: "100%",
+              height: 44,
+              fontSize: 15,
+              fontWeight: 600,
+              borderRadius: 8,
+              backgroundColor: "#3b82f6",
+              color: "#fff",
+              border: "none",
+              cursor: "pointer",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: 8,
+            }}
+          >
+            Got it, Continue
+          </button>
+
+          <p style={{ margin: "12px 0 0 0", color: "#9ca3af", fontSize: 11 }}>
+            This notice only appears on mobile phones
+          </p>
+        </div>
+      </div>
+    )
+  }
+
   React.useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search)
     const token = urlParams.get("token")
@@ -943,6 +1115,8 @@ const Formlogin = () => {
 
   return (
     <>
+      {renderMobilePhoneNotice()}
+
       <Row
         style={{
           minHeight: "100vh",
@@ -982,56 +1156,96 @@ const Formlogin = () => {
       {/* Success Modal */}
       <Modal open={resetSuccess} footer={null} closable={false} centered width={400}>
         <div style={{ textAlign: "center", padding: "20px 0" }}>
-          <div
-            style={{
-              width: 70,
-              height: 70,
-              borderRadius: "50%",
-              backgroundColor: "#dcfce7",
-              display: "inline-flex",
-              alignItems: "center",
-              justifyContent: "center",
-              marginBottom: 20,
-            }}
-          >
-            <CheckCircleFilled style={{ fontSize: 40, color: "#22c55e" }} />
-          </div>
+          {isRedirecting ? (
+            <div style={{ padding: "40px 0" }}>
+              <div
+                style={{
+                  display: "inline-block",
+                  animation: "spin 1s linear infinite",
+                }}
+              >
+                <img
+                  src={logo || "/placeholder.svg"}
+                  alt="Loading..."
+                  style={{
+                    width: 80,
+                    height: 80,
+                    objectFit: "contain",
+                  }}
+                />
+              </div>
+              <p
+                style={{
+                  marginTop: 20,
+                  color: "#666",
+                  fontSize: 14,
+                }}
+              >
+                Redirecting to Sign In...
+              </p>
+              <style>
+                {`
+                  @keyframes spin {
+                    from { transform: rotate(0deg); }
+                    to { transform: rotate(360deg); }
+                  }
+                `}
+              </style>
+            </div>
+          ) : (
+            <>
+              <div
+                style={{
+                  width: 70,
+                  height: 70,
+                  borderRadius: "50%",
+                  backgroundColor: "#dcfce7",
+                  display: "inline-flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  marginBottom: 20,
+                }}
+              >
+                <CheckCircleFilled style={{ fontSize: 40, color: "#22c55e" }} />
+              </div>
 
-          <h3
-            style={{
-              fontSize: 22,
-              fontWeight: 700,
-              color: "#1a1a2e",
-              marginBottom: 10,
-            }}
-          >
-            Password Reset Successful!
-          </h3>
+              <h3
+                style={{
+                  fontSize: 22,
+                  fontWeight: 700,
+                  color: "#1a1a2e",
+                  marginBottom: 10,
+                }}
+              >
+                Password Reset Successful!
+              </h3>
 
-          <p
-            style={{
-              color: "#666",
-              marginBottom: 25,
-              fontSize: 14,
-            }}
-          >
-            Your password has been successfully changed. Please sign in with your new password.
-          </p>
+              <p
+                style={{
+                  color: "#666",
+                  marginBottom: 25,
+                  fontSize: 14,
+                }}
+              >
+                Your password has been successfully changed. Please sign in with your new password.
+              </p>
 
-          <Button
-            type="primary"
-            onClick={handleSuccessModalClose}
-            label="Sign In"
-            style={{
-              width: "100%",
-              height: 45,
-              fontSize: 16,
-              fontWeight: 600,
-              borderRadius: 8,
-              backgroundColor: "#3b82f6",
-              border: "none",
-            }}
-          />
+              <Button
+                type="primary"
+                onClick={handleSuccessModalClose}
+                label="Sign In"
+                style={{
+                  width: "100%",
+                  height: 45,
+                  fontSize: 16,
+                  fontWeight: 600,
+                  borderRadius: 8,
+                  backgroundColor: "#3b82f6",
+                  border: "none",
+                }}
+              />
+            </>
+          )}
         </div>
       </Modal>
     </>
